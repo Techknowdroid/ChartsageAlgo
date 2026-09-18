@@ -1,0 +1,188 @@
+National Stock Exchange of India Ltd.
+http://www.nseindia.com/[25-03-2011 12:37:08]
+EQUITIES
+FUTIDX
+IISL
+-----
+Products &
+Services
+-----
+IISL Indices
+-----
+Index Concepts
+-----
+Statistics
+-----
+Index Funds
+-----
+IISL Press
+Releases
+-----
+FAQs
+-----
+IISL - Publications
+-----
+Licensing
+-----
+Contact Us
+-----
+  Home > Indices  > IISL Press Releases  > Apr 19, 1999
+Press Release
+Change in indices w.e.f. May 26, 1999
+The Index Maintenance Sub-Committee  of India Index Services & Products Ltd. (IISL)
+met on April 16, 1999 to finalise changes in various indices.
+The changes being made in the various indices is enclosed:
+(1) S&P CNX Nifty
+The companies being excluded  from S&P CNX Nifty, since there are better repalcement
+candidates, are:
+S. No. Company Name Impact Cost (%) Current Market
+Capitalisation (Rs. mill.)
+1 Arvind Mills Ltd. 0.35 2775
+2 Great Eastern Shipping Corp. Ltd. 0.43 5823
+3 Reliance Capital Ltd. 0.30 3988
+The companies being included in S&P CNX Nifty are:
+S. No. Company Name Impact Cost (%) Current Market
+Capitalisation(Rs. mill.)
+1 Dr. Reddy's Laboratories Ltd. 0.23 18223
+2 Novartis Ltd. 0.39 26177
+3 Reckitt & Colman Ltd. 0.31 11643
+The total market capitalisation of revamped S&P CNX Nifty is Rs. 2,168,148 million and
+which is 50% of the total market capitalisaition of NSE. 
+(2) CNX Nifty Junior
+The companies being excluded from CNX Nifty Junior are:
+S. No. Company Name Impact Cost (%) Current Market
+Capitalisation(Rs. mill.)
+1 Dr. Reddy's Laboratories Ltd. 0.19 18223
+2 Novartis Ltd. 0.27 26177
+3 Reckitt & Colman Ltd. 0.36 11643
+4 Federal Bank Ltd. 0.43 676
+5 Hotel Leela Venture Ltd. 0.54 889
+Dr. Reddy's Laboratories Ltd., Novartis Ltd., and Reckitt & Colman Ltd., have graduated to
+S&P CNX Nifty and Federal Bank Ltd.'s and Hotel Leela Venture Ltd.'s market capitalisation
+have reduced substantially and are therefore being replaced. 
+National Stock Exchange of India Ltd.
+http://www.nseindia.com/[25-03-2011 12:37:08]
+The companies being included in CNX Nifty Junior are:
+S. No. Company Name Impact Cost (%) Current Market
+Capitalisation(Rs. mill.)
+1 German Remedies Ltd. 0.33 6096
+2 E Merck Ltd. 0.42 9432
+3 Burroughs Wellcome Ltd. 0.48 7145
+4 Aptech Ltd. 0.56 9149
+5 Raymond Ltd. 0.71 4520
+The total market capitalisation of the revamped CNX Nifty Junior is Rs. 4,31,532 million
+which is 10% of the total market capitalisaition of NSE. 
+(3) S&P CNX 500
+The companies being excluded from S&P CNX 500 are:
+S. No. Company Name Industry Name
+1 Alpine Industries Ltd. Solvent Extraction
+2 BIL Industries Ltd. Trading
+3 Peacock Industries Miscellaneous
+4 India Securities Ltd. Finance
+5 National Peroxide Ltd. Chemicals Inorganic
+6 Altos India Ltd. Computers - Hardware
+7 GTC Industries Ltd. Cigarettes
+8 Oil Country Tubular Ltd. Steel And Steel Products
+9 Prakash Industries Ltd. Diversified
+10 Merind Ltd. Pharmaceuticals
+11 Arvind Polycot Ltd. Textile Products
+The companies being included in the S&P CNX 500 are:
+S. No. Company Name Industry Name
+1 Amara Raja Batteries Miscellaneous
+2 Ashima Syntex Ltd. Textile Products
+3 Bausch & Lomb (India) Ltd. Personal Care
+4 Citicorp Securities & Investments Ltd. Finance
+5 Global Trust Bank Banks
+6 Gujarat Mineral Dev. Corp. Ltd. Mining
+7 Mangalore Refinery & Petrochemicals Ltd. Refineries
+8 Sri Vishnu Cement Cement And Cement Products
+9 SSI Ltd. Computers - Software
+10 Subros Ltd. Auto Ancillaries
+11 Vashisti Detergents Detergents
+National Stock Exchange of India Ltd.
+http://www.nseindia.com/[25-03-2011 12:37:08]
+ 
+ 
+The changes in the S&P CNX 500 due to exclusion/inclusion are as follows :
+ Number Market Cap. (Rs. Mill.) Turnover (Rs. Mill.)
+Companies Excluded 11 2,744.10 323.14
+Companies Included 11 24,709.49 26,802.06
+Net Change  21,965.39 26,478.92
+(4) CNX MidCap 200
+The companies being excluded from the CNX MidCap 200 are:
+S. No. Company Name Industry Name
+1 Bank of Rajasthan Banks
+2 Binani Industries Ltd. Metals
+3 Forbes Gokak Ltd. Textiles Cotton
+4 Goetze (India) Ltd. Auto Ancillaries
+5 Hero Honda Motors Automobiles 2 And 3 Wheelers
+6 KEC International Transmission Towers
+7 Kotak Mahindra Finance Ltd. Finance
+8 Mukand Ltd. Steel And Steel Products
+9 SRF Ltd. Textiles Synthetic
+The companies being included in the CNX MidCap 200 are:
+S. No. Company Name Industry Name
+1 Global Trust Bank Banks
+2 HDFC Bank Ltd. Banks
+3 Tata Elxsi (India) Ltd. Computers - Hardware
+4 SSI Ltd. Computers - Software
+5 Vashisti Detergents Detergents
+6 Industrial Oxygen Co. Industrial Gas
+7 Gujarat Mineral Dev. Corp. Ltd. Mining
+8 Hitech Drilling Services India Ltd. Oil Exploration/Production
+9 ITC Agro Tech Ltd. Solvent Extraction
+The changes in the CNX MidCap 200 due to exclusion/inclusion are as follows:
+ Number Market Cap. (Rs. Mill.) Turnover (Rs. Mill.)
+Companies Excluded 9 28,768.34 5,523.89
+Companies Included 9 32,562.64 23,926.53
+Net Change  23,926.53 18,402.64
+(5) CNX MNC Index
+The companies being excluded in the CNX MNC Index are:
+National Stock Exchange of India Ltd.
+http://www.nseindia.com/[25-03-2011 12:37:08]
+S. No. Company Name Industry Name
+1 KSB Pumps Ltd. Compressors / Pumps
+2 Grindwell Norton Ltd. Abrasives
+3 Eternit Everest Ltd. Cement And Cement Products
+The companies being included in the CNX MNC Index are:
+S. No. Company Name Industry Name
+1 Gujarat Gas Co. Ltd. Industrial Gas
+2 Vesuvius India Ltd. Refractories
+3 ITW Signode India Ltd. Packaging
+The changes in the CNX MNC Index due to exclusion/inclusion are as follows:
+ Number Market Cap. (Rs. Mill.) Turnover (Rs. Mill.)
+Companies Excluded 3 5,082.26 137.61
+Companies Included 3 6,041.04 1,367.88
+Net Change  958.78 1,230.27
+(6) CNX PSE Index
+The company being excluded in the CNX PSE Index is:
+Sr. No. Company Name Industry Name
+1. Shipping Corporation Shipping
+2. Hindustan Organic Chemicals Ltd. Chemicals - Organic
+The company being included in the CNX PSE Index is:
+Sr. No. Company Name Industry Name
+1. Bharat Electronics Electronics - Industrial
+2. CMC Ltd. Computers - Hardware
+The changes in the CNX PSE Index due to exclusion/inclusion are as follows:
+ Number Market Cap. (Rs. Mill.) Turnover (Rs. Mill.)
+Companies Excluded 2 10,129.05 55.22
+Companies Included 2 4,097.93 1,479.43
+Net Change  6,031.12 1,424.21
+(7) CNX IT Index
+The company being excluded in the CNX IT Index is:
+Sr. No. Company Name Industry Name
+1. Altos India Ltd. Computers - Hardware
+National Stock Exchange of India Ltd.
+http://www.nseindia.com/[25-03-2011 12:37:08]
+The company being included in the CNX IT Index is:
+Sr. No. Company Name Industry Name
+1. SSI Ltd. Computers - Software
+The changes in the CNX IT Index due to exclusion/inclusion are as follows:
+ Number Market Cap. (Rs. Mill.) Turnover (Rs. Mill.)
+Companies Excluded 1 192.02 50.08
+Companies Included 1 2246.60 13,547.64
+Net Change  2,054.58 13,497.56
+The above changes will come into effect on May 26, 1999.
+Place: Mumbai
+Date : April 19, 1999
+Top

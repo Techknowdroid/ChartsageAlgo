@@ -1,0 +1,69 @@
+ 
+ 
+ 
+PRESS RELEASE 
+Mumbai, December 30, 2024 
+Corporate Action Adjustment for ITC Ltd. in Nifty indices 
+ 
+NSE vide its circular NSE/ CMTR/65845 dated December 27, 2024 has announced special pre-open 
+session to be conducted for ITC Ltd. (ITC) in Capital Market segment on January 06, 2025 on account 
+of demerger of company’s Hotel business into the ITC Hotels Ltd. 
+ 
+In accordance with the index methodology,  demerged entity ITC Hotels Ltd. (with a dummy Symbol 
+“DUMMYITC”) shall be included at zero price without divisor adjustment  in following indices  
+effective from January 06, 2025 (close of January 03, 2025). 
+ 
+Sr. No. Index Name 
+1 Nifty 50 
+2 Nifty 100 
+3 Nifty 200 
+4 Nifty 500 
+5 Nifty50 Value 20 
+6 NIFTY Alpha Low-Volatility 30 
+7 NIFTY Alpha Quality Low-Volatility 30 
+8 NIFTY Alpha Quality Value Low-Volatility 30 
+9 NIFTY LargeMidcap 250 
+10 NIFTY Quality Low-Volatility 30 
+11 NIFTY100 Quality 30 
+12 NIFTY200 Quality 30 
+13 NIFTY50 Equal Weight 
+14 Nifty Dividend Opportunities 50 
+15 Nifty FMCG 
+16 Nifty Growth Sectors 15 
+17 Nifty India Consumption 
+18 Nifty Low Volatility 50 
+19 Nifty Non-Cyclical Consumer 
+20 Nifty Rural 
+21 Nifty Top 10 Equal Weight 
+22 Nifty Top 15 Equal Weight 
+23 Nifty Top 20 Equal Weight 
+ 
+ 
+Sr. No. Index Name 
+24 Nifty Total Market 
+25 Nifty100 Equal Weight 
+26 Nifty100 Low Volatility 30 
+27 Nifty500 Equal Weight 
+28 Nifty500 LargeMidSmall Equal-Cap Weighted 
+29 Nifty500 Multicap 50:25:25 
+ 
+For detailed guidelines regarding handling of corporate actions involving demergers in Nifty indices, 
+please refer index methodology document published on our website www.niftyindices.com. 
+ 
+ 
+About NSE Indices Limited:  
+NSE Indices Limited (formerly known as India Index Services & Products Ltd. - IISL), a subsidiary of 
+NSE, provides a variety of indices and index related services for the capital markets. The company 
+focuses on the index as a core product. The company owns  and manages a portfolio of indices under 
+the Nifty brand of NSE, including the flagship index, the Nifty 50. Nifty equity indices comprises 
+broad-based benchmark indices, sectoral indices, strategy indices, thematic indices, and customised 
+indices. NSE In dices Limited also maintains fixed income indices based on Government of India 
+securities, corporate bonds, money market instruments and hybrid indices. Many investment products 
+based on Nifty indices have been developed within India and abroad. These incl ude index -based 
+derivatives traded on NSE and NSE International Exchange IFSC Limited (NSE IX) and a number of 
+index funds and exchange traded funds. The flagship 'Nifty 50' index is widely tracked and traded as 
+the benchmark for Indian Capital Markets.  
+For more information, please visit: www.niftyindices.com 
+Press contact: 
+Email ID: cc@nse.co.in 
+  

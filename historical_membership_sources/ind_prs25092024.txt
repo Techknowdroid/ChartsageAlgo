@@ -1,0 +1,205 @@
+ 
+ 
+ 
+PRESS RELEASE 
+Mumbai, September 25, 2024 
+ 
+Replacements in indices 
+ 
+The Index Maintenance Sub -Committee (Equity) of NSE Indices Limited has decided to make the 
+following changes in various Nifty equity indices as listed hereunder. 
+ 
+A. Revocation of exclusion of Vodafone Idea Ltd. (IDEA) in Nifty indices: 
+ 
+On August 23, 2024, as part of periodic review of various indices, the Index Maintenance Sub -
+Committee (Equity) of NSE Indices Limited had announced exclusion of Vodafone Idea Ltd. (IDEA) 
+from various Nifty indices with effect from September 30, 2024  on account of non -compliance with 
+impact cost criteria.  The Committee has decided to revoke its decision to exclude IDEA from various 
+indices following the recalculation of security’s impact cost by NSE. 
+ 
+Following changes shall be made in various indices as a result of revocation of Vodafone Idea Ltd.’s 
+exclusion from various indices: 
+ 
+Sr. 
+No. Index Name Security Name Symbol Remarks 
+1 Nifty 500 Vodafone Idea Ltd. IDEA Exclusion revoked 
+Prism Johnson Ltd. PRSMJOHNSN Exclusion 
+2 Nifty Midcap 150 Vodafone Idea Ltd. IDEA Exclusion revoked 
+Central Bank of India CENTRALBK Inclusion revoked 
+3 Nifty Smallcap 250 Central Bank of India CENTRALBK Exclusion revoked 
+Prism Johnson Ltd.* PRSMJOHNSN Exclusion 
+4 Nifty Midcap 
+Select## 
+Vodafone Idea Ltd. IDEA Exclusion revoked 
+Astral Ltd. ASTRAL Exclusion 
+5 Nifty Midcap 50 
+Vodafone Idea Ltd. IDEA Exclusion revoked 
+Sona BLW Precision 
+Forgings Ltd. SONACOMS Inclusion revoked 
+6 Nifty Midcap 100 Vodafone Idea Ltd. IDEA Exclusion revoked 
+Central Bank of India CENTRALBK Inclusion revoked 
+7 Nifty Smallcap 100 Central Bank of India# CENTRALBK Exclusion revoked 
+Graphite India Ltd. GRAPHITE Exclusion 
+8 Nifty 200 Vodafone Idea Ltd. IDEA Exclusion revoked 
+Central Bank of India CENTRALBK Inclusion revoked 
+ 
+ 
+Sr. 
+No. Index Name Security Name Symbol Remarks 
+9 Nifty LargeMidcap 
+250 
+Vodafone Idea Ltd. IDEA Exclusion revoked 
+Central Bank of India CENTRALBK Inclusion revoked 
+10 Nifty MidSmallcap 
+400 
+Vodafone Idea Ltd. IDEA Exclusion revoked 
+Prism Johnson Ltd. PRSMJOHNSN Exclusion 
+11 Nifty Total Market Vodafone Idea Ltd. IDEA Exclusion revoked 
+Prism Johnson Ltd. PRSMJOHNSN Exclusion 
+12 Nifty MidSmall IT 
+& Telecom 
+Vodafone Idea Ltd. IDEA Exclusion revoked 
+Happiest Minds 
+Technologies Ltd. HAPPSTMNDS Exclusion 
+13 Nifty India Digital 
+Vodafone Idea Ltd. IDEA Exclusion revoked 
+Happiest Minds 
+Technologies Ltd. HAPPSTMNDS Exclusion 
+14 Nifty Rural Vodafone Idea Ltd. IDEA Exclusion revoked 
+Bayer Cropscience Ltd. BAYERCROP Exclusion 
+15 
+Nifty500 Multicap 
+Infrastructure 
+50:30:20 
+Vodafone Idea Ltd. IDEA Exclusion revoked 
+CG Power and Industrial 
+Solutions Ltd. CGPOWER Inclusion revoked 
+*On account of exclusion from Nifty 500. 
+#On account of revocation of exclusion from Nifty Smallcap 250. 
+ 
+The above change in Nifty 500 index will also be applicable to Nifty500 Multicap 50:25:25, Nifty500 
+LargeMidSmall Equal-Cap Weighted and Nifty500 Equal Weight indices. 
+ 
+The changes in all indices listed above ( excluding Nifty Midcap Select index) shall become effective 
+from September 30, 2024 (close of September 27, 2024).   This press release should be read in 
+consonance with the press release issued on August 23, 2024. 
+ 
+## Nifty Midcap Select index: 
+With an aim to provide prior communication of 4 weeks in case of changes in Nifty Midcap Select 
+index, which is available for trading under F&O segment at NSE, t he effective date for changes in the 
+index announced earlier on August 23, 2024 has been postponed . The changes shall now become 
+effective from October 25, 2024 (close of October 24, 2024)  instead of September 30, 2024 as 
+announced earlier. Details of replacements in the index are given below: 
+ 
+ The following companies are being excluded from Nifty Midcap Select index: 
+ 
+Sr. No. Company Name Symbol 
+1 Jubilant Foodworks Ltd. JUBLFOOD 
+2 Page Industries Ltd. PAGEIND 
+ 
+ 
+Sr. No. Company Name Symbol 
+3 UPL Ltd. UPL 
+4 Astral Ltd. ASTRAL 
+ 
+ The following companies are being included in Nifty Midcap Select index: 
+ 
+Sr. No. Company Name Symbol 
+1 Colgate Palmolive (India) Ltd. COLPAL 
+2 Dixon Technologies (India) Ltd. DIXON 
+3 Indus Towers Ltd. INDUSTOWER 
+4 SRF Ltd. SRF 
+ 
+ 
+B. Replacements in Nifty High Beta 50 index on account of quarterly review: 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Federal Bank Ltd. FEDERALBNK 
+2 General Insurance Corporation of India GICRE 
+3 IDFC First Bank Ltd. IDFCFIRSTB 
+4 Info Edge (India) Ltd. NAUKRI 
+5 Jaiprakash Power Ventures Ltd. JPPOWER 
+6 Mahindra & Mahindra Financial Services Ltd. M&MFIN 
+7 Sammaan Capital Ltd. SAMMAANCAP 
+8 Suzlon Energy Ltd. SUZLON 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Adani Green Energy Ltd. ADANIGREEN 
+2 Bharat Electronics Ltd. BEL 
+3 Container Corporation of India Ltd. CONCOR 
+4 GAIL (India) Ltd. GAIL 
+5 GMR Airports Infrastructure Ltd. GMRINFRA 
+6 IRB Infrastructure Developers Ltd. IRB 
+7 NCC Ltd. NCC 
+8 Oil & Natural Gas Corporation Ltd. ONGC 
+ 
+The above changes shall become effective from September 30, 2024 (close of September 27, 2024).   
+ 
+ 
+ 
+C. Replacements in Nifty IPO index: 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Abans Holdings Ltd. AHL 
+2 Archean Chemical Industries Ltd. ACI 
+3 Avalon Technologies Ltd. AVALON 
+4 Bikaji Foods International Ltd. BIKAJI 
+5 Cyient DLM Ltd. CYIENTDLM 
+6 DCX Systems Ltd. DCXINDIA 
+7 Dharmaj Crop Guard Ltd. DHARMAJ 
+8 Divgi Torqtransfer Systems Ltd. DIVGIITTS 
+9 Elin Electronics Ltd. ELIN 
+10 Five-Star Business Finance Ltd. FIVESTAR 
+11 Fusion Finance Ltd. FUSION 
+12 Global Health Ltd. MEDANTA 
+13 Global Surfaces Ltd. GSLSU 
+14 HMA Agro Industries Ltd. HMAAGRO 
+15 Ideaforge Technology Ltd. IDEAFORGE 
+16 IKIO Lighting Ltd. IKIO 
+17 Inox Green Energy Services Ltd. INOXGREEN 
+18 Kaynes Technology India Ltd. KAYNES 
+19 Keystone Realtors Ltd. RUSTOMJEE 
+20 Kfin Technologies Ltd. KFINTECH 
+21 Landmark Cars Ltd. LANDMARK 
+22 Mankind Pharma Ltd. MANKIND 
+23 Netweb Technologies India Ltd. NETWEB 
+24 Radiant Cash Management Services Ltd. RADIANTCMS 
+25 Senco Gold Ltd. SENCO 
+26 Sula Vineyards Ltd. SULA 
+27 Uniparts India Ltd. UNIPARTS 
+28 Utkarsh Small Finance Bank Ltd. UTKARSHBNK 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Arkade Developers Ltd. ARKADE 
+2 Northern Arc Capital Ltd. NORTHARC 
+ 
+ 
+Sr. No. Company Name Symbol 
+3 Western Carriers (India) Ltd. WCIL 
+ 
+The above changes shall become effective from September 30, 2024 (close of September 27, 2024).   
+ 
+ 
+About NSE Indices Limited:  
+NSE Indices Limited (formerly known as India Index Services & Products Ltd. - IISL), a subsidiary of 
+NSE, provides a variety of indices and index related services for the capital markets. The company 
+focuses on the index as a core product. The company owns  and manages a portfolio of indices under 
+the Nifty brand of NSE, including the flagship index, the Nifty 50. Nifty equity indices comprises 
+broad-based benchmark indices, sectoral indices, strategy indices, thematic indices, and customised 
+indices. NSE In dices Limited also maintains fixed income indices based on Government of India 
+securities, corporate bonds, money market instruments and hybrid indices. Many investment products 
+based on Nifty indices have been developed within India and abroad. These incl ude index -based 
+derivatives traded on NSE and NSE International Exchange IFSC Limited (NSE IX) and a number of 
+index funds and exchange traded funds. The flagship 'Nifty 50' index is widely tracked and traded as 
+the benchmark for Indian Capital Markets.  
+For more information, please visit: www.niftyindices.com 
+Press contact: 
+Email ID: cc@nse.co.in  

@@ -1,0 +1,541 @@
+ 
+ 
+PRESS RELEASE 
+Mumbai, June 09, 2023 
+Replacements in indices 
+ 
+The Index Maintenance Sub -Committee (Equity) of NSE Indices Limited has decided to make the 
+replacement of stocks in various indices as listed hereunder. These changes shall become effective 
+from June 30, 2023 (close of June 29, 2023). 
+ 
+A. Replacements on account of semi-annual review of strategy indices: 
+ 
+1) Nifty Alpha Low-Volatility 30 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Ambuja Cements Ltd. AMBUJACEM 
+2 Cipla Ltd. CIPLA 
+3 HCL Technologies Ltd. HCLTECH 
+4 Marico Ltd. MARICO 
+5 Page Industries Ltd. PAGEIND 
+6 Power Grid Corporation of India Ltd. POWERGRID 
+7 Reliance Industries Ltd. RELIANCE 
+8 SBI Life Insurance Company Ltd. SBILIFE 
+9 Tata Consultancy Services Ltd. TCS 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Abbott India Ltd. ABBOTINDIA 
+2 Axis Bank Ltd. AXISBANK 
+3 Godrej Consumer Products Ltd. GODREJCP 
+4 Grasim Industries Ltd. GRASIM 
+5 Indian Oil Corporation Ltd. IOC 
+6 Maruti Suzuki India Ltd. MARUTI 
+7 Torrent Pharmaceuticals Ltd. TORNTPHARM 
+8 UltraTech Cement Ltd. ULTRACEMCO 
+ 
+ 
+Sr. No. Company Name Symbol 
+9 Zydus Lifesciences Ltd. ZYDUSLIFE 
+ 
+ 
+2) Nifty Alpha Quality Low-Volatility 30 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 ACC Ltd. ACC 
+2 Infosys Ltd. INFY 
+3 MRF Ltd. MRF 
+4 Reliance Industries Ltd. RELIANCE 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Bosch Ltd. BOSCHLTD 
+2 Godrej Consumer Products Ltd. GODREJCP 
+3 Oracle Financial Services Software Ltd. OFSS 
+4 Torrent Pharmaceuticals Ltd. TORNTPHARM 
+ 
+ 
+3) Nifty Alpha Quality Value Low-Volatility 30 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 ACC Ltd. ACC 
+2 Ambuja Cements Ltd. AMBUJACEM 
+3 Power Grid Corporation of India Ltd. POWERGRID 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 HDFC Asset Management Company Ltd. HDFCAMC 
+2 HDFC Bank Ltd. HDFCBANK 
+3 Zydus Lifesciences Ltd. ZYDUSLIFE 
+ 
+ 
+ 
+ 
+4) Nifty Quality Low-Volatility 30 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 ACC Ltd. ACC 
+2 Honeywell Automation India Ltd. HONAUT 
+3 MRF Ltd. MRF 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Havells India Ltd. HAVELLS 
+2 HDFC Asset Management Company Ltd. HDFCAMC 
+3 Maruti Suzuki India Ltd. MARUTI 
+ 
+ 
+5) Nifty100 Quality 30 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Bajaj Finance Ltd. BAJFINANCE 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Page Industries Ltd. PAGEIND 
+ 
+ 
+6) Nifty200 Quality 30 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Indian Energy Exchange Ltd. IEX 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 HDFC Asset Management Company Ltd. HDFCAMC 
+ 
+ 
+7) Nifty Midcap150 Quality 50 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Alembic Pharmaceuticals Ltd. APLLTD 
+2 Gujarat State Petronet Ltd. GSPL 
+3 Indian Energy Exchange Ltd. IEX 
+4 Page Industries Ltd. PAGEIND 
+5 Sanofi India Ltd. SANOFI 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Fine Organic Industries Ltd. FINEORG 
+2 Indraprastha Gas Ltd. IGL 
+3 MphasiS Ltd. MPHASIS 
+4 Polycab India Ltd. POLYCAB 
+5 Schaeffler India Ltd. SCHAEFFLER 
+ 
+ 
+8) Nifty Smallcap250 Quality 50 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 DCM Shriram Ltd. DCMSHRIRAM 
+2 Galaxy Surfactants Ltd. GALAXYSURF 
+3 Jamna Auto Industries Ltd. JAMNAAUTO 
+4 KPIT Technologies Ltd. KPITTECH 
+5 Rallis India Ltd. RALLIS 
+6 TCI Express Ltd. TCIEXP 
+7 Transport Corporation of India Ltd. TCI 
+8 Vaibhav Global Ltd. VAIBHAVGBL 
+9 V-Guard Industries Ltd. VGUARD 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 eClerx Services Ltd. ECLERX 
+ 
+ 
+Sr. No. Company Name Symbol 
+2 Gujarat Ambuja Exports Ltd. GAEL 
+3 Gujarat Narmada Valley Fertilizers and Chem. Ltd. GNFC 
+4 Gujarat State Petronet Ltd. GSPL 
+5 Indian Energy Exchange Ltd. IEX 
+6 National Aluminium Co. Ltd. NATIONALUM 
+7 Sanofi India Ltd. SANOFI 
+8 Sharda Cropchem Ltd. SHARDACROP 
+9 Sonata Software Ltd. SONATSOFTW 
+ 
+9) Nifty200 Momentum 30 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Adani Enterprises Ltd. ADANIENT 
+2 Ambuja Cements Ltd. AMBUJACEM 
+3 Bharat Heavy Electricals Ltd. BHEL 
+4 Bharti Airtel Ltd. BHARTIARTL 
+5 Canara Bank CANBK 
+6 Coal India Ltd. COALINDIA 
+7 Eicher Motors Ltd. EICHERMOT 
+8 Escorts Kubota Ltd. ESCORTS 
+9 Federal Bank Ltd. FEDERALBNK 
+10 ICICI Bank Ltd. ICICIBANK 
+11 Jindal Steel & Power Ltd. JINDALSTEL 
+12 Mahindra & Mahindra Ltd. M&M 
+13 NTPC Ltd. NTPC 
+14 Pidilite Industries Ltd. PIDILITIND 
+15 State Bank of India SBIN 
+16 Sun Pharmaceutical Industries Ltd. SUNPHARMA 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Apollo Tyres Ltd. APOLLOTYRE 
+2 Astral Ltd. ASTRAL 
+3 Aurobindo Pharma Ltd. AUROPHARMA 
+4 Bajaj Auto Ltd. BAJAJ-AUTO 
+ 
+ 
+Sr. No. Company Name Symbol 
+5 Cholamandalam Investment and Finance 
+Company Ltd. CHOLAFIN 
+6 Dalmia Bharat Ltd. DALBHARAT 
+7 Godrej Consumer Products Ltd. GODREJCP 
+8 InterGlobe Aviation Ltd. INDIGO 
+9 Mahindra & Mahindra Financial Services Ltd. M&MFIN 
+10 Polycab India Ltd. POLYCAB 
+11 Power Finance Corporation Ltd. PFC 
+12 REC Ltd. RECLTD 
+13 Syngene International Ltd. SYNGENE 
+14 The Ramco Cements Ltd. RAMCOCEM 
+15 Torrent Pharmaceuticals Ltd. TORNTPHARM 
+16 Zydus Lifesciences Ltd. ZYDUSLIFE 
+ 
+ 
+10) Nifty Midcap150 Momentum 50 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 ABB India Ltd. ABB 
+2 Aditya Birla Fashion and Retail Ltd. ABFRL 
+3 Blue Dart Express Ltd. BLUEDART 
+4 Canara Bank CANBK 
+5 Fortis Healthcare Ltd. FORTIS 
+6 Gujarat Fluorochemicals Ltd. FLUOROCHEM 
+7 Oberoi Realty Ltd. OBEROIRLTY 
+8 Page Industries Ltd. PAGEIND 
+9 Prestige Estates Projects Ltd. PRESTIGE 
+10 Rajesh Exports Ltd. RAJESHEXPO 
+11 SKF India Ltd. SKFINDIA 
+12 Sumitomo Chemical India Ltd. SUMICHEM 
+13 Tata Chemicals Ltd. TATACHEM 
+14 United Breweries Ltd. UBL 
+15 Varun Beverages Ltd. VBL 
+16 Yes Bank Ltd. YESBANK 
+ 
+ 
+ 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Apollo Tyres Ltd. APOLLOTYRE 
+2 Astral Ltd. ASTRAL 
+3 Aurobindo Pharma Ltd. AUROPHARMA 
+4 CRISIL Ltd. CRISIL 
+5 Dalmia Bharat Ltd. DALBHARAT 
+6 L&T Finance Holdings Ltd. L&TFH 
+7 Mahindra & Mahindra Financial Services Ltd. M&MFIN 
+8 Metro Brands Ltd. METROBRAND 
+9 Persistent Systems Ltd. PERSISTENT 
+10 Power Finance Corporation Ltd. PFC 
+11 REC Ltd. RECLTD 
+12 Sundaram Finance Ltd. SUNDARMFIN 
+13 Supreme Industries Ltd. SUPREMEIND 
+14 Syngene International Ltd. SYNGENE 
+15 The Ramco Cements Ltd. RAMCOCEM 
+16 Zydus Lifesciences Ltd. ZYDUSLIFE 
+ 
+11) Nifty500 Value 50 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 E.I.D. Parry (India) Ltd. EIDPARRY 
+2 Mahanagar Gas Ltd. MGL 
+3 Polyplex Corporation Ltd. POLYPLEX 
+4 Shriram Finance Ltd. SHRIRAMFIN 
+5 TV18 Broadcast Ltd. TV18BRDCST 
+6 Vardhman Textiles Ltd. VTL 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Brightcom Group Ltd. BCG 
+2 Gujarat State Petronet Ltd. GSPL 
+3 JM Financial Ltd. JMFINANCIL 
+4 NMDC Ltd. NMDC 
+ 
+ 
+Sr. No. Company Name Symbol 
+5 Piramal Enterprises Ltd. PEL 
+6 Sanofi India Ltd. SANOFI 
+ 
+ 
+B. Replacements on account of semi-annual review of thematic indices: 
+ 
+1) Nifty100 ESG 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Bandhan Bank Ltd. BANDHANBNK 
+2 Biocon Ltd. BIOCON 
+3 Gland Pharma Ltd. GLAND 
+4 MphasiS Ltd. MPHASIS 
+5 One 97 Communications Ltd. PAYTM 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 ABB India Ltd. ABB 
+2 Bank of Baroda BANKBARODA 
+3 Canara Bank CANBK 
+4 Page Industries Ltd. PAGEIND 
+5 Varun Beverages Ltd. VBL 
+ 
+ 
+2) Nifty100 Enhanced ESG 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Bandhan Bank Ltd. BANDHANBNK 
+2 Biocon Ltd. BIOCON 
+3 MphasiS Ltd. MPHASIS 
+4 One 97 Communications Ltd. PAYTM 
+5 Reliance Industries Ltd. RELIANCE 
+ 
+ 
+ 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 ABB India Ltd. ABB 
+2 Canara Bank CANBK 
+3 Page Industries Ltd. PAGEIND 
+4 Varun Beverages Ltd. VBL 
+ 
+ 
+3) Nifty100 ESG Sector Leaders 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Biocon Ltd. BIOCON 
+2 Indian Oil Corporation Ltd. IOC 
+3 Nestle India Ltd. NESTLEIND 
+4 Reliance Industries Ltd. RELIANCE 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 ABB India Ltd. ABB 
+2 Page Industries Ltd. PAGEIND 
+ 
+ 
+C. Replacements on account of quarterly review of strategy indices: 
+ 
+1) Nifty Alpha 50 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Adani Power Ltd. ADANIPOWER 
+2 Ambuja Cements Ltd. AMBUJACEM 
+3 Deepak Fertilisers & Petrochemicals Corp. Ltd. DEEPAKFERT 
+4 Gujarat Fluorochemicals Ltd. FLUOROCHEM 
+5 IIFL Finance Ltd. IIFL 
+6 Timken India Ltd. TIMKEN 
+ 
+ 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Cyient Ltd. CYIENT 
+2 Equitas Small Finance Bank Ltd. EQUITASBNK 
+3 Finolex Cables Ltd. FINCABLES 
+4 Jindal Stainless Ltd. JSL 
+5 NCC Ltd. NCC 
+6 Sonata Software Ltd. SONATSOFTW 
+ 
+2) Nifty High Beta 50 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Ashok Leyland Ltd. ASHOKLEY 
+2 Macrotech Developers Ltd. LODHA 
+3 PB Fintech Ltd. POLICYBZR 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Adani Wilmar Ltd. AWL 
+2 Suzlon Energy Ltd. SUZLON 
+3 Union Bank of India UNIONBANK 
+ 
+ 
+3) Nifty Low Volatility 50 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Crompton Greaves Consumer Electricals Ltd. CROMPTON 
+2 Divi's Laboratories Ltd. DIVISLAB 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Alkem Laboratories Ltd. ALKEM 
+2 Grasim Industries Ltd. GRASIM 
+ 
+ 
+4) Nifty100 Low Volatility 30 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 HDFC Life Insurance Company Ltd. HDFCLIFE 
+2 Tech Mahindra Ltd. TECHM 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 ICICI Bank Ltd. ICICIBANK 
+2 Torrent Pharmaceuticals Ltd. TORNTPHARM 
+ 
+5) Nifty100 Alpha 30 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Ambuja Cements Ltd. AMBUJACEM 
+2 NTPC Ltd. NTPC 
+3 Power Grid Corporation of India Ltd. POWERGRID 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 DLF Ltd. DLF 
+2 Torrent Pharmaceuticals Ltd. TORNTPHARM 
+3 UltraTech Cement Ltd. ULTRACEMCO 
+ 
+6) Nifty200 Alpha 30 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Coal India Ltd. COALINDIA 
+2 ICICI Bank Ltd. ICICIBANK 
+3 Mahindra & Mahindra Ltd. M&M 
+4 MRF Ltd. MRF 
+5 NTPC Ltd. NTPC 
+ 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Astral Ltd. ASTRAL 
+2 Cholamandalam Investment and Finance Company Ltd. CHOLAFIN 
+3 Dalmia Bharat Ltd. DALBHARAT 
+4 Godrej Consumer Products Ltd. GODREJCP 
+5 REC Ltd. RECLTD 
+ 
+D. Replacements on account of quarterly review of thematic indices: 
+ 
+1) Nifty SME Emerge 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Dhanuka Realty Ltd. DRL 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 A G Universal Ltd. AGUL 
+2 Agarwal Float Glass India Ltd. AGARWALFT 
+3 Ambani Organics Ltd. AMBANIORG 
+4 Aristo Bio-Tech and Lifescience Ltd. ARISTO 
+5 De Neers Tools Ltd. DENEERS 
+6 Gayatri Rubbers And Chemicals Ltd. GRCL 
+7 Infinium Pharmachem Ltd. INFINIUM 
+8 Jakharia Fabric Ltd. JAKHARIA 
+9 Lead Reclaim And Rubber Products Ltd. LRRPL 
+10 Mcon Rasayan India Ltd. MCON 
+11 Mos Utility Ltd. MOS 
+12 Nirman Agri Gentics Ltd. NIRMAN 
+13 Parin Furniture Ltd. PARIN 
+14 Pattech Fitwell Tube Components Ltd. PATTECH 
+15 Quality Foils (India) Ltd. QFIL 
+16 Quicktouch Technologies Ltd. QUICKTOUCH 
+17 Shera Energy Ltd. SHERA 
+18 Sotac Pharmaceuticals Ltd. SOTAC 
+ 
+ 
+Sr. No. Company Name Symbol 
+19 Srivasavi Adhesive Tapes Ltd. SRIVASAVI 
+20 Systango Technologies Ltd. SYSTANGO 
+21 Vels Film International Ltd. VELS 
+22 Vera Synthetic Ltd. VERA 
+23 Vertexplus Technologies Ltd. VERTEXPLUS 
+24 Viaz Tyres Ltd. VIAZ 
+ 
+No changes are being made to Nifty REITs & InvITs, Nifty Aditya Birla Group, Nifty Mahindra 
+Group and Nifty Tata Group indices. 
+ 
+E. Replacement on account of monthly review of Shariah indices: 
+ 
+1) Nifty500 Shariah 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Aether Industries Ltd. AETHER 
+ 
+No exclusion is being made from the index. 
+ 
+No changes are being made to Nifty50 Shariah and Nifty Shariah 25 indices. 
+ 
+ 
+About NSE Indices Limited:  
+NSE Indices Limited (formerly known as India Index Services & Products Ltd. - IISL), a subsidiary 
+of NSE, provides a variety of indices and index related services for the capital markets. The company 
+focuses on the index as a core product. The company owns and manages a portfolio of indices under 
+the Nifty brand of NSE, including the flagship index, the Nifty 50. Nifty equity indices comprise of 
+broad-based benchmark indices, sectoral indices, strategy indices, thematic indices and customised 
+indices. NSE I ndices Limited also maintains fixed income indices based on Government of India 
+securities, corporate bonds, money market instruments and hybrid indices. Many investment products 
+based on Nifty indices have been developed within India and abroad. These inc lude index based 
+derivatives traded on NSE, NSE IFSC and Singapore Exchange Ltd. (SGX) and a number of index 
+funds and exchange traded funds. The flagship 'Nifty 50' index is widely tracked and traded as the 
+benchmark for Indian Capital Markets.  
+ 
+For more information, please visit: www.niftyindices.com 
+ 
+Press contact: 
+Email ID: cc@nse.co.in 

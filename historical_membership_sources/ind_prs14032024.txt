@@ -1,0 +1,191 @@
+ 
+ 
+ 
+PRESS RELEASE 
+Mumbai, March 14, 2024 
+ 
+Replacements in indices 
+ 
+The Index Maintenance Sub -Committee (Equity) of NSE Indices Limited has decided to make 
+replacement of stocks in various indices on account of quarterly review as listed hereunder.  These 
+changes shall become effective from March 28, 2024 (close of March 27, 2024). 
+ 
+1) Nifty Alpha 50 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 APL Apollo Tubes Ltd. APLAPOLLO 
+2 CG Power and Industrial Solutions Ltd. CGPOWER 
+3 Cholamandalam Investment and Finance Co. Ltd. CHOLAFIN 
+4 Escorts Kubota Ltd. ESCORTS 
+5 IDFC First Bank Ltd. IDFCFIRSTB 
+6 IDFC Ltd. IDFC 
+7 ITC Ltd. ITC 
+8 Karnataka Bank Ltd. KTKBANK 
+9 Mahindra & Mahindra Financial Services Ltd. M&MFIN 
+10 One 97 Communications Ltd. PAYTM 
+11 Polycab India Ltd. POLYCAB 
+12 Siemens Ltd. SIEMENS 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Adani Green Energy Ltd. ADANIGREEN 
+2 Adani Power Ltd. ADANIPOWER 
+3 Bajaj Auto Ltd. BAJAJ-AUTO 
+4 Dixon Technologies (India) Ltd. DIXON 
+5 DLF Ltd. DLF 
+ 
+ 
+Sr. No. Company Name Symbol 
+6 General Insurance Corporation of India GICRE 
+7 Hindustan Copper Ltd. HINDCOPPER 
+8 Jindal Stainless Ltd. JSL 
+9 Kalyan Jewellers India Ltd. KALYANKJIL 
+10 Lupin Ltd. LUPIN 
+11 Macrotech Developers Ltd. LODHA 
+12 Oracle Financial Services Software Ltd. OFSS 
+ 
+2) Nifty High Beta 50 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Adani Energy Solutions Ltd. ADANIENSOL 
+2 Angel One Ltd. ANGELONE 
+3 Bajaj Finance Ltd. BAJFINANCE 
+4 Bajaj Finserv Ltd. BAJAJFINSV 
+5 Cholamandalam Investment and Finance Co. Ltd. CHOLAFIN 
+6 Karnataka Bank Ltd. KTKBANK 
+7 L&T Technology Services Ltd. LTTS 
+8 Poonawalla Fincorp Ltd. POONAWALLA 
+9 Zomato Ltd. ZOMATO 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Aarti Industries Ltd. AARTIIND 
+2 Adani Power Ltd. ADANIPOWER 
+3 Aditya Birla Capital Ltd. ABCAPITAL 
+4 General Insurance Corporation of India GICRE 
+5 Hindustan Copper Ltd. HINDCOPPER 
+6 Indian Railway Finance Corporation Ltd. IRFC 
+7 Piramal Enterprises Ltd. PEL 
+8 REC Ltd. RECLTD 
+9 Vodafone Idea Ltd. IDEA 
+ 
+ 
+ 
+ 
+ 
+3) Nifty Low Volatility 50 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Berger Paints India Ltd. BERGEPAINT 
+2 Indian Oil Corporation Ltd. IOC 
+3 Torrent Pharmaceuticals Ltd. TORNTPHARM 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Avenue Supermarts Ltd. DMART 
+2 JSW Steel Ltd. JSWSTEEL 
+3 SRF Ltd. SRF 
+ 
+ 
+4) Nifty100 Low Volatility 30 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Indian Oil Corporation Ltd. IOC 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Titan Company Ltd. TITAN 
+ 
+ 
+5) Nifty100 Alpha 30 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Axis Bank Ltd. AXISBANK 
+2 Bharti Airtel Ltd. BHARTIARTL 
+3 Cholamandalam Investment and Finance Co. Ltd. CHOLAFIN 
+4 IndusInd Bank Ltd. INDUSINDBK 
+5 ITC Ltd. ITC 
+ 
+ 
+Sr. No. Company Name Symbol 
+6 Jindal Steel & Power Ltd. JINDALSTEL 
+7 Mahindra & Mahindra Ltd. M&M 
+8 Siemens Ltd. SIEMENS 
+9 UltraTech Cement Ltd. ULTRACEMCO 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Adani Enterprises Ltd. ADANIENT 
+2 Adani Green Energy Ltd. ADANIGREEN 
+3 Adani Ports and Special Economic Zone Ltd. ADANIPORTS 
+4 Adani Power Ltd. ADANIPOWER 
+5 Bharat Petroleum Corporation Ltd. BPCL 
+6 Cipla Ltd. CIPLA 
+7 Indian Railway Finance Corporation Ltd. IRFC 
+8 Power Finance Corporation Ltd. PFC 
+9 REC Ltd. RECLTD 
+ 
+ 
+6) Nifty200 Alpha 30 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Alkem Laboratories Ltd. ALKEM 
+2 Apollo Tyres Ltd. APOLLOTYRE 
+3 Cholamandalam Investment and Finance Co. Ltd. CHOLAFIN 
+4 Coforge Ltd. COFORGE 
+5 Escorts Kubota Ltd. ESCORTS 
+6 IDFC First Bank Ltd. IDFCFIRSTB 
+7 Oberoi Realty Ltd. OBEROIRLTY 
+8 Polycab India Ltd. POLYCAB 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Adani Ports and Special Economic Zone Ltd. ADANIPORTS 
+2 Dixon Technologies (India) Ltd. DIXON 
+ 
+ 
+Sr. No. Company Name Symbol 
+3 GMR Airports Infrastructure Ltd. GMRINFRA 
+4 Hindustan Petroleum Corporation Ltd. HINDPETRO 
+5 Indian Oil Corporation Ltd. IOC 
+6 Oracle Financial Services Software Ltd. OFSS 
+7 Shriram Finance Ltd. SHRIRAMFIN 
+8 Torrent Pharmaceuticals Ltd. TORNTPHARM 
+ 
+No change is being made in the Nifty REITs & InvITs index. 
+ 
+ 
+About NSE Indices Limited:  
+NSE Indices Limited (formerly known as India Index Services & Products Ltd. - IISL), a subsidiary of 
+NSE, provides a variety of indices and index related services for the capital markets. The company 
+focuses on the index as a core product. The company owns  and manages a portfolio of indices under 
+the Nifty brand of NSE, including the flagship index, the Nifty 50. Nifty equity indices comprises 
+broad-based benchmark indices, sectoral indices, strategy indices, thematic indices, and customised 
+indices. NSE In dices Limited also maintains fixed income indices based on Government of India 
+securities, corporate bonds, money market instruments and hybrid indices. Many investment products 
+based on Nifty indices have been developed within India and abroad. These incl ude index -based 
+derivatives traded on NSE and NSE International Exchange IFSC Limited (NSE IX) and a number of 
+index funds and exchange traded funds. The flagship 'Nifty 50' index is widely tracked and traded as 
+the benchmark for Indian Capital Markets.  
+For more information, please visit: www.niftyindices.com 
+Press contact: 
+Email ID: cc@nse.co.in 
+  

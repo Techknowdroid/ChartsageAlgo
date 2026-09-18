@@ -1,0 +1,167 @@
+ 
+ 
+ 
+PRESS RELEASE 
+Mumbai, March 19, 2024 
+ 
+Replacements in indices 
+ 
+The Index Maintenance Sub-Committee (Equity) of NSE Indices Limited has decided to make changes 
+in various indices as listed hereunder. These changes shall become effective from March 28, 2024 (close 
+of March 27, 2024). 
+ 
+A. Replacement on account of non-compliance of SEBI Portfolio Concentration Norms: 
+ 
+On February 28, 2024, as part of periodic  review of various indices, the Index Maintenance Sub -
+Committee (Equity) of NSE Indices Limited had announced inclusion of Indian Renewable Energy 
+Development Agency Ltd.  (IREDA) in Nifty 500, Nifty Midcap 150, Nifty Midcap 100, Nifty 200, 
+Nifty LargeMidcap 250, Nifty MidSmallcap 400, Nifty Total Market and Nifty500 Multicap 50:25:25 
+indices with effect from March 28, 2024. 
+ 
+As IREDA breached one of the requirements of SEBI Portfolio Concentration Norms for Equity 
+Exchange Traded Funds (ETFs) and Index Funds related to impact cost, the Committee has decided to 
+revoke its earlier decision to include IREDA announced on February 28, 2024. 
+ 
+Following changes shall be made in various indices as a result of revocation of IREDA’s inclusion in 
+various indices: 
+ 
+Sr. 
+No. Index Name Security Name Symbol Remarks 
+1 Nifty 500 
+Indian Renewable Energy Dev. 
+Agency Ltd. IREDA Inclusion revoked 
+V-Guard Industries Ltd. VGUARD Exclusion revoked 
+2 Nifty Midcap 150 
+Indian Renewable Energy Dev. 
+Agency Ltd. IREDA Inclusion revoked 
+BSE Ltd. BSE Inclusion 
+3 Nifty Smallcap 250 BSE Ltd.* BSE Exclusion 
+V-Guard Industries Ltd. VGUARD Exclusion revoked 
+4 Nifty Midcap 100 
+Indian Renewable Energy Dev. 
+Agency Ltd. IREDA Inclusion revoked 
+BSE Ltd. BSE Inclusion 
+ 
+ 
+Sr. 
+No. Index Name Security Name Symbol Remarks 
+5 Nifty 200 
+Indian Renewable Energy Dev. 
+Agency Ltd. IREDA Inclusion revoked 
+BSE Ltd. BSE Inclusion 
+6 Nifty LargeMidcap 
+250 
+Indian Renewable Energy Dev. 
+Agency Ltd. IREDA Inclusion revoked 
+BSE Ltd. BSE Inclusion 
+7 Nifty Smallcap 50 BSE Ltd.* BSE Inclusion revoked 
+Blue Star Ltd. BLUESTARCO Inclusion 
+8 Nifty Smallcap 100 BSE Ltd.* BSE Exclusion 
+Blue Star Ltd. BLUESTARCO Inclusion 
+9 Nifty MidSmallcap 
+400  
+Indian Renewable Energy Dev. 
+Agency Ltd. IREDA Inclusion revoked 
+V-Guard Industries Ltd. VGUARD Exclusion revoked 
+10 Nifty Microcap 
+250 
+V-Guard Industries Ltd. VGUARD Inclusion revoked 
+Jyoti CNC Automation Ltd. JYOTICNC Inclusion 
+11 Nifty Total Market 
+Indian Renewable Energy Dev. 
+Agency Ltd. IREDA Inclusion revoked 
+Jyoti CNC Automation Ltd. JYOTICNC Inclusion 
+12 Nifty Consumer 
+Durables 
+V.I.P. Industries Ltd. VIPIND Inclusion revoked 
+V-Guard Industries Ltd. VGUARD Exclusion revoked 
+*On account of inclusion in Nifty Midcap 150. 
+ 
+The above change in Nifty 500 index will also be applicable to Nifty500 Multicap 50:25:25 index.  
+ 
+This press release should be read in consonance with the press release issued on February 28, 2024. All 
+other replacements announced on February 28, 2024 shall remain unchanged. 
+ 
+B. Replacements on account of monthly review of Nifty Shariah indices: 
+ 
+On account of monthly review of Shariah compliance, replacement of stocks in Nifty Shariah indices 
+shall be made as listed hereunder: 
+ 
+1) Nifty50 Shariah 
+ 
+The following company is being excluded on account of exclusion from Nifty 50: 
+ 
+Sr. No. Company Name Symbol 
+1 UPL Ltd. UPL 
+ 
+No inclusion is being made in the index. 
+ 
+ 
+ 
+2) Nifty500 Shariah 
+ 
+The following companies are being excluded on account of exclusion from Nifty 500: 
+ 
+Sr. No. Company Name Symbol 
+1 Aarti Drugs Ltd. AARTIDRUGS 
+2 G R Infraprojects Ltd. GRINFRA 
+3 Galaxy Surfactants Ltd. GALAXYSURF 
+4 Gujarat Alkalies & Chemicals Ltd. GUJALKALI 
+5 Infibeam Avenues Ltd. INFIBEAM 
+6 Ingersoll Rand (India) Ltd. INGERRAND 
+7 Jamna Auto Industries Ltd. JAMNAAUTO 
+8 Lakshmi Machine Works Ltd. LAXMIMACH 
+9 Lux Industries Ltd. LUXIND 
+10 Orient Electric Ltd. ORIENTELEC 
+11 Polyplex Corporation Ltd. POLYPLEX 
+12 Procter & Gamble Health Ltd. PGHL 
+13 Rallis India Ltd. RALLIS 
+14 Relaxo Footwears Ltd. RELAXO 
+15 Rossari Biotech Ltd. ROSSARI 
+16 Sharda Cropchem Ltd. SHARDACROP 
+17 Suprajit Engineering Ltd. SUPRAJIT 
+18 Teamlease Services Ltd. TEAMLEASE 
+19 TTK Prestige Ltd. TTKPRESTIG 
+20 Vinati Organics Ltd. VINATIORGA 
+ 
+The following companies are being included on account of inclusion in Nifty 500: 
+ 
+Sr. No. Company Name Symbol 
+1 Action Construction Equipment Ltd. ACE 
+2 AstraZenca Pharma India Ltd. ASTRAZEN 
+3 Chennai Petroleum Corporation Ltd. CHENNPETRO 
+4 DOMS Industries Ltd. DOMS 
+5 Elecon Engineering Co. Ltd. ELECON 
+6 Happy Forgings Ltd. HAPPYFORGE 
+7 HBL Power Systems Ltd. HBLPOWER 
+8 Himadri Speciality Chemical Ltd. HSCL 
+ 
+ 
+Sr. No. Company Name Symbol 
+9 Honasa Consumer Ltd. HONASA 
+10 Jai Balaji Industries Ltd. JAIBALAJI 
+11 Jupiter Wagons Ltd. JWL 
+12 Lloyds Metals And Energy Ltd. LLOYDSME 
+13 Maharashtra Seamless Ltd. MAHSEAMLES 
+14 Railtel Corporation Of India Ltd. RAILTEL 
+15 Tata Technologies Ltd. TATATECH 
+16 Titagarh Rail Systems Ltd. TITAGARH 
+ 
+No change is being made to Nifty Shariah 25 index. 
+ 
+About NSE Indices Limited:  
+NSE Indices Limited (formerly known as India Index Services & Products Ltd. - IISL), a subsidiary of 
+NSE, provides a variety of indices and index related services for the capital markets. The company 
+focuses on the index as a core product. The company owns  and manages a portfolio of indices under 
+the Nifty brand of NSE, including the flagship index, the Nifty 50. Nifty equity indices comprises 
+broad-based benchmark indices, sectoral indices, strategy indices, thematic indices, and customised 
+indices. NSE In dices Limited also maintains fixed income indices based on Government of India 
+securities, corporate bonds, money market instruments and hybrid indices. Many investment products 
+based on Nifty indices have been developed within India and abroad. These incl ude index -based 
+derivatives traded on NSE and NSE International Exchange IFSC Limited (NSE IX) and a number of 
+index funds and exchange traded funds. The flagship 'Nifty 50' index is widely tracked and traded as 
+the benchmark for Indian Capital Markets.  
+For more information, please visit: www.niftyindices.com 
+Press contact: 
+Email ID: cc@nse.co.in 
+  

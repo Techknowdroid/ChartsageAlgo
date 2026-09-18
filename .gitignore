@@ -1,0 +1,66 @@
+# Python-generated files
+__pycache__/
+*.py[cod]
+
+# Build, distribution, backup, and local tool environments
+build/
+dist/
+backups/
+.opencode/
+_packaging_runtime/
+_packaging_deps/
+_build_tools/
+_membership_tools/
+
+# Downloaded/operational market data and snapshots
+nse_bhavcopy_archive/
+bhavcopy_snapshots/
+FINALCHARTinkV1_data/
+historical_membership_sources/downloads/
+historical_membership_sources/node_modules/
+historical_membership_sources/press-release.html
+historical_membership_sources/build_diagnostics.json
+
+# Live databases and SQLite sidecars
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# Generated distributions and reports
+*.zip
+*.xlsx
+*.log
+*.tmp
+*.part
+
+# Credentials, broker/session data, holdings, alerts, and machine-local state
+broker_logins.json
+holdings_details.json
+telegram_settings.json
+telegram_alert_state.json
+today_executed_orders.json
+zerodha_session.json
+_chartsage_home.json
+app_settings.json
+bhavcopy_state.json
+market_data_maintenance_state.json
+historical_membership_update_state.json
+
+# Regenerable root caches (sanitised defaults remain in seed_data/)
+nse_symbols_cache.json
+nse_sectors_cache.json
+nse_trading_calendar.json
+
+# Active personal strategies/watchlists stay local; sanitised defaults are in seed_data/
+scanner_templates.json
+watchlists.json
+seed_data/*_before_*
+_test_paper_gui.py
+
+# Manual superseded copies; current source/configuration remains versioned
+ChartSageAlgoOPENcode_before_*.py
+scanner_templates_backup_*.json
+scanner_templates_before_*.json
+*.superseded_*

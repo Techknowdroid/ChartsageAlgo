@@ -1,0 +1,1900 @@
+ 
+ 
+ 
+PRESS RELEASE 
+Mumbai, August 10, 2026 
+Replacements in indices 
+ 
+The Index Maintenance Sub -Committee (Equity) of NSE Indices Limited has decided to make 
+replacement of stocks in various indices as part of its periodic review as listed hereunder. These changes 
+shall become effective from September 30, 2026 (close of September 29, 2026). 
+ 
+A. Replacements on account of semi-annual review of broad market indices: 
+ 
+1) Nifty 50 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Wipro Ltd. WIPRO 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 BSE Ltd. BSE 
+ 
+Note: 
+1. BSE Ltd. (average free-float market capitalization Rs. 1,40,879 crores) has been included in Nifty 50 index 
+as the 6-month average free-float market capitalization of the company within eligible universe is at least 
+1.5 times the 6 -month average free-float market capitalization of the smallest constituents i.e. Wipro Ltd. 
+(average free-float market capitalization Rs. 55,930 crores). 
+2. Next two eligible companies namely TVS Motor Company Ltd. (Rs. 84,566 crores) and Divi’s Laboratories 
+Ltd. (Rs. 82,930 crores) were not considered for inclusion in Nifty 50 index as the average free-float market 
+capitalization of two Nifty 50 constituents with lowest average free -float market capitalization (after 
+exclusion of the company in Nifty 50 listed above) namely HDFC Life Insurance Company Ltd. (Rs. 65,666 
+crores) and Tata Consumer Products Ltd. (Rs. 73,054 crores) was less than 1.5 times the 6-month average 
+free-float market capitalization. 
+3. Stocks that are available for trading in NSE’s Futures & Options segment are only eligible for inclusion in 
+the index. 
+ 
+The above replacement will also be applicable to Nifty50 Equal Weight index. 
+ 
+ 
+ 
+ 
+ 
+2) Nifty 500 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 3M India Ltd. 3MINDIA 
+2 Aditya Birla Fashion and Retail Ltd. ABFRL 
+3 Aditya Birla Lifestyle Brands Ltd. ABLBL 
+4 Bayer Cropscience Ltd. BAYERCROP 
+5 Bikaji Foods International Ltd. BIKAJI 
+6 Blue Dart Express Ltd. BLUEDART 
+7 Blue Jet Healthcare Ltd. BLUEJET 
+8 Bombay Burmah Trading Corporation Ltd. BBTC 
+9 C.E. Info Systems Ltd. MAPMYINDIA 
+10 Chalet Hotels Ltd. CHALET 
+11 DCM Shriram Ltd. DCMSHRIRAM 
+12 Eris Lifesciences Ltd. ERIS 
+13 Go Digit General Insurance Ltd. GODIGIT 
+14 Indegene Ltd. INDGN 
+15 JSW Dulux Ltd. JSWDULUX 
+16 Jubilant Pharmova Ltd. JUBLPHARMA 
+17 Latent View Analytics Ltd. LATENTVIEW 
+18 Leela Palaces Hotels & Resorts Ltd. THELEELA 
+19 Newgen Software Technologies Ltd. NEWGEN 
+20 Niva Bupa Health Insurance Company Ltd. NIVABUPA 
+21 Pfizer Ltd. PFIZER 
+22 Sapphire Foods India Ltd. SAPPHIRE 
+23 Saregama India Ltd SAREGAMA 
+24 SBFC Finance Ltd. SBFC 
+25 Sonata Software Ltd. SONATSOFTW 
+26 Supreme Petrochem Ltd. SPLPETRO 
+27 Travel Food Services Ltd. TRAVELFOOD 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Aether Industries Ltd. AETHER 
+2 Avanti Feeds Ltd. AVANTIFEED 
+ 
+ 
+Sr. No. Company Name Symbol 
+3 Azad Engineering Ltd. AZAD 
+4 Bagmane Prime Office REIT BAGMANE 
+5 Bharat Coking Coal Ltd. BHARATCOAL 
+6 Black Box Ltd. BBOX 
+7 Brookfield India Real Estate Trust BIRET 
+8 Central Mine Planning & Design Institute Ltd. CMPDI 
+9 Clean Max Enviro Energy Solutions Ltd. CLEANMAX 
+10 Cupid Ltd. CUPID 
+11 Embassy Office Parks REIT EMBASSY 
+12 Fractal Analytics Ltd. FRACTAL 
+13 INOX India Ltd. INOXINDIA 
+14 Kirloskar Brothers Ltd. KIRLOSBROS 
+15 KSB Ltd. KSB 
+16 MTAR Technologies Ltd. MTARTECH 
+17 Privi Speciality Chemicals Ltd. PRIVISCL 
+18 Rubicon Research Ltd. RUBICON 
+19 Sansera Engineering Ltd. SANSERA 
+20 SPR Auto Technologies Ltd. SHRIPISTON 
+21 Sterlite Technologies Ltd. STLTECH 
+22 TD Power Systems Ltd. TDPOWERSYS 
+23 Thangamayil Jewellery Ltd. THANGAMAYL 
+24 Vedanta Aluminium Metal Ltd. VAML 
+25 Vedanta Iron and Steel Ltd. VISL 
+26 Vedanta Oil and Gas Ltd. VOGL 
+27 Vedanta Power Ltd. VEDPOWER 
+ 
+The above replacements will also be applicable to Nifty500 Equal Weight, Nifty500 Multicap 50:25:25 
+and Nifty500 LargeMidSmall Equal-Cap Weighted indices. 
+ 
+3) Nifty 100 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Indian Hotels Co. Ltd. INDHOTEL 
+2 Lodha Developers Ltd. LODHA 
+3 REC Ltd. RECLTD 
+4 Shree Cement Ltd. SHREECEM 
+ 
+ 
+Sr. No. Company Name Symbol 
+5 United Spirits Ltd. UNITDSPR 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 BSE Ltd. BSE 
+2 Hitachi Energy India Ltd. POWERINDIA 
+3 Polycab India Ltd. POLYCAB 
+4 Vedanta Aluminium Metal Ltd. VAML 
+5 Vodafone Idea Ltd. IDEA 
+ 
+The above replacements will also be applicable to Nifty100 Equal Weight index. 
+ 
+4) Nifty Midcap 150 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 3M India Ltd. 3MINDIA 
+2 ACC Ltd. ACC 
+3 Apollo Tyres Ltd. APOLLOTYRE 
+4 AWL Agri Business Ltd. AWL 
+5 BSE Ltd. BSE 
+6 Hitachi Energy India Ltd. POWERINDIA 
+7 Honeywell Automation India Ltd. HONAUT 
+8 KPIT Technologies Ltd. KPITTECH 
+9 Polycab India Ltd. POLYCAB 
+10 SJVN Ltd. SJVN 
+11 Tata Elxsi Ltd. TATAELXSI 
+12 The New India Assurance Company Ltd. NIACL 
+13 Vodafone Idea Ltd. IDEA 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Aster DM Quality Care Ltd. ASTERDM 
+2 Embassy Office Parks REIT EMBASSY 
+3 Fertilisers and Chemicals Travancore Ltd. FACT 
+ 
+ 
+Sr. No. Company Name Symbol 
+4 Hindustan Copper Ltd. HINDCOPPER 
+5 Indian Hotels Co. Ltd. INDHOTEL 
+6 Indian Overseas Bank IOB 
+7 Lodha Developers Ltd. LODHA 
+8 Meesho Ltd. MEESHO 
+9 Narayana Hrudayalaya Ltd. NH 
+10 Piramal Finance Ltd. PIRAMALFIN 
+11 REC Ltd. RECLTD 
+12 Shree Cement Ltd. SHREECEM 
+13 United Spirits Ltd. UNITDSPR 
+ 
+5) Nifty Smallcap 250 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Aditya Birla Fashion and Retail Ltd. ABFRL 
+2 Aditya Birla Lifestyle Brands Ltd. ABLBL 
+3 Aster DM Quality Care Ltd. ASTERDM 
+4 Bayer Cropscience Ltd. BAYERCROP 
+5 Bikaji Foods International Ltd. BIKAJI 
+6 Blue Dart Express Ltd. BLUEDART 
+7 Blue Jet Healthcare Ltd. BLUEJET 
+8 Bombay Burmah Trading Corporation Ltd. BBTC 
+9 C.E. Info Systems Ltd. MAPMYINDIA 
+10 Chalet Hotels Ltd. CHALET 
+11 DCM Shriram Ltd. DCMSHRIRAM 
+12 Eris Lifesciences Ltd. ERIS 
+13 Fertilisers and Chemicals Travancore Ltd. FACT 
+14 Go Digit General Insurance Ltd. GODIGIT 
+15 Hindustan Copper Ltd. HINDCOPPER 
+16 Indegene Ltd. INDGN 
+17 Indian Overseas Bank IOB 
+18 JSW Dulux Ltd. JSWDULUX 
+19 Jubilant Pharmova Ltd. JUBLPHARMA 
+20 Latent View Analytics Ltd. LATENTVIEW 
+21 Leela Palaces Hotels & Resorts Ltd. THELEELA 
+ 
+ 
+Sr. No. Company Name Symbol 
+22 Meesho Ltd. MEESHO 
+23 Narayana Hrudayalaya Ltd. NH 
+24 Newgen Software Technologies Ltd. NEWGEN 
+25 Niva Bupa Health Insurance Company Ltd. NIVABUPA 
+26 Pfizer Ltd. PFIZER 
+27 Piramal Finance Ltd. PIRAMALFIN 
+28 Sapphire Foods India Ltd. SAPPHIRE 
+29 Saregama India Ltd SAREGAMA 
+30 SBFC Finance Ltd. SBFC 
+31 Sonata Software Ltd. SONATSOFTW 
+32 Supreme Petrochem Ltd. SPLPETRO 
+33 Travel Food Services Ltd. TRAVELFOOD 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 ACC Ltd. ACC 
+2 Aether Industries Ltd. AETHER 
+3 Apollo Tyres Ltd. APOLLOTYRE 
+4 Avanti Feeds Ltd. AVANTIFEED 
+5 AWL Agri Business Ltd. AWL 
+6 Azad Engineering Ltd. AZAD 
+7 Bagmane Prime Office REIT BAGMANE 
+8 Bharat Coking Coal Ltd. BHARATCOAL 
+9 Black Box Ltd. BBOX 
+10 Brookfield India Real Estate Trust BIRET 
+11 Central Mine Planning & Design Institute Ltd. CMPDI 
+12 Clean Max Enviro Energy Solutions Ltd. CLEANMAX 
+13 Cupid Ltd. CUPID 
+14 Fractal Analytics Ltd. FRACTAL 
+15 Honeywell Automation India Ltd. HONAUT 
+16 INOX India Ltd. INOXINDIA 
+17 Kirloskar Brothers Ltd. KIRLOSBROS 
+18 KPIT Technologies Ltd. KPITTECH 
+19 KSB Ltd. KSB 
+20 MTAR Technologies Ltd. MTARTECH 
+21 Privi Speciality Chemicals Ltd. PRIVISCL 
+ 
+ 
+Sr. No. Company Name Symbol 
+22 Rubicon Research Ltd. RUBICON 
+23 Sansera Engineering Ltd. SANSERA 
+24 SJVN Ltd. SJVN 
+25 SPR Auto Technologies Ltd. SHRIPISTON 
+26 Sterlite Technologies Ltd. STLTECH 
+27 Tata Elxsi Ltd. TATAELXSI 
+28 TD Power Systems Ltd. TDPOWERSYS 
+29 Thangamayil Jewellery Ltd. THANGAMAYL 
+30 The New India Assurance Company Ltd. NIACL 
+31 Vedanta Iron and Steel Ltd. VISL 
+32 Vedanta Oil and Gas Ltd. VOGL 
+33 Vedanta Power Ltd. VEDPOWER 
+ 
+6) Nifty Next 50 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Indian Hotels Co. Ltd. INDHOTEL 
+2 Lodha Developers Ltd. LODHA 
+3 REC Ltd. RECLTD 
+4 Shree Cement Ltd. SHREECEM 
+5 United Spirits Ltd. UNITDSPR 
+ 
+Note: All the companies in the table above have been excluded pursuant to exclusion from Nifty 100 index (a parent index 
+for Nifty Next 50) 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Hitachi Energy India Ltd. POWERINDIA 
+2 Polycab India Ltd. POLYCAB 
+3 Vedanta Aluminium Metal Ltd. VAML 
+4 Vodafone Idea Ltd. IDEA 
+5 Wipro Ltd. WIPRO 
+ 
+Note: Constituents of Nifty 50 and Nifty Next 50 indices are derived from Nifty 100 index (a parent index). All constituents 
+in the table above which are constituents of reconstituted Nifty 100 (but not part of Nifty 50) have been included in Nifty 
+Next 50 index. 
+ 
+ 
+ 
+7) Nifty Next 100 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Abbott India Ltd. ABBOTINDIA 
+2 ACC Ltd. ACC 
+3 Adani Total Gas Ltd. ATGL 
+4 Berger Paints India Ltd. BERGEPAINT 
+5 Container Corporation of India Ltd. CONCOR 
+6 Godrej Properties Ltd. GODREJPROP 
+7 ICICI Prudential Life Insurance Company Ltd. ICICIPRULI 
+8 Indian Railway Catering And Tourism Corporation Ltd. IRCTC 
+9 Jubilant Foodworks Ltd. JUBLFOOD 
+10 LIC Housing Finance Ltd. LICHSGFIN 
+11 Life Insurance Corporation of India LICI 
+12 Mahindra & Mahindra Financial Services Ltd. M&MFIN 
+13 Oracle Financial Services Software Ltd. OFSS 
+14 Page Industries Ltd. PAGEIND 
+15 Petronet LNG Ltd. PETRONET 
+16 PI Industries Ltd. PIIND 
+17 SBI Cards and Payment Services Ltd. SBICARD 
+18 Supreme Industries Ltd. SUPREMEIND 
+19 Thermax Ltd. THERMAX 
+20 United Breweries Ltd. UBL 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Coforge Ltd. COFORGE 
+2 Dixon Technologies (India) Ltd. DIXON 
+3 Embassy Office Parks REIT EMBASSY 
+4 Fortis Healthcare Ltd. FORTIS 
+5 GE Vernova T&D India Ltd. GVT&D 
+6 Hero MotoCorp Ltd. HEROMOTOCO 
+7 Hitachi Energy India Ltd. POWERINDIA 
+8 IDFC First Bank Ltd. IDFCFIRSTB 
+9 IndusInd Bank Ltd. INDUSINDBK 
+10 Laurus Labs Ltd. LAURUSLABS 
+ 
+ 
+Sr. No. Company Name Symbol 
+11 Lenskart Solutions Ltd. LENSKART 
+12 Multi Commodity Exchange of India Ltd. MCX 
+13 One 97 Communications Ltd. PAYTM 
+14 PB Fintech Ltd. POLICYBZR 
+15 Persistent Systems Ltd. PERSISTENT 
+16 Polycab India Ltd. POLYCAB 
+17 Suzlon Energy Ltd. SUZLON 
+18 Vedanta Aluminium Metal Ltd. VAML 
+19 Vodafone Idea Ltd. IDEA 
+20 Wipro Ltd. WIPRO 
+ 
+8) Nifty India FPI 150 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Ambuja Cements Ltd. AMBUJACEM 
+2 Bajaj Holdings & Investment Ltd. BAJAJHLDNG 
+3 Bank of Baroda BANKBARODA 
+4 ICICI Prudential Life Insurance Company Ltd. ICICIPRULI 
+5 SBI Cards and Payment Services Ltd. SBICARD 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Ashok Leyland Ltd. ASHOKLEY 
+2 Biocon Ltd. BIOCON 
+3 Hitachi Energy India Ltd. POWERINDIA 
+4 Lenskart Solutions Ltd. LENSKART 
+5 Vedanta Aluminium Metal Ltd. VAML 
+ 
+Note: 
+1. Bajaj Holdings & Investment Ltd. has been excluded from Nifty India FPI 150 index as it does not rank 
+amongst the top 350 stocks by 6 months average daily turnover in Nifty 500. 
+2. Vedanta Aluminium Metal Ltd. (stock with highest foreign investible free -float market capitalization  
+amongst eligible constituents) is included as replacement to Bajaj Holdings & Investment Ltd. 
+3. Ashok Leyland Ltd., Hitachi Energy India Ltd., Lenskart Solutions Ltd. and Biocon Ltd. have been included 
+in Nifty India FPI 150 index as the 6 -month average foreign investible free-float market capitalization of 
+these companies within eligible universe is at least 1.25 times the 6 -month average foreign investible free-
+ 
+ 
+float market capitalization of the smallest constituents i.e. SBI Cards and Payment Services Ltd., Ambuja 
+Cements Ltd., Bank of Baroda and ICICI Prudential Life Insurance Company Ltd. respectively. 
+ 
+9) Nifty Midcap Select 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 BSE Ltd. BSE 
+2 Fortis Healthcare Ltd. FORTIS 
+3 Hindustan Petroleum Corporation Ltd. HINDPETRO 
+4 Polycab India Ltd. POLYCAB 
+ 
+Note: 
+1. BSE Ltd. and Polycab India Ltd. have been excluded from the index pursuant to exclusion from Nifty Midcap 150 index 
+(a parent index for Nifty Midcap Select index) 
+2. Fortis Healthcare Ltd. has been excluded from the index as it did not form part of ‘reranked universe’ as defined in the 
+methodology document for this index 
+3. Hindustan Petroleum Corporation Ltd. (lowest ranked stock by 6-month average free-float market capitalization in the 
+reranked universe) has been excluded from the index against the compulsory inclusion of Indian Hotels Co. Ltd. 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Federal Bank Ltd. FEDERALBNK 
+2 GE Vernova T&D India Ltd. GVT&D 
+3 Indian Hotels Co. Ltd. INDHOTEL 
+4 Multi Commodity Exchange of India Ltd. MCX 
+ 
+Note: 
+1. GE Vernova T&D India Ltd.  has been compulsorily included in the index as it ranks within top 5 stocks based on 6 -
+month average full market capitalization within the eligible universe 
+2. Federal Bank  Ltd., Multi Commodity Exchange of India  Ltd and Indian Hotels Co. Ltd . have been compulsorily 
+included in the index as they rank within top 10 based on 6 -month average free float market capitalization in the 
+‘reranked universe’ as defined in the methodology document for this index  
+3. Stocks that are available for trading in NSE’s Futures & Options segment are only eligible for inclusion in the index  
+ 
+ 
+10) Nifty Midcap 50 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Alkem Laboratories Ltd. ALKEM 
+ 
+ 
+Sr. No. Company Name Symbol 
+2 BSE Ltd. BSE 
+3 Coforge Ltd. COFORGE 
+4 Colgate Palmolive (India) Ltd. COLPAL 
+5 MphasiS Ltd. MPHASIS 
+6 Polycab India Ltd. POLYCAB 
+7 SBI Cards and Payment Services Ltd. SBICARD 
+8 Supreme Industries Ltd. SUPREMEIND 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 GE Vernova T&D India Ltd. GVT&D 
+2 Glenmark Pharmaceuticals Ltd. GLENMARK 
+3 Indian Hotels Co. Ltd. INDHOTEL 
+4 JSW Energy Ltd. JSWENERGY 
+5 National Aluminium Co. Ltd. NATIONALUM 
+6 REC Ltd. RECLTD 
+7 United Spirits Ltd. UNITDSPR 
+8 Vishal Mega Mart Ltd. VMM 
+ 
+ 
+11) Nifty Midcap 100 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Alkem Laboratories Ltd. ALKEM 
+2 BSE Ltd. BSE 
+3 Coromandel International Ltd. COROMANDEL 
+4 Hitachi Energy India Ltd. POWERINDIA 
+5 Housing & Urban Development Corporation Ltd. HUDCO 
+6 KPIT Technologies Ltd. KPITTECH 
+7 Polycab India Ltd. POLYCAB 
+8 Tata Elxsi Ltd. TATAELXSI 
+9 Tata Investment Corporation Ltd. TATAINVEST 
+10 Vodafone Idea Ltd. IDEA 
+ 
+ 
+ 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Apar Industries Ltd. APARINDS 
+2 Bank of Maharashtra MAHABANK 
+3 Hindustan Copper Ltd. HINDCOPPER 
+4 Indian Hotels Co. Ltd. INDHOTEL 
+5 Life Insurance Corporation of India LICI 
+6 Lodha Developers Ltd. LODHA 
+7 Meesho Ltd. MEESHO 
+8 NLC India Ltd. NLCINDIA 
+9 REC Ltd. RECLTD 
+10 United Spirits Ltd. UNITDSPR 
+ 
+12) Nifty Smallcap 50 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Aster DM Quality Care Ltd. ASTERDM 
+2 Castrol India Ltd. CASTROLIND 
+3 CESC Ltd. CESC 
+4 Cholamandalam Financial Holdings Ltd. CHOLAHLDNG 
+5 Cohance Lifesciences Ltd. COHANCE 
+6 Five-Star Business Finance Ltd. FIVESTAR 
+7 Hindustan Copper Ltd. HINDCOPPER 
+8 Kec International Ltd. KEC 
+9 Narayana Hrudayalaya Ltd. NH 
+10 Piramal Finance Ltd. PIRAMALFIN 
+11 Reliance Power Ltd. RPOWER 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Acutaas Chemicals Ltd. ACUTAAS 
+2 Apollo Tyres Ltd. APOLLOTYRE 
+3 Ather Energy Ltd. ATHERENERG 
+4 Great Eastern Shipping Co. Ltd. GESHIP 
+5 HFCL Ltd. HFCL 
+ 
+ 
+Sr. No. Company Name Symbol 
+6 Kirloskar Oil Eng Ltd. KIRLOSENG 
+7 KPIT Technologies Ltd. KPITTECH 
+8 MTAR Technologies Ltd. MTARTECH 
+9 Onesource Specialty Pharma Ltd. ONESOURCE 
+10 Tata Elxsi Ltd. TATAELXSI 
+11 TD Power Systems Ltd. TDPOWERSYS 
+ 
+ 
+13) Nifty Smallcap 100 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Aditya Birla Real Estate Ltd. ABREL 
+2 Afcons Infrastructure Ltd. AFCONS 
+3 Aptus Value Housing Finance India Ltd. APTUS 
+4 Aster DM Quality Care Ltd. ASTERDM 
+5 BLS International Services Ltd. BLS 
+6 Brainbees Solutions Ltd. FIRSTCRY 
+7 Castrol India Ltd. CASTROLIND 
+8 Chambal Fertilizers & Chemicals Ltd. CHAMBLFERT 
+9 Five-Star Business Finance Ltd. FIVESTAR 
+10 Hindustan Copper Ltd. HINDCOPPER 
+11 IRCON International Ltd. IRCON 
+12 JM Financial Ltd. JMFINANCIL 
+13 Meesho Ltd. MEESHO 
+14 Narayana Hrudayalaya Ltd. NH 
+15 Piramal Finance Ltd. PIRAMALFIN 
+16 Reliance Power Ltd. RPOWER 
+17 Sarda Energy and Minerals Ltd. SARDAEN 
+18 Signatureglobal (India) Ltd. SIGNATURE 
+19 Star Health and Allied Insurance Company Ltd. STARHEALTH 
+20 Swan Corp Ltd. SWANCORP 
+21 The Ramco Cements Ltd. RAMCOCEM 
+22 Whirlpool of India Ltd. WHIRLPOOL 
+23 Zensar Technolgies Ltd. ZENSARTECH 
+ 
+ 
+ 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Acutaas Chemicals Ltd. ACUTAAS 
+2 Apollo Tyres Ltd. APOLLOTYRE 
+3 Avanti Feeds Ltd. AVANTIFEED 
+4 Belrise Industries Ltd. BELRISE 
+5 Bharat Coking Coal Ltd. BHARATCOAL 
+6 Cemindia Projects Ltd. CEMPRO 
+7 Central Mine Planning & Design Institute Ltd. CMPDI 
+8 Chennai Petroleum Corporation Ltd. CHENNPETRO 
+9 Cupid Ltd. CUPID 
+10 Emmvee Photovoltaic Power Ltd. EMMVEE 
+11 Gallantt Ispat Ltd. GALLANTT 
+12 HFCL Ltd. HFCL 
+13 Kirloskar Oil Eng Ltd. KIRLOSENG 
+14 KPIT Technologies Ltd. KPITTECH 
+15 MTAR Technologies Ltd. MTARTECH 
+16 Onesource Specialty Pharma Ltd. ONESOURCE 
+17 R R Kabel Ltd. RRKABEL 
+18 Sammaan Capital Ltd. SAMMAANCAP 
+19 Sterlite Technologies Ltd. STLTECH 
+20 Syrma SGS Technology Ltd. SYRMA 
+21 Tata Elxsi Ltd. TATAELXSI 
+22 TD Power Systems Ltd. TDPOWERSYS 
+23 Vedanta Power Ltd. VEDPOWER 
+ 
+14) Nifty 200 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Alkem Laboratories Ltd. ALKEM 
+2 Coromandel International Ltd. COROMANDEL 
+3 Housing & Urban Development Corporation Ltd. HUDCO 
+4 KPIT Technologies Ltd. KPITTECH 
+5 Shree Cement Ltd. SHREECEM 
+6 Tata Elxsi Ltd. TATAELXSI 
+ 
+ 
+Sr. No. Company Name Symbol 
+7 Tata Investment Corporation Ltd. TATAINVEST 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Apar Industries Ltd. APARINDS 
+2 Bank of Maharashtra MAHABANK 
+3 Hindustan Copper Ltd. HINDCOPPER 
+4 Life Insurance Corporation of India LICI 
+5 Meesho Ltd. MEESHO 
+6 NLC India Ltd. NLCINDIA 
+7 Vedanta Aluminium Metal Ltd. VAML 
+ 
+15) Nifty LargeMidcap 250 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 3M India Ltd. 3MINDIA 
+2 ACC Ltd. ACC 
+3 Apollo Tyres Ltd. APOLLOTYRE 
+4 AWL Agri Business Ltd. AWL 
+5 Honeywell Automation India Ltd. HONAUT 
+6 KPIT Technologies Ltd. KPITTECH 
+7 SJVN Ltd. SJVN 
+8 Tata Elxsi Ltd. TATAELXSI 
+9 The New India Assurance Company Ltd. NIACL 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Aster DM Quality Care Ltd. ASTERDM 
+2 Embassy Office Parks REIT EMBASSY 
+3 Fertilisers and Chemicals Travancore Ltd. FACT 
+4 Hindustan Copper Ltd. HINDCOPPER 
+5 Indian Overseas Bank IOB 
+6 Meesho Ltd. MEESHO 
+7 Narayana Hrudayalaya Ltd. NH 
+ 
+ 
+Sr. No. Company Name Symbol 
+8 Piramal Finance Ltd. PIRAMALFIN 
+9 Vedanta Aluminium Metal Ltd. VAML 
+ 
+ 
+16) Nifty MidSmallcap 400 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 3M India Ltd. 3MINDIA 
+2 Aditya Birla Fashion and Retail Ltd. ABFRL 
+3 Aditya Birla Lifestyle Brands Ltd. ABLBL 
+4 Bayer Cropscience Ltd. BAYERCROP 
+5 Bikaji Foods International Ltd. BIKAJI 
+6 Blue Dart Express Ltd. BLUEDART 
+7 Blue Jet Healthcare Ltd. BLUEJET 
+8 Bombay Burmah Trading Corporation Ltd. BBTC 
+9 BSE Ltd. BSE 
+10 C.E. Info Systems Ltd. MAPMYINDIA 
+11 Chalet Hotels Ltd. CHALET 
+12 DCM Shriram Ltd. DCMSHRIRAM 
+13 Eris Lifesciences Ltd. ERIS 
+14 Go Digit General Insurance Ltd. GODIGIT 
+15 Hitachi Energy India Ltd. POWERINDIA 
+16 Indegene Ltd. INDGN 
+17 JSW Dulux Ltd. JSWDULUX 
+18 Jubilant Pharmova Ltd. JUBLPHARMA 
+19 Latent View Analytics Ltd. LATENTVIEW 
+20 Leela Palaces Hotels & Resorts Ltd. THELEELA 
+21 Newgen Software Technologies Ltd. NEWGEN 
+22 Niva Bupa Health Insurance Company Ltd. NIVABUPA 
+23 Pfizer Ltd. PFIZER 
+24 Polycab India Ltd. POLYCAB 
+25 Sapphire Foods India Ltd. SAPPHIRE 
+26 Saregama India Ltd SAREGAMA 
+27 SBFC Finance Ltd. SBFC 
+28 Sonata Software Ltd. SONATSOFTW 
+ 
+ 
+Sr. No. Company Name Symbol 
+29 Supreme Petrochem Ltd. SPLPETRO 
+30 Travel Food Services Ltd. TRAVELFOOD 
+31 Vodafone Idea Ltd. IDEA 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Aether Industries Ltd. AETHER 
+2 Avanti Feeds Ltd. AVANTIFEED 
+3 Azad Engineering Ltd. AZAD 
+4 Bagmane Prime Office REIT BAGMANE 
+5 Bharat Coking Coal Ltd. BHARATCOAL 
+6 Black Box Ltd. BBOX 
+7 Brookfield India Real Estate Trust BIRET 
+8 Central Mine Planning & Design Institute Ltd. CMPDI 
+9 Clean Max Enviro Energy Solutions Ltd. CLEANMAX 
+10 Cupid Ltd. CUPID 
+11 Embassy Office Parks REIT EMBASSY 
+12 Fractal Analytics Ltd. FRACTAL 
+13 Indian Hotels Co. Ltd. INDHOTEL 
+14 INOX India Ltd. INOXINDIA 
+15 Kirloskar Brothers Ltd. KIRLOSBROS 
+16 KSB Ltd. KSB 
+17 Lodha Developers Ltd. LODHA 
+18 MTAR Technologies Ltd. MTARTECH 
+19 Privi Speciality Chemicals Ltd. PRIVISCL 
+20 REC Ltd. RECLTD 
+21 Rubicon Research Ltd. RUBICON 
+22 Sansera Engineering Ltd. SANSERA 
+23 Shree Cement Ltd. SHREECEM 
+24 SPR Auto Technologies Ltd. SHRIPISTON 
+25 Sterlite Technologies Ltd. STLTECH 
+26 TD Power Systems Ltd. TDPOWERSYS 
+27 Thangamayil Jewellery Ltd. THANGAMAYL 
+28 United Spirits Ltd. UNITDSPR 
+29 Vedanta Iron and Steel Ltd. VISL 
+30 Vedanta Oil and Gas Ltd. VOGL 
+ 
+ 
+Sr. No. Company Name Symbol 
+31 Vedanta Power Ltd. VEDPOWER 
+ 
+The above replacements will also be applicable to Nifty Midsmallcap400 50:50 index. 
+ 
+17) Nifty Microcap 250 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Aarti Drugs Ltd. AARTIDRUGS 
+2 Aether Industries Ltd. AETHER 
+3 Ahluwalia Contracts (India) Ltd. AHLUCONT 
+4 Alembic Pharmaceuticals Ltd. APLLTD 
+5 Alivus Life Sciences Ltd. ALIVUS 
+6 Alok Industries Ltd. ALOKINDS 
+7 ASK Automotive Ltd. ASKAUTOLTD 
+8 Avanti Feeds Ltd. AVANTIFEED 
+9 Awfis Space Solutions Ltd. AWFIS 
+10 Azad Engineering Ltd. AZAD 
+11 Bajaj Electricals Ltd BAJAJELEC 
+12 Black Box Ltd. BBOX 
+13 Century Plyboards (India) Ltd. CENTURYPLY 
+14 CORONA Remedies Ltd. CORONA 
+15 Crizac Ltd. CRIZAC 
+16 Cupid Ltd. CUPID 
+17 Dr. Agarwal's Health Care Ltd. AGARWALEYE 
+18 Ethos Ltd. ETHOSLTD 
+19 Eureka Forbes Ltd. EUREKAFORB 
+20 GHCL Ltd. GHCL 
+21 GMM Pfaudler Ltd. GMMPFAUDLR 
+22 Hemisphere Properties India Ltd. HEMIPROP 
+23 India Shelter Finance Corporation Ltd. INDIASHLTR 
+24 Inox Green Energy Services Ltd. INOXGREEN 
+25 INOX India Ltd. INOXINDIA 
+26 JK Lakshmi Cement Ltd. JKLAKSHMI 
+27 Jupiter Life Line Hospitals Ltd. JLHL 
+28 Kirloskar Brothers Ltd. KIRLOSBROS 
+ 
+ 
+Sr. No. Company Name Symbol 
+29 KSB Ltd. KSB 
+30 Maharashtra Scooters Ltd. MAHSCOOTER 
+31 Maharashtra Seamless Ltd. MAHSEAMLES 
+32 MTAR Technologies Ltd. MTARTECH 
+33 Nesco Ltd. NESCO 
+34 Optiemus Infracom Ltd. OPTIEMUS 
+35 Orient Cement Ltd. ORIENTCEM 
+36 Orkla India Ltd. ORKLAINDIA 
+37 Prism Johnson Ltd. PRSMJOHNSN 
+38 Privi Speciality Chemicals Ltd. PRIVISCL 
+39 Prudent Corporate Advisory Services Ltd. PRUDENT 
+40 RattanIndia Enterprises Ltd. RTNINDIA 
+41 Redtape Ltd. REDTAPE 
+42 Rubicon Research Ltd. RUBICON 
+43 Saatvik Green Energy Ltd. SAATVIKGL 
+44 Sanofi Consumer Healthcare India Ltd. SANOFICONR 
+45 Sansera Engineering Ltd. SANSERA 
+46 Seshaasai Technologies Ltd. STYL 
+47 SKF India (Industrial) Ltd. SKFINDUS 
+48 SKF India Ltd. SKFINDIA 
+49 Smartworks Coworking Spaces Ltd. SMARTWORKS 
+50 SPR Auto Technologies Ltd. SHRIPISTON 
+51 Star Cement Ltd. STARCEMENT 
+52 Sterlite Technologies Ltd. STLTECH 
+53 Styrenix Performance Materials Ltd. STYRENIX 
+54 TD Power Systems Ltd. TDPOWERSYS 
+55 Thangamayil Jewellery Ltd. THANGAMAYL 
+56 The Anup Engineering Ltd. ANUP 
+57 Triveni Engineering & Industries Ltd. TRIVENI 
+58 TSF Investments Ltd. TSFINV 
+59 Varroc Engineering Ltd. VARROC 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Aditya Birla Fashion and Retail Ltd. ABFRL 
+2 Aditya Birla Lifestyle Brands Ltd. ABLBL 
+ 
+ 
+Sr. No. Company Name Symbol 
+3 Aeroflex Industries Ltd. AEROFLEX 
+4 Amagi Media Labs Ltd. AMAGI 
+5 Bajaj Consumer Care Ltd. BAJAJCON 
+6 Blue Jet Healthcare Ltd. BLUEJET 
+7 C.E. Info Systems Ltd. MAPMYINDIA 
+8 Ceigall India Ltd. CEIGALL 
+9 Centum Electronics Ltd. CENTUM 
+10 Chalet Hotels Ltd. CHALET 
+11 CMR Green Technologies Ltd. CMRGREEN 
+12 E2E Networks Ltd. E2E 
+13 Eris Lifesciences Ltd. ERIS 
+14 Genus Power Infrastructures Ltd. GENUSPOWER 
+15 GNG Electronics Ltd. EBGNG 
+16 Goldiam International Ltd. GOLDIAM 
+17 Gujarat Alkalies & Chemicals Ltd. GUJALKALI 
+18 Happy Forgings Ltd. HAPPYFORGE 
+19 Indegene Ltd. INDGN 
+20 Jubilant Pharmova Ltd. JUBLPHARMA 
+21 Knowledge Marine & Engineering Works Ltd. KMEW 
+22 Kwality Wall's (India) Ltd. KWIL 
+23 Latent View Analytics Ltd. LATENTVIEW 
+24 Leela Palaces Hotels & Resorts Ltd. THELEELA 
+25 Lumax Industries Ltd. LUMAXIND 
+26 Madhya Bharat Agro Products Ltd. MBAPL 
+27 Nephrocare Health Services Ltd. NEPHROPLUS 
+28 Newgen Software Technologies Ltd. NEWGEN 
+29 Niva Bupa Health Insurance Company Ltd. NIVABUPA 
+30 Northern Arc Capital Ltd. NORTHARC 
+31 Omnitech Engineering Ltd. OMNI 
+32 OnEMI Technology Solutions Ltd. KISSHT 
+33 Paisalo Digital Ltd. PAISALO 
+34 PDS Ltd. PDSL 
+35 Powerica Ltd. POWERICA 
+36 Precision Wires India Ltd. PRECWIRE 
+37 Procter & Gamble Health Ltd. PGHL 
+38 Responsive Industries Ltd. RESPONIND 
+ 
+ 
+Sr. No. Company Name Symbol 
+39 S.J.S. Enterprises Ltd. SJS 
+40 Sapphire Foods India Ltd. SAPPHIRE 
+41 Saregama India Ltd SAREGAMA 
+42 SBFC Finance Ltd. SBFC 
+43 SEDEMAC Mechatronics Ltd. SEDEMAC 
+44 Senores Pharmaceuticals Ltd. SENORES 
+45 SG Mart Ltd. SGMART 
+46 Shadowfax Technologies Ltd. SHADOWFAX 
+47 Shilchar Technologies Ltd. SHILCTECH 
+48 Shreeji Shipping Global Ltd. SHREEJISPG 
+49 Sigma Advanced Systems Ltd. SIGMAADV 
+50 Sonata Software Ltd. SONATSOFTW 
+51 Stylam Industries Ltd. STYLAMIND 
+52 Sundram Fasteners Ltd. SUNDRMFAST 
+53 Sunflag Iron & Steel Company Ltd. SUNFLAG 
+54 Supreme Petrochem Ltd. SPLPETRO 
+55 Suven Life Sciences Ltd. SUVEN 
+56 Timex Group India Ltd. TIMEX 
+57 TTK Prestige Ltd. TTKPRESTIG 
+58 Unimech Aerospace and Manufacturing Ltd. UNIMECH 
+59 Vesuvius India Ltd. VESUVIUS 
+ 
+18) Nifty Total Market 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 3M India Ltd. 3MINDIA 
+2 Aarti Drugs Ltd. AARTIDRUGS 
+3 Ahluwalia Contracts (India) Ltd. AHLUCONT 
+4 Alembic Pharmaceuticals Ltd. APLLTD 
+5 Alivus Life Sciences Ltd. ALIVUS 
+6 Alok Industries Ltd. ALOKINDS 
+7 ASK Automotive Ltd. ASKAUTOLTD 
+8 Awfis Space Solutions Ltd. AWFIS 
+9 Bajaj Electricals Ltd BAJAJELEC 
+10 Bayer Cropscience Ltd. BAYERCROP 
+ 
+ 
+Sr. No. Company Name Symbol 
+11 Bikaji Foods International Ltd. BIKAJI 
+12 Blue Dart Express Ltd. BLUEDART 
+13 Bombay Burmah Trading Corporation Ltd. BBTC 
+14 Century Plyboards (India) Ltd. CENTURYPLY 
+15 CORONA Remedies Ltd. CORONA 
+16 Crizac Ltd. CRIZAC 
+17 DCM Shriram Ltd. DCMSHRIRAM 
+18 Dr. Agarwal's Health Care Ltd. AGARWALEYE 
+19 Ethos Ltd. ETHOSLTD 
+20 Eureka Forbes Ltd. EUREKAFORB 
+21 GHCL Ltd. GHCL 
+22 GMM Pfaudler Ltd. GMMPFAUDLR 
+23 Go Digit General Insurance Ltd. GODIGIT 
+24 Hemisphere Properties India Ltd. HEMIPROP 
+25 India Shelter Finance Corporation Ltd. INDIASHLTR 
+26 Inox Green Energy Services Ltd. INOXGREEN 
+27 JK Lakshmi Cement Ltd. JKLAKSHMI 
+28 JSW Dulux Ltd. JSWDULUX 
+29 Jupiter Life Line Hospitals Ltd. JLHL 
+30 Maharashtra Scooters Ltd. MAHSCOOTER 
+31 Maharashtra Seamless Ltd. MAHSEAMLES 
+32 Nesco Ltd. NESCO 
+33 Optiemus Infracom Ltd. OPTIEMUS 
+34 Orient Cement Ltd. ORIENTCEM 
+35 Orkla India Ltd. ORKLAINDIA 
+36 Pfizer Ltd. PFIZER 
+37 Prism Johnson Ltd. PRSMJOHNSN 
+38 Prudent Corporate Advisory Services Ltd. PRUDENT 
+39 RattanIndia Enterprises Ltd. RTNINDIA 
+40 Redtape Ltd. REDTAPE 
+41 Saatvik Green Energy Ltd. SAATVIKGL 
+42 Sanofi Consumer Healthcare India Ltd. SANOFICONR 
+43 Seshaasai Technologies Ltd. STYL 
+44 SKF India (Industrial) Ltd. SKFINDUS 
+45 SKF India Ltd. SKFINDIA 
+46 Smartworks Coworking Spaces Ltd. SMARTWORKS 
+ 
+ 
+Sr. No. Company Name Symbol 
+47 Star Cement Ltd. STARCEMENT 
+48 Styrenix Performance Materials Ltd. STYRENIX 
+49 The Anup Engineering Ltd. ANUP 
+50 Travel Food Services Ltd. TRAVELFOOD 
+51 Triveni Engineering & Industries Ltd. TRIVENI 
+52 TSF Investments Ltd. TSFINV 
+53 Varroc Engineering Ltd. VARROC 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Aeroflex Industries Ltd. AEROFLEX 
+2 Amagi Media Labs Ltd. AMAGI 
+3 Bagmane Prime Office REIT BAGMANE 
+4 Bajaj Consumer Care Ltd. BAJAJCON 
+5 Bharat Coking Coal Ltd. BHARATCOAL 
+6 Brookfield India Real Estate Trust BIRET 
+7 Ceigall India Ltd. CEIGALL 
+8 Central Mine Planning & Design Institute Ltd. CMPDI 
+9 Centum Electronics Ltd. CENTUM 
+10 Clean Max Enviro Energy Solutions Ltd. CLEANMAX 
+11 CMR Green Technologies Ltd. CMRGREEN 
+12 E2E Networks Ltd. E2E 
+13 Embassy Office Parks REIT EMBASSY 
+14 Fractal Analytics Ltd. FRACTAL 
+15 Genus Power Infrastructures Ltd. GENUSPOWER 
+16 GNG Electronics Ltd. EBGNG 
+17 Goldiam International Ltd. GOLDIAM 
+18 Gujarat Alkalies & Chemicals Ltd. GUJALKALI 
+19 Happy Forgings Ltd. HAPPYFORGE 
+20 Knowledge Marine & Engineering Works Ltd. KMEW 
+21 Kwality Wall's (India) Ltd. KWIL 
+22 Lumax Industries Ltd. LUMAXIND 
+23 Madhya Bharat Agro Products Ltd. MBAPL 
+24 Nephrocare Health Services Ltd. NEPHROPLUS 
+25 Northern Arc Capital Ltd. NORTHARC 
+26 Omnitech Engineering Ltd. OMNI 
+ 
+ 
+Sr. No. Company Name Symbol 
+27 OnEMI Technology Solutions Ltd. KISSHT 
+28 Paisalo Digital Ltd. PAISALO 
+29 PDS Ltd. PDSL 
+30 Powerica Ltd. POWERICA 
+31 Precision Wires India Ltd. PRECWIRE 
+32 Procter & Gamble Health Ltd. PGHL 
+33 Responsive Industries Ltd. RESPONIND 
+34 S.J.S. Enterprises Ltd. SJS 
+35 SEDEMAC Mechatronics Ltd. SEDEMAC 
+36 Senores Pharmaceuticals Ltd. SENORES 
+37 SG Mart Ltd. SGMART 
+38 Shadowfax Technologies Ltd. SHADOWFAX 
+39 Shilchar Technologies Ltd. SHILCTECH 
+40 Shreeji Shipping Global Ltd. SHREEJISPG 
+41 Sigma Advanced Systems Ltd. SIGMAADV 
+42 Stylam Industries Ltd. STYLAMIND 
+43 Sundram Fasteners Ltd. SUNDRMFAST 
+44 Sunflag Iron & Steel Company Ltd. SUNFLAG 
+45 Suven Life Sciences Ltd. SUVEN 
+46 Timex Group India Ltd. TIMEX 
+47 TTK Prestige Ltd. TTKPRESTIG 
+48 Unimech Aerospace and Manufacturing Ltd. UNIMECH 
+49 Vedanta Aluminium Metal Ltd. VAML 
+50 Vedanta Iron and Steel Ltd. VISL 
+51 Vedanta Oil and Gas Ltd. VOGL 
+52 Vedanta Power Ltd. VEDPOWER 
+53 Vesuvius India Ltd. VESUVIUS 
+ 
+19) Nifty Smallcap 500 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Aarti Drugs Ltd. AARTIDRUGS 
+2 Ahluwalia Contracts (India) Ltd. AHLUCONT 
+3 Alembic Pharmaceuticals Ltd. APLLTD 
+4 Alivus Life Sciences Ltd. ALIVUS 
+ 
+ 
+Sr. No. Company Name Symbol 
+5 Alok Industries Ltd. ALOKINDS 
+6 ASK Automotive Ltd. ASKAUTOLTD 
+7 Aster DM Quality Care Ltd. ASTERDM 
+8 AstraZenca Pharma India Ltd. ASTRAZEN 
+9 Awfis Space Solutions Ltd. AWFIS 
+10 Bajaj Electricals Ltd BAJAJELEC 
+11 Bikaji Foods International Ltd. BIKAJI 
+12 Blue Dart Express Ltd. BLUEDART 
+13 Bombay Burmah Trading Corporation Ltd. BBTC 
+14 Century Plyboards (India) Ltd. CENTURYPLY 
+15 DCM Shriram Ltd. DCMSHRIRAM 
+16 Dr. Agarwal's Health Care Ltd. AGARWALEYE 
+17 Ethos Ltd. ETHOSLTD 
+18 Eureka Forbes Ltd. EUREKAFORB 
+19 Fertilisers and Chemicals Travancore Ltd. FACT 
+20 GHCL Ltd. GHCL 
+21 GMM Pfaudler Ltd. GMMPFAUDLR 
+22 Hatsun Agro Product Ltd. HATSUN 
+23 Hemisphere Properties India Ltd. HEMIPROP 
+24 Hindustan Copper Ltd. HINDCOPPER 
+25 India Shelter Finance Corporation Ltd. INDIASHLTR 
+26 Indian Overseas Bank IOB 
+27 Inox Green Energy Services Ltd. INOXGREEN 
+28 JK Lakshmi Cement Ltd. JKLAKSHMI 
+29 JSW Dulux Ltd. JSWDULUX 
+30 JSW Holdings Ltd. JSWHL 
+31 Jupiter Life Line Hospitals Ltd. JLHL 
+32 Maharashtra Scooters Ltd. MAHSCOOTER 
+33 Maharashtra Seamless Ltd. MAHSEAMLES 
+34 Meesho Ltd. MEESHO 
+35 Metro Brands Ltd. METROBRAND 
+36 Narayana Hrudayalaya Ltd. NH 
+37 Nesco Ltd. NESCO 
+38 Optiemus Infracom Ltd. OPTIEMUS 
+39 Orient Cement Ltd. ORIENTCEM 
+40 Orkla India Ltd. ORKLAINDIA 
+ 
+ 
+Sr. No. Company Name Symbol 
+41 Piramal Finance Ltd. PIRAMALFIN 
+42 Prism Johnson Ltd. PRSMJOHNSN 
+43 Prudent Corporate Advisory Services Ltd. PRUDENT 
+44 RattanIndia Enterprises Ltd. RTNINDIA 
+45 Redtape Ltd. REDTAPE 
+46 Saatvik Green Energy Ltd. SAATVIKGL 
+47 SKF India (Industrial) Ltd. SKFINDUS 
+48 SKF India Ltd. SKFINDIA 
+49 Smartworks Coworking Spaces Ltd. SMARTWORKS 
+50 Star Cement Ltd. STARCEMENT 
+51 Styrenix Performance Materials Ltd. STYRENIX 
+52 The Anup Engineering Ltd. ANUP 
+53 Travel Food Services Ltd. TRAVELFOOD 
+54 Triveni Engineering & Industries Ltd. TRIVENI 
+55 TSF Investments Ltd. TSFINV 
+56 TVS Holdings Ltd. TVSHLTD 
+57 Varroc Engineering Ltd. VARROC 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 3M India Ltd. 3MINDIA 
+2 ACC Ltd. ACC 
+3 Amagi Media Labs Ltd. AMAGI 
+4 Apollo Tyres Ltd. APOLLOTYRE 
+5 AWL Agri Business Ltd. AWL 
+6 Bagmane Prime Office REIT BAGMANE 
+7 Bajaj Consumer Care Ltd. BAJAJCON 
+8 Bharat Coking Coal Ltd. BHARATCOAL 
+9 Brookfield India Real Estate Trust BIRET 
+10 Ceigall India Ltd. CEIGALL 
+11 Central Mine Planning & Design Institute Ltd. CMPDI 
+12 Centum Electronics Ltd. CENTUM 
+13 Clean Max Enviro Energy Solutions Ltd. CLEANMAX 
+14 CMR Green Technologies Ltd. CMRGREEN 
+15 E2E Networks Ltd. E2E 
+16 Fractal Analytics Ltd. FRACTAL 
+ 
+ 
+Sr. No. Company Name Symbol 
+17 Genus Power Infrastructures Ltd. GENUSPOWER 
+18 GNG Electronics Ltd. EBGNG 
+19 Happy Forgings Ltd. HAPPYFORGE 
+20 Honeywell Automation India Ltd. HONAUT 
+21 Knowledge Marine & Engineering Works Ltd. KMEW 
+22 KPIT Technologies Ltd. KPITTECH 
+23 Kwality Wall's (India) Ltd. KWIL 
+24 Lumax Industries Ltd. LUMAXIND 
+25 Madhya Bharat Agro Products Ltd. MBAPL 
+26 MINDSPACE BUSINESS PARKS REIT MINDSPACE 
+27 Nephrocare Health Services Ltd. NEPHROPLUS 
+28 Omnitech Engineering Ltd. OMNI 
+29 OnEMI Technology Solutions Ltd. KISSHT 
+30 Park Medi World Ltd. PARKHOSPS 
+31 Powerica Ltd. POWERICA 
+32 Precision Wires India Ltd. PRECWIRE 
+33 Procter & Gamble Health Ltd. PGHL 
+34 Responsive Industries Ltd. RESPONIND 
+35 S.J.S. Enterprises Ltd. SJS 
+36 SEDEMAC Mechatronics Ltd. SEDEMAC 
+37 Senores Pharmaceuticals Ltd. SENORES 
+38 SG Mart Ltd. SGMART 
+39 Shadowfax Technologies Ltd. SHADOWFAX 
+40 Shilchar Technologies Ltd. SHILCTECH 
+41 Shreeji Shipping Global Ltd. SHREEJISPG 
+42 Sigma Advanced Systems Ltd. SIGMAADV 
+43 SJVN Ltd. SJVN 
+44 Sky Gold and Diamonds Ltd. SKYGOLD 
+45 SML Mahindra Ltd. SMLMAH 
+46 Stylam Industries Ltd. STYLAMIND 
+47 Sunflag Iron & Steel Company Ltd. SUNFLAG 
+48 Suven Life Sciences Ltd. SUVEN 
+49 Tata Elxsi Ltd. TATAELXSI 
+50 The New India Assurance Company Ltd. NIACL 
+51 Timex Group India Ltd. TIMEX 
+52 TTK Prestige Ltd. TTKPRESTIG 
+ 
+ 
+Sr. No. Company Name Symbol 
+53 Unimech Aerospace and Manufacturing Ltd. UNIMECH 
+54 Vedanta Iron and Steel Ltd. VISL 
+55 Vedanta Oil and Gas Ltd. VOGL 
+56 Vedanta Power Ltd. VEDPOWER 
+57 Vesuvius India Ltd. VESUVIUS 
+ 
+B. Replacements on account of semi-annual review of sectoral indices: 
+ 
+1) Nifty Auto 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Exide Industries Ltd. EXIDEIND 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Hyundai Motor India Ltd. HYUNDAI 
+ 
+2) Nifty Capital Goods 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Finolex Industries Ltd. FINPIPE 
+2 Praj Industries Ltd. PRAJIND 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Grindwell Norton Ltd. GRINDWELL 
+2 MTAR Technologies Ltd. MTARTECH 
+ 
+3) Nifty Cement 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 JK Lakshmi Cement Ltd. JKLAKSHMI 
+ 
+ 
+Sr. No. Company Name Symbol 
+2 Orient Cement Ltd. ORIENTCEM 
+3 Prism Johnson Ltd. PRSMJOHNSN 
+4 Star Cement Ltd. STARCEMENT 
+ 
+No inclusion is being made in the index. 
+ 
+4) Nifty Chemicals 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Bayer Cropscience Ltd. BAYERCROP 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Jubilant Ingrevia Ltd. JUBLINGREA 
+ 
+ 
+5) Nifty Commercial & Transport Services 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Awfis Space Solutions Ltd. AWFIS 
+2 Blue Dart Express Ltd. BLUEDART 
+3 Hemisphere Properties India Ltd. HEMIPROP 
+4 Inox Green Energy Services Ltd. INOXGREEN 
+5 Nesco Ltd. NESCO 
+6 Smartworks Coworking Spaces Ltd. SMARTWORKS 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Central Mine Planning & Design Institute Ltd. CMPDI 
+2 Knowledge Marine & Engineering Works Ltd. KMEW 
+3 Shadowfax Technologies Ltd. SHADOWFAX 
+4 Shreeji Shipping Global Ltd. SHREEJISPG 
+ 
+ 
+ 
+6) Nifty Construction 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Ahluwalia Contracts (India) Ltd. AHLUCONT 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Ceigall India Ltd. CEIGALL 
+ 
+ 
+7) Nifty Consumer Durables 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Thangamayil Jewellery Ltd. THANGAMAYL 
+ 
+No exclusion is being made from the index. 
+ 
+ 
+8) Nifty Consumer Services 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Crizac Ltd. CRIZAC 
+2 RattanIndia Enterprises Ltd. RTNINDIA 
+3 Travel Food Services Ltd. TRAVELFOOD 
+ 
+No inclusion is being made in the index. 
+ 
+ 
+9) Nifty FMCG 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Emami Ltd. EMAMILTD 
+ 
+ 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Godfrey Phillips India Ltd. GODFRYPHLP 
+ 
+10) Nifty Healthcare 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Piramal Pharma Ltd. PPLPHARMA 
+2 Syngene International Ltd. SYNGENE 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Gland Pharma Ltd. GLAND 
+2 Krishna Institute of Medical Sciences Ltd. KIMS 
+ 
+11) Nifty500 Healthcare 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Blue Jet Healthcare Ltd. BLUEJET 
+2 Eris Lifesciences Ltd. ERIS 
+3 Indegene Ltd. INDGN 
+4 Jubilant Pharmova Ltd. JUBLPHARMA 
+5 Pfizer Ltd. PFIZER 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Rubicon Research Ltd. RUBICON 
+ 
+12) Nifty Hospitals 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Dr. Agarwal's Health Care Ltd. AGARWALEYE 
+ 
+ 
+Sr. No. Company Name Symbol 
+2 Jupiter Life Line Hospitals Ltd. JLHL 
+ 
+No inclusion is being made in the index. 
+ 
+ 
+13) Nifty Insurance 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Go Digit General Insurance Ltd. GODIGIT 
+ 
+No inclusion is being made in the index. 
+ 
+ 
+14) Nifty Media 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Hathway Cable & Datacom Ltd. HATHWAY 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 MPS Ltd. MPSLTD 
+ 
+ 
+15) Nifty Metal 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Welspun Corp Ltd. WELCORP 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Vedanta Aluminium Metal Ltd. VAML 
+ 
+ 
+ 
+ 
+ 
+16) Nifty NBFC 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Northern Arc Capital Ltd. NORTHARC 
+2 Paisalo Digital Ltd. PAISALO 
+ 
+No exclusion is being made from the index. 
+ 
+17) Nifty Power 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Clean Max Enviro Energy Solutions Ltd. CLEANMAX 
+2 Vedanta Power Ltd. VEDPOWER 
+ 
+No exclusion is being made from the index. 
+ 
+18) Nifty Retail 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Crizac Ltd. CRIZAC 
+2 RattanIndia Enterprises Ltd. RTNINDIA 
+ 
+No inclusion is being made in the index. 
+ 
+19) Nifty Telecommunications 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Optiemus Infracom Ltd. OPTIEMUS 
+ 
+No inclusion is being made in the index. 
+ 
+ 
+ 
+ 
+ 
+20) Nifty MidSmall Financial Services 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 BSE Ltd. BSE 
+2 Housing & Urban Development Corporation Ltd. HUDCO 
+3 RBL Bank Ltd. RBLBANK 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Motilal Oswal Financial Services Ltd. MOTILALOFS 
+2 Nippon Life India Asset Management Ltd. NAM-INDIA 
+3 REC Ltd. RECLTD 
+ 
+21) Nifty MidSmall Healthcare 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Pfizer Ltd. PFIZER 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Anthem Biosciences Ltd. ANTHEM 
+ 
+22) Nifty MidSmall IT & Telecom 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Sonata Software Ltd. SONATSOFTW 
+2 Vodafone Idea Ltd. IDEA 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Inventurus Knowledge Solutions Ltd. IKS 
+2 Netweb Technologies India Ltd. NETWEB 
+ 
+ 
+ 
+No changes are being made in Nifty Bank, Nifty Financial Services, Nifty Financial Services 25/50, 
+Nifty Financial Services Ex-Bank, Nifty Housing Finance, Nifty IT, Nifty Oil & Gas, Nifty Pharma, 
+Nifty Private Bank, Nifty PSU Bank and Nifty Realty indices. 
+ 
+C. Replacements on account of semi-annual review of thematic indices: 
+ 
+1) Nifty Commodities 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 PI Industries Ltd. PIIND 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Vedanta Aluminium Metal Ltd. VAML 
+ 
+2) Nifty Core Housing 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 ACC Ltd. ACC 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 LG Electronics India Ltd. LGEINDIA 
+ 
+3) Nifty Energy 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 SJVN Ltd. SJVN 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 TD Power Systems Ltd. TDPOWERSYS 
+ 
+ 
+ 
+4) Nifty Housing 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Rail Vikas Nigam Ltd. RVNL 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Karur Vysya Bank Ltd. KARURVYSYA 
+ 
+ 
+5) Nifty India Digital 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 C.E. Info Systems Ltd. MAPMYINDIA 
+2 Latent View Analytics Ltd. LATENTVIEW 
+3 Newgen Software Technologies Ltd. NEWGEN 
+4 Sonata Software Ltd. SONATSOFTW 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Black Box Ltd. BBOX 
+2 Fractal Analytics Ltd. FRACTAL 
+3 Sterlite Technologies Ltd. STLTECH 
+ 
+6) Nifty India Infrastructure & Logistics 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Blue Dart Express Ltd. BLUEDART 
+2 RITES Ltd. RITES 
+3 Signatureglobal (India) Ltd. SIGNATURE 
+4 Transformers And Rectifiers (India) Ltd. TARIL 
+ 
+ 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Azad Engineering Ltd. AZAD 
+2 Sterlite Technologies Ltd. STLTECH 
+3 TD Power Systems Ltd. TDPOWERSYS 
+4 Vedanta Power Ltd. VEDPOWER 
+ 
+ 
+7) Nifty India Internet 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Crizac Ltd. CRIZAC 
+2 RattanIndia Enterprises Ltd. RTNINDIA 
+3 Seshaasai Technologies Ltd. STYL 
+ 
+No inclusion is being made in the index. 
+ 
+ 
+8) Nifty India Manufacturing 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Bharat Heavy Electricals Ltd. BHEL 
+2 Castrol India Ltd. CASTROLIND 
+3 Honeywell Automation India Ltd. HONAUT 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Amber Enterprises India Ltd. AMBER 
+2 Hitachi Energy India Ltd. POWERINDIA 
+3 Vedanta Aluminium Metal Ltd. VAML 
+4 Welspun Corp Ltd. WELCORP 
+ 
+ 
+ 
+ 
+ 
+ 
+9) Nifty India New Age Consumption 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Aditya Birla Lifestyle Brands Ltd. ABLBL 
+2 Chalet Hotels Ltd. CHALET 
+3 Sapphire Foods India Ltd. SAPPHIRE 
+4 Saregama India Ltd SAREGAMA 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Aditya Birla Sun Life AMC Ltd. ABSLAMC 
+2 Meesho Ltd. MEESHO 
+3 Pine Labs Ltd. PINELABS 
+4 Prime Focus Ltd. PFOCUS 
+ 
+ 
+10) Nifty India Tourism 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Chalet Hotels Ltd. CHALET 
+2 Leela Palaces Hotels & Resorts Ltd. THELEELA 
+3 Sapphire Foods India Ltd. SAPPHIRE 
+4 Travel Food Services Ltd. TRAVELFOOD 
+ 
+No inclusion is being made in the index. 
+ 
+ 
+11) Nifty Infrastructure 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Ambuja Cements Ltd. AMBUJACEM 
+2 Shree Cement Ltd. SHREECEM 
+ 
+ 
+ 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Adani Power Ltd. ADANIPOWER 
+2 GE Vernova T&D India Ltd. GVT&D 
+ 
+12) Nifty MNC 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 3M India Ltd. 3MINDIA 
+2 Cohance Lifesciences Ltd. COHANCE 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 LG Electronics India Ltd. LGEINDIA 
+2 Vedanta Aluminium Metal Ltd. VAML 
+ 
+ 
+13) Nifty Mobility 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Indian Railway Catering And Tourism Corporation Ltd. IRCTC 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Delhivery Ltd. DELHIVERY 
+ 
+14) Nifty Non-Cyclical Consumer 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Indian Railway Catering And Tourism Corporation Ltd. IRCTC 
+2 Jubilant Foodworks Ltd. JUBLFOOD 
+ 
+ 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Lenskart Solutions Ltd. LENSKART 
+2 Vodafone Idea Ltd. IDEA 
+ 
+15) Nifty PSE 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Indian Railway Catering And Tourism Corporation Ltd. IRCTC 
+2 Rail Vikas Nigam Ltd. RVNL 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 National Aluminium Co. Ltd. NATIONALUM 
+2 Steel Authority of India Ltd. SAIL 
+ 
+16) Nifty Rural 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 ACC Ltd. ACC 
+2 Escorts Kubota Ltd. ESCORTS 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Ather Energy Ltd. ATHERENERG 
+2 Tata Capital Ltd. TATACAP 
+ 
+17) Nifty Services Sector 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 GAIL (India) Ltd. GAIL 
+2 Info Edge (India) Ltd. NAUKRI 
+ 
+ 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Adani Power Ltd. ADANIPOWER 
+2 Federal Bank Ltd. FEDERALBNK 
+ 
+18) Nifty Small Finance Banks & Microfinance Institutions 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Capital Small Finance Bank Ltd. CAPITALSFB 
+2 ESAF Small Finance Bank Ltd. ESAFSFB 
+3 Satin Creditcare Network Ltd. SATIN 
+ 
+No exclusion is being made from the index. 
+ 
+19) Nifty Waves 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Gradiente Infotainment Ltd. GRADIENTE 
+2 Media Matrix Worldwide Ltd. MMWL 
+3 Quint Digital Ltd. QUINT 
+ 
+No exclusion is being made from the index. 
+ 
+ 
+20) Nifty500 Multicap India Manufacturing 50:30:20 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Astral Ltd. ASTRAL 
+2 Chambal Fertilizers & Chemicals Ltd. CHAMBLFERT 
+3 Cohance Lifesciences Ltd. COHANCE 
+4 Exide Industries Ltd. EXIDEIND 
+5 Hindustan Copper Ltd. HINDCOPPER 
+6 Polycab India Ltd. POLYCAB 
+ 
+ 
+Sr. No. Company Name Symbol 
+7 Whirlpool of India Ltd. WHIRLPOOL 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Acutaas Chemicals Ltd. ACUTAAS 
+2 Apollo Tyres Ltd. APOLLOTYRE 
+3 GE Vernova T&D India Ltd. GVT&D 
+4 KEI Industries Ltd. KEI 
+5 Kirloskar Oil Eng Ltd. KIRLOSENG 
+6 National Aluminium Co. Ltd. NATIONALUM 
+7 Onesource Specialty Pharma Ltd. ONESOURCE 
+ 
+ 
+21) Nifty500 Multicap Infrastructure 50:30:20 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Aster DM Quality Care Ltd. ASTERDM 
+2 Dalmia Bharat Ltd. DALBHARAT 
+3 Exide Industries Ltd. EXIDEIND 
+4 Hitachi Energy India Ltd. POWERINDIA 
+5 Lemon Tree Hotels Ltd. LEMONTREE 
+6 Narayana Hrudayalaya Ltd. NH 
+7 NCC Ltd. NCC 
+8 Torrent Power Ltd. TORNTPOWER 
+9 Vodafone Idea Ltd. IDEA 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Adani Power Ltd. ADANIPOWER 
+2 Apollo Tyres Ltd. APOLLOTYRE 
+3 Cochin Shipyard Ltd. COCHINSHIP 
+4 GE Vernova T&D India Ltd. GVT&D 
+5 Lodha Developers Ltd. LODHA 
+6 Sansera Engineering Ltd. SANSERA 
+ 
+ 
+Sr. No. Company Name Symbol 
+7 Shree Cement Ltd. SHREECEM 
+8 Sterlite Technologies Ltd. STLTECH 
+9 TD Power Systems Ltd. TDPOWERSYS 
+ 
+ 
+22) Nifty100 Liquid 15 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Bharat Electronics Ltd. BEL 
+2 Maruti Suzuki India Ltd. MARUTI 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Infosys Ltd. INFY 
+2 Tata Consultancy Services Ltd. TCS 
+ 
+ 
+23) Nifty Midcap Liquid 15 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 AU Small Finance Bank Ltd. AUBANK 
+2 BSE Ltd. BSE 
+3 Coforge Ltd. COFORGE 
+4 Fortis Healthcare Ltd. FORTIS 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Bharat Forge Ltd. BHARATFORG 
+2 Bharat Heavy Electricals Ltd. BHEL 
+3 GE Vernova T&D India Ltd. GVT&D 
+4 PB Fintech Ltd. POLICYBZR 
+ 
+ 
+ 
+ 
+24) Nifty Shariah 25 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Coforge Ltd. COFORGE 
+2 Havells India Ltd. HAVELLS 
+3 LTM Ltd. LTM 
+4 SRF Ltd. SRF 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Bharat Petroleum Corporation Ltd. BPCL 
+2 Britannia Industries Ltd. BRITANNIA 
+3 Sun Pharmaceutical Industries Ltd. SUNPHARMA 
+4 Trent Ltd. TRENT 
+ 
+No changes are being made in Nifty Capital Markets, Nifty Transportation & Logistics and Nifty India 
+Corporate Group Index - Tata Group 25% Cap indices. 
+ 
+D. Replacements on account of semi-annual review of strategy indices: 
+ 
+1) Nifty Growth Sectors 15 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Persistent Systems Ltd. PERSISTENT 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 HCL Technologies Ltd. HCLTECH 
+ 
+2) Nifty Top 10 Equal Weight 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Tata Consultancy Services Ltd. TCS 
+ 
+ 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 State Bank of India SBIN 
+ 
+No changes are being made in Nifty Top 15 Equal Weight and Nifty Top 20 Equal Weight indices. 
+ 
+E. Replacements on account of quarterly review of thematic indices: 
+ 
+1) Nifty India Select 5 Corporate Groups (MAATR) 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Aditya Birla Fashion and Retail Ltd. ABFRL 
+2 Aditya Birla Lifestyle Brands Ltd. ABLBL 
+ 
+No inclusion is being made in the index. 
+ 
+2) Nifty SME Emerge 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Pattech Fitwell Tube Components Ltd. PATTECH 
+2 Vels Film International Ltd. VELS 
+3 Visaman Global Sales Ltd. VISAMAN 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Avience Biomedicals Ltd. AVIENCE 
+2 Bio Medica Laboratories Ltd. BMLL 
+3 Clay Craft India Ltd. CLAYCRAFT 
+4 GenXAI Analytics Ltd. GENXAI 
+5 Happy Steels Ltd. HAPPY 
+6 IC Electricals Company Ltd. ICELCO 
+7 NFP Sampoorna Foods Ltd. NFPSAMPOOR 
+8 Q-Line Biotech Ltd. QLINE 
+ 
+ 
+Sr. No. Company Name Symbol 
+9 RFBL Flexi Pack Ltd. RFBL 
+10 Shreedhar Spinners Ltd. SHREEDHAR 
+11 Teamtech Formwork Solutions Ltd. TEAMTECH 
+12 Teja Engineering Industries Ltd. TEJA 
+13 Utkal Speciality Industries India Ltd. UTKAL 
+14 Vinit Mobile Ltd. VMOBILE 
+ 
+No changes are being made in Nifty India Corporate Group Index - Aditya Birla Group , Nifty India 
+Corporate Group Index - Mahindra Group and Nifty India Corporate Group Index - Tata Group indices. 
+ 
+For detailed criteria, kindly refer the methodology document. 
+ 
+About NSE Indices Limited:  
+NSE Indices Limited (formerly known as India Index Services & Products Ltd. - IISL), a subsidiary of 
+NSE, provides a variety of indices and index related services for the capital markets. The company 
+focuses on the index as a core product. The company owns  and manages a portfolio of indices under 
+the Nifty brand of NSE, including the flagship index, the Nifty 50. Nifty equity indices comprises 
+broad-based benchmark indices, sectoral indices, strategy indices, thematic indices, and customised 
+indices. NSE In dices Limited also maintains fixed income indices based on Government of India 
+securities, corporate bonds, money market instruments and hybrid indices. Many investment products 
+based on Nifty indices have been developed within India and abroad. These incl ude index -based 
+derivatives traded on NSE and NSE International Exchange IFSC Limited (NSE IX) and a number of 
+index funds and exchange traded funds. The flagship 'Nifty 50' index is widely tracked and traded as 
+the benchmark for Indian Capital Markets.  
+For more information, please visit: www.niftyindices.com 
+Press contact: 
+Email ID: cc@nse.co.in 

@@ -1,0 +1,435 @@
+ 
+ 
+ 
+PRESS RELEASE 
+Mumbai, July 11, 2022 
+ 
+Replacements in indices 
+The Index Maintenance Sub -Committee (Equity) of NSE Indices Limited has decided to replace 
+following stocks from various indices as listed hereunder on account of proposed scheme of 
+arrangements as approved by equity shareholders of the respective companies. 
+ 
+A) NMDC Ltd.: Scheme of arrangement for demerger of NMDC Iron & Steel Plant at Nagamar, 
+Chhattisgarh from NMDC Ltd. into NMDC Steel Ltd. 
+ 
+B) Piramal Enterprises Ltd.: Scheme of arrangement for demerger of Pharma Business of Piramal 
+Enterprises Ltd. into Piramal Pharma Ltd. 
+ 
+C) Shriram City Union Finance Ltd.:  Scheme of arrangement for amalgamation of Shriram City 
+Union Finance Ltd. with Shriram Transport Finance Company Ltd. 
+ 
+These changes shall become effective from August 08, 2022 (close of August 05, 2022). 
+ 
+ 
+1) Nifty 500 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 NMDC Ltd. NMDC 
+2 Piramal Enterprises Ltd. PEL 
+3 Shriram City Union Finance Ltd. SHRIRAMCIT 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Campus Activewear Ltd. CAMPUS 
+2 Delhivery Ltd. DELHIVERY 
+3 Life Insurance Corporation of India LICI 
+ 
+ 
+ 
+ 
+The above replacements will also be applicable to Nifty500 Multicap 50:25:25 index. 
+ 
+2) Nifty 100 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 NMDC Ltd. NMDC 
+2 Piramal Enterprises Ltd. PEL 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Life Insurance Corporation of India LICI 
+2 Tata Power Co. Ltd. TATAPOWER 
+ 
+The above replacements will also be applicable to Nifty100 Equal Weight index. 
+ 
+3) Nifty Next 50 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 NMDC Ltd. NMDC 
+2 Piramal Enterprises Ltd. PEL 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Life Insurance Corporation of India LICI 
+2 Tata Power Co. Ltd. TATAPOWER 
+ 
+ 
+4) Nifty Midcap 150 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Tata Power Co. Ltd.* TATAPOWER 
+* Excluded on account of inclusion in Nifty 100 
+ 
+ 
+ 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Delhivery Ltd. DELHIVERY 
+ 
+ 
+5) Nifty Midcap 50 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Tata Power Co. Ltd.* TATAPOWER 
+*Excluded on account of exclusion from Nifty Midcap 150 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Polycab India Ltd. POLYCAB 
+ 
+ 
+6) Nifty Midcap 100 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Tata Power Co. Ltd.* TATAPOWER 
+* Excluded on account of exclusion from Nifty Midcap 150 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Delhivery Ltd. DELHIVERY 
+ 
+ 
+7) Nifty Midcap Select 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Tata Power Co. Ltd.* TATAPOWER 
+* Excluded on account of exclusion from Nifty Midcap 150 
+ 
+ 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Hindustan Aeronautics Ltd. HAL 
+ 
+ 
+8) Nifty Smallcap 250 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Shriram City Union Finance Ltd. SHRIRAMCIT 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Campus Activewear Ltd. CAMPUS 
+ 
+ 
+9) Nifty 200 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 NMDC Ltd. NMDC 
+2 Piramal Enterprises Ltd. PEL 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Delhivery Ltd. DELHIVERY 
+2 Life Insurance Corporation of India LICI 
+ 
+ 
+10) Nifty LargeMidcap 250 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 NMDC Ltd. NMDC 
+2 Piramal Enterprises Ltd. PEL 
+ 
+ 
+ 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Delhivery Ltd. DELHIVERY 
+2 Life Insurance Corporation of India LICI 
+ 
+ 
+11) Nifty MidSmallcap 400 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Shriram City Union Finance Ltd. SHRIRAMCIT 
+2 Tata Power Co. Ltd.* TATAPOWER 
+* Excluded on account of exclusion from Nifty Midcap 150 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Campus Activewear Ltd. CAMPUS 
+2 Delhivery Ltd. DELHIVERY 
+ 
+ 
+12) Nifty Total Market 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 NMDC Ltd. NMDC 
+2 Piramal Enterprises Ltd. PEL 
+3 Shriram City Union Finance Ltd. SHRIRAMCIT 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Campus Activewear Ltd. CAMPUS 
+2 Delhivery Ltd. DELHIVERY 
+3 Life Insurance Corporation of India LICI 
+ 
+ 
+ 
+ 
+ 
+ 
+13) Nifty Financial Services 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Piramal Enterprises Ltd. PEL 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Indian Energy Exchange Ltd. IEX 
+ 
+The above replacement will also be applicable to Nifty Financial Services 25/50 index. 
+ 
+ 
+14) Nifty Financial Services Ex-Bank 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Piramal Enterprises Ltd. PEL 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Life Insurance Corporation of India LICI 
+ 
+ 
+15) Nifty Metal 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 NMDC Ltd. NMDC 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 MOIL Ltd. MOIL 
+ 
+ 
+ 
+ 
+ 
+16) Nifty Commodities 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 NMDC Ltd. NMDC 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Navin Fluorine International Ltd. NAVINFLUOR 
+ 
+ 
+17) Nifty CPSE 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 NMDC Ltd. NMDC 
+ 
+No inclusion is being made in the index. 
+ 
+18) Nifty PSE 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 NMDC Ltd. NMDC 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Life Insurance Corporation of India LICI 
+ 
+ 
+19) Nifty Midcap Liquid 15 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Tata Power Co. Ltd.* TATAPOWER 
+*Excluded on account of exclusion from Nifty Midcap 50 
+ 
+ 
+ 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Voltas Ltd. VOLTAS 
+ 
+ 
+20) Nifty100 ESG 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 NMDC Ltd. NMDC 
+2 Piramal Enterprises Ltd. PEL 
+ 
+No inclusion is being made in the index. 
+ 
+ 
+21) Nifty100 Enhanced ESG 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 NMDC Ltd. NMDC 
+2 Piramal Enterprises Ltd. PEL 
+ 
+No inclusion is being made in the index. 
+ 
+ 
+22) Nifty100 ESG Sector Leaders 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 NMDC Ltd. NMDC 
+ 
+No inclusion is being made in the index. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+23) Nifty Dividend Opportunities 50 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 NMDC Ltd. NMDC 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Bajaj Holdings & Investment Ltd. BAJAJHLDNG 
+ 
+ 
+24) Nifty High Beta 50 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Piramal Enterprises Ltd. PEL 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 MindTree Ltd. MINDTREE 
+ 
+ 
+25) Nifty500 Value 50 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 NMDC Ltd. NMDC 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Great Eastern Shipping Co. Ltd. GESHIP 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+About National Stock Exchange of India Limited (NSE): 
+ 
+National Stock Exchange of India (NSE) is the world’s largest derivatives exchange by trading 
+volume (contracts) as per the statistics maintained by Futures Industry Association (FIA) for calendar 
+year 2021. NSE is ranked 4th in the world in the cash equities by number of trades as per the statistics 
+maintained by the World Federation of Exchanges (WFE) for calendar year 2021. NSE was the first 
+exchange in India to implement electronic or screen-based trading. It began operations in 1994 and is 
+ranked as the largest stock exchange in India in terms of total and average daily turnover for equity 
+shares every year since 1995, based on SEBI data. NSE has a fully integrated business model 
+comprising exchange listings, trading services, clearing and settlement services, indices, market data 
+feeds, technology solutions and financial education offerings. NSE also oversees compliance by 
+trading, clearing members and listed companies with the rules and regulations of SEBI and the 
+exchange. NSE is a pioneer in technology and ensures the reliability and performance of its systems 
+through a culture of innovation and investment in technology.   
+For more information, please visit: www.nseindia.com 
+ 
+About NSE Indices Limited:  
+NSE Indices Limited (formerly known as India Index Services & Products Ltd. - IISL), a subsidiary of 
+NSE, provides a variety of indices and index related services for the capital markets. The company focuses 
+on the index as a core product. The company owns and manages a portfolio of indices under the Nifty 
+brand of NSE, including the flagship index, the Nifty 50. Nifty equity indices comprises of bro ad-based 
+benchmark indices, sectoral indices, strategy indices, thematic indices and customised indices. NSE 
+Indices Limited also maintains fixed income indices based on Government of India securities, corporate 
+bonds, money market instruments and hybrid i ndices. Many investment products based on Nifty indices 
+have been developed within India and abroad. These include index based derivatives traded on NSE, NSE 
+IFSC and Singapore Exchange Ltd. (SGX) and a number of index funds and exchange traded funds. The 
+flagship 'Nifty 50' index is widely tracked and traded as the benchmark for Indian Capital Markets. 
+For more information, please visit: www.niftyindices.com 
+ 
+    
+Press contact: 
+Kumar Kartikey - Chief Manager, Corporate Communications 
+Priyanka Roy - Manager, Corporate Communications 
+Email ID: cc@nse.co.in 
+ 
+ 

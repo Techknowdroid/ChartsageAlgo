@@ -1,0 +1,427 @@
+ 
+ 
+ 
+PRESS RELEASE 
+Mumbai, September 16, 2022 
+Replacements in indices 
+The Index Maintenance Sub -Committee (Equity) of NSE Indices Limited has decided to make the 
+replacement of stocks in various indices as listed hereunder.  These changes shall become effective 
+from September 30, 2022 (close of September 29, 2022). 
+ 
+A. Replacements in indices on account of scheme of arrangement for amalgamation: 
+ 
+i) Equitas Holdings Ltd.: Scheme of arrangement for amalgamation of Equitas Holdings Ltd. with 
+Equitas Small Finance Bank Ltd. as approved by equity shareholders of the company. 
+ 
+ii) Mindtree Ltd.:  Scheme of arrangement for amalgamation of Mindtree Ltd. with Larsen & 
+Toubro Infotech Ltd. as approved by equity shareholders of the company. 
+ 
+1) Nifty 500 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Equitas Holdings Ltd. EQUITAS 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Shoppers Stop Ltd. SHOPERSTOP 
+ 
+The above replacement will also be applicable to Nifty500 Multicap 50:25:25 index. 
+ 
+2) Nifty Smallcap 250 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Equitas Holdings Ltd. EQUITAS 
+ 
+ 
+ 
+ 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Shoppers Stop Ltd. SHOPERSTOP 
+ 
+3) Nifty MidSmallcap 400 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Equitas Holdings Ltd. EQUITAS 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Shoppers Stop Ltd. SHOPERSTOP 
+ 
+4) Nifty Microcap 250 
+ 
+The following company is being excluded on account of inclusion in Nifty 500: 
+ 
+Sr. No. Company Name Symbol 
+1 Shoppers Stop Ltd. SHOPERSTOP 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Safari Industries (India) Ltd. SAFARI 
+ 
+5) Nifty Total Market 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Equitas Holdings Ltd. EQUITAS 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Safari Industries (India) Ltd. SAFARI 
+ 
+ 
+ 
+ 
+ 
+6) Nifty Alpha Quality Low-Volatility 30 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Mindtree Ltd. MINDTREE 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 MRF Ltd. MRF 
+ 
+7) Nifty Alpha Quality Value Low-Volatility 30 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Mindtree Ltd. MINDTREE 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Power Grid Corporation of India Ltd. POWERGRID 
+ 
+8) Nifty100 Quality 30 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Mindtree Ltd. MINDTREE 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Hindustan Aeronautics Ltd. HAL 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+9) Nifty200 Quality 30 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Mindtree Ltd. MINDTREE 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Oracle Financial Services Software Ltd. OFSS 
+ 
+10) Nifty100 ESG 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Mindtree Ltd. MINDTREE 
+ 
+No inclusion is being made in the index. 
+ 
+11) Nifty100 Enhanced ESG 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Mindtree Ltd. MINDTREE 
+ 
+No inclusion is being made in the index. 
+ 
+B. Replacements on account of quarterly review of strategy indices: 
+ 
+1) Nifty Alpha 50 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Apollo Hospitals Enterprise Ltd. APOLLOHOSP 
+2 Birlasoft Ltd. BSOFT 
+3 Central Depository Services (India) Ltd. CDSL 
+4 Coforge Ltd. COFORGE 
+ 
+ 
+ 
+Sr. No. Company Name Symbol 
+5 Deepak Nitrite Ltd. DEEPAKNTR 
+6 Indian Energy Exchange Ltd. IEX 
+7 L&T Technology Services Ltd. LTTS 
+8 Laurus Labs Ltd. LAURUSLABS 
+9 Max Healthcare Institute Ltd. MAXHEALTH 
+10 Mindtree Ltd.* MINDTREE 
+11 MphasiS Ltd. MPHASIS 
+12 National Aluminium Co. Ltd. NATIONALUM 
+13 Oil India Ltd. OIL 
+14 Persistent Systems Ltd. PERSISTENT 
+15 Prestige Estates Projects Ltd. PRESTIGE 
+16 Radico Khaitan Ltd RADICO 
+17 Tanla Platforms Ltd. TANLA 
+18 Trident Ltd. TRIDENT 
+19 Vardhman Textiles Ltd. VTL 
+20 Vedanta Ltd. VEDL 
+* On account of proposed scheme of arrangement for amalgamation 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Aditya Birla Fashion and Retail Ltd. ABFRL 
+2 Bank of Baroda BANKBARODA 
+3 Brightcom Group Ltd. BCG 
+4 Canara Bank CANBK 
+5 CG Power and Industrial Solutions Ltd. CGPOWER 
+6 Cholamandalam Investment and Finance Co. Ltd. CHOLAFIN 
+7 Coal India Ltd. COALINDIA 
+8 Escorts Kubota Ltd. ESCORTS 
+9 Federal Bank Ltd. FEDERALBNK 
+10 ITC Ltd. ITC 
+11 KEI Industries Ltd. KEI 
+12 Mahindra & Mahindra Ltd. M&M 
+13 NHPC Ltd. NHPC 
+14 Oberoi Realty Ltd. OBEROIRLTY 
+15 Tata Motors Ltd. TATAMOTORS 
+16 Tube Investments of India Ltd. TIINDIA 
+ 
+ 
+ 
+Sr. No. Company Name Symbol 
+17 TVS Motor Company Ltd. TVSMOTOR 
+18 Vodafone Idea Ltd. IDEA 
+19 Yes Bank Ltd. YESBANK 
+20 Zee Entertainment Enterprises Ltd. ZEEL 
+ 
+2) Nifty High Beta 50 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Delta Corp Ltd. DELTACORP 
+2 Indiabulls Real Estate Ltd. IBREALEST 
+3 Mindtree Ltd.* MINDTREE 
+* On account of proposed scheme of arrangement for amalgamation 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 BSE Ltd. BSE 
+2 Poonawalla Fincorp Ltd. POONAWALLA 
+3 Zomato Ltd. ZOMATO 
+ 
+3) Nifty Low Volatility 50 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Oracle Financial Services Software Ltd. OFSS 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Sun Pharmaceutical Industries Ltd. SUNPHARMA 
+ 
+4) Nifty100 Alpha 30 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Apollo Hospitals Enterprise Ltd. APOLLOHOSP 
+ 
+ 
+ 
+Sr. No. Company Name Symbol 
+2 Bajaj Finserv Ltd. BAJAJFINSV 
+3 Infosys Ltd. INFY 
+4 Larsen & Toubro Infotech Ltd. LTI 
+5 Mindtree Ltd.* MINDTREE 
+6 Procter & Gamble Hygiene & Health Care Ltd. PGHH 
+7 Tata Consumer Products Ltd. TATACONSUM 
+8 Tech Mahindra Ltd. TECHM 
+9 Vedanta Ltd. VEDL 
+* On account of proposed scheme of arrangement for amalgamation 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Adani Total Gas Ltd. ATGL 
+2 Bharat Electronics Ltd. BEL 
+3 Bosch Ltd. BOSCHLTD 
+4 Eicher Motors Ltd. EICHERMOT 
+5 Hindustan Aeronautics Ltd. HAL 
+6 Indian Railway Catering and Tourism Corporation Ltd. IRCTC 
+7 Maruti Suzuki India Ltd. MARUTI 
+8 Siemens Ltd. SIEMENS 
+9 Tata Power Co. Ltd. TATAPOWER 
+ 
+5) Nifty200 Alpha 30 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Apollo Hospitals Enterprise Ltd. APOLLOHOSP 
+2 Bharti Airtel Ltd. BHARTIARTL 
+3 Indian Energy Exchange Ltd. IEX 
+4 L&T Technology Services Ltd. LTTS 
+5 Mindtree Ltd.* MINDTREE 
+6 MphasiS Ltd. MPHASIS 
+7 National Aluminium Co. Ltd. NATIONALUM 
+8 Persistent Systems Ltd. PERSISTENT 
+9 United Spirits Ltd. MCDOWELL-N 
+* On account of proposed scheme of arrangement for amalgamation 
+ 
+ 
+ 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Bank of Baroda BANKBARODA 
+2 Canara Bank CANBK 
+3 Coal India Ltd. COALINDIA 
+4 Federal Bank Ltd. FEDERALBNK 
+5 ITC Ltd. ITC 
+6 Mahindra & Mahindra Ltd. M&M 
+7 TVS Motor Company Ltd. TVSMOTOR 
+8 Vodafone Idea Ltd. IDEA 
+9 Zee Entertainment Enterprises Ltd. ZEEL 
+ 
+No change is being made in Nifty100 Low Volatility 30 index. 
+ 
+ 
+C. Replacements in Nifty Shariah indices: 
+ 
+On account of monthly review of Shariah compliance, replacements in Nifty Shariah indices shall be 
+made as given hereunder: 
+ 
+1) Nifty50 Shariah 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Shree Cement Ltd. SHREECEM 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Adani Enterprises Ltd. ADANIENT 
+2 Apollo Hospitals Enterprise Ltd. APOLLOHOSP 
+ 
+2) Nifty500 Shariah 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Advanced Enzyme Tech Ltd. ADVENZYMES 
+2 Anupam Rasayan India Ltd. ANURAS 
+ 
+ 
+ 
+Sr. No. Company Name Symbol 
+3 Eris Lifesciences Ltd. ERIS 
+4 Gland Pharma Ltd. GLAND 
+5 Glenmark Life Sciences Ltd. GLS 
+6 HLE Glascoat Ltd. HLEGLAS 
+7 Indo Count Industries Ltd. ICIL 
+8 Metropolis Healthcare Ltd. METROPOLIS 
+9 Mindtree Ltd.* MINDTREE 
+10 Railtel Corporation of India Ltd. RAILTEL 
+11 Solara Active Pharma Sciences Ltd. SOLARA 
+12 Strides Pharma Science Ltd. STAR 
+13 Triveni Turbine Ltd. TRITURBINE 
+* On account of proposed scheme of arrangement for amalgamation 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Adani Wilmar Ltd. AWL 
+2 Apollo Hospitals Enterprise Ltd. APOLLOHOSP 
+3 Bharat Rasayan Ltd. BHARATRAS 
+4 Greenpanel Industries Ltd. GREENPANEL 
+5 Indian Railway Catering and Tourism Corporation Ltd. IRCTC 
+6 Info Edge (India) Ltd. NAUKRI 
+7 Mahanagar Gas Ltd. MGL 
+8 Mahindra Lifespace Developers Ltd. MAHLIFE 
+9 Mastek Ltd. MASTEK 
+10 Motherson Sumi Wiring India Ltd. MSUMI 
+11 RITES Ltd. RITES 
+12 Samvardhana Motherson International Ltd. MOTHERSON 
+13 Sharda Cropchem Ltd. SHARDACROP 
+14 Swan Energy Ltd. SWANENERGY 
+15 Transport Corporation of India Ltd. TCI 
+16 Vedant Fashions Ltd. MANYAVAR 
+ 
+No change is being made in Nifty Shariah 25 index. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+About National Stock Exchange of India Limited (NSE): 
+ 
+National Stock Exchange of India (NSE) is the world’s largest derivatives exchange by trading 
+volume (contracts) as per the statistics maintained by Futures Industry Association (FIA) for calendar 
+year 2021. NSE is ranked 4th in the world in the cash equities by number of trades as per the statistics 
+maintained by the World Federation of Exchanges (WFE) for calendar year 2021. NSE was the first 
+exchange in India to implement electronic or screen-based trading. It began operations in 1994 and is 
+ranked as the largest stock exchange in India in terms of total and average daily turnover for equity 
+shares every year since 1995, based on SEBI data. NSE has a fully i ntegrated business model 
+comprising exchange listings, trading services, clearing and settlement services, indices, market data 
+feeds, technology solutions and financial education offerings. NSE also oversees compliance by 
+trading, clearing members and lis ted companies with the rules and regulations of SEBI and the 
+exchange. NSE is a pioneer in technology and ensures the reliability and performance of its systems 
+through a culture of innovation and investment in technology.   
+For more information, please visit: www.nseindia.com 
+ 
+About NSE Indices Limited:  
+NSE Indices Limited (formerly known as India Index Services & Products Ltd. - IISL), a subsidiary of 
+NSE, provides a variety of indices and index related services for the capital markets. The company focuses 
+on the index as a core product. The company owns and manages a portfolio of indices under the Nifty 
+brand of NSE, including the flagship index, the Nifty 50. Nifty equity indices comprises of broad-based 
+benchmark indices, sectoral indices, strategy indices, thematic indices and customised indices. NSE 
+Indices Limited also maintains fixed income indices based on Government of India securities, corporate 
+bonds, money market instruments  and hybrid indices. Many investment products based on Nifty indices 
+have been developed within India and abroad. These include index based derivatives traded on NSE, NSE 
+IFSC and Singapore Exchange Ltd. (SGX) and a number of index funds and exchange trade d funds. The 
+flagship 'Nifty 50' index is widely tracked and traded as the benchmark for Indian Capital Markets. 
+For more information, please visit: www.Niftyindices.com 
+ 
+    
+Press contact: 
+Kumar Kartikey - Associate Vice President, Corporate Communications 
+Priyanka Roy - Manager, Corporate Communications 
+Email ID: cc@nse.co.in 
+ 
+ 

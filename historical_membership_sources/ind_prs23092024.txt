@@ -1,0 +1,291 @@
+ 
+ 
+ 
+PRESS RELEASE 
+Mumbai, September 23, 2024 
+ 
+Replacements in indices and revision in guideline for calculation of 
+‘Investable Weight Factor’ (IWF) 
+ 
+The Index Maintenance Sub -Committee (Equity) of NSE Indices Limited has decided to make the 
+following changes in various Nifty equity indices as listed hereunder . These changes shall become 
+effective from September 30, 2024 (close of September 27, 2024). 
+ 
+A. Replacement on account of quarterly review of strategy and thematic indices: 
+ 
+1) Nifty Alpha 50 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Adani Green Energy Ltd. ADANIGREEN 
+2 Angel One Ltd. ANGELONE 
+3 Birlasoft Ltd. BSOFT 
+4 Canara Bank CANBK 
+5 General Insurance Corporation of India GICRE 
+6 Indian Bank INDIANB 
+7 Jaiprakash Power Ventures Ltd. JPPOWER 
+8 NCC Ltd. NCC 
+9 Punjab National Bank PNB 
+10 Supreme Industries Ltd. SUPREMEIND 
+11 Titagarh Rail Systems Ltd. TITAGARH 
+12 Union Bank of India UNIONBANK 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Amara Raja Energy & Mobility Ltd. ARE&M 
+2 Central Depository Services (India) Ltd. CDSL 
+3 Century Textile & Industries Ltd. CENTURYTEX 
+ 
+ 
+Sr. No. Company Name Symbol 
+4 Cochin Shipyard Ltd. COCHINSHIP 
+5 Colgate Palmolive (India) Ltd. COLPAL 
+6 Hindustan Petroleum Corporation Ltd. HINDPETRO 
+7 Hitachi Energy India Ltd. POWERINDIA 
+8 Indus Towers Ltd. INDUSTOWER 
+9 Inox Wind Ltd. INOXWIND 
+10 Oil India Ltd. OIL 
+11 Phoenix Mills Ltd. PHOENIXLTD 
+12 Solar Industries India Ltd. SOLARINDS 
+ 
+2) Nifty Low Volatility 50 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 NTPC Ltd. NTPC 
+2 Oil & Natural Gas Corporation Ltd. ONGC 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Apollo Hospitals Enterprise Ltd. APOLLOHOSP 
+2 Divi's Laboratories Ltd. DIVISLAB 
+ 
+3) Nifty100 Low Volatility 30 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Berger Paints India Ltd. BERGEPAINT 
+2 Colgate Palmolive (India) Ltd. COLPAL 
+3 Marico Ltd. MARICO 
+4 NTPC Ltd. NTPC 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Apollo Hospitals Enterprise Ltd. APOLLOHOSP 
+2 Bajaj Finserv Ltd. BAJAJFINSV 
+ 
+ 
+Sr. No. Company Name Symbol 
+3 Infosys Ltd. INFY 
+4 Maruti Suzuki India Ltd. MARUTI 
+ 
+4) Nifty100 Alpha 30 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Adani Ports and Special Economic Zone Ltd. ADANIPORTS 
+2 Canara Bank CANBK 
+3 Cipla Ltd. CIPLA 
+4 DLF Ltd. DLF 
+5 Larsen & Toubro Ltd. LT 
+6 Punjab National Bank PNB 
+7 Shriram Finance Ltd. SHRIRAMFIN 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Bharat Heavy Electricals Ltd. BHEL 
+2 Bharti Airtel Ltd. BHARTIARTL 
+3 Bosch Ltd. BOSCHLTD 
+4 Hero MotoCorp Ltd. HEROMOTOCO 
+5 InterGlobe Aviation Ltd. INDIGO 
+6 Sun Pharmaceutical Industries Ltd. SUNPHARMA 
+7 Vedanta Ltd. VEDL 
+ 
+5) Nifty200 Alpha 30 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Adani Ports and Special Economic Zone Ltd. ADANIPORTS 
+2 GMR Airports Infrastructure Ltd. GMRINFRA 
+3 HDFC Asset Management Company Ltd. HDFCAMC 
+4 NMDC Ltd. NMDC 
+5 Polycab India Ltd. POLYCAB 
+6 Punjab National Bank PNB 
+ 
+ 
+Sr. No. Company Name Symbol 
+7 Vodafone Idea Ltd. IDEA 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Bharti Airtel Ltd. BHARTIARTL 
+2 Colgate Palmolive (India) Ltd. COLPAL 
+3 Hero MotoCorp Ltd. HEROMOTOCO 
+4 InterGlobe Aviation Ltd. INDIGO 
+5 Persistent Systems Ltd. PERSISTENT 
+6 Torrent Pharmaceuticals Ltd. TORNTPHARM 
+7 Voltas Ltd. VOLTAS 
+ 
+No change is being made in the Nifty REITs & InvITs index.  Changes (if any) in Nifty High Beta 50 
+index arising out of periodic reconstitution will be announced in due course. 
+ 
+B. Replacement on account of non-compliance of SEBI Portfolio Concentration Norms: 
+ 
+On August 23, 2024, as part of periodic review of various indices, the Index Maintenance Sub -
+Committee (Equity) of NSE Indices Limited had announced inclusion of Exicom Tele-Systems Ltd. 
+(EXICOM) and JNK India Ltd. (JNKINDIA) in Nifty Microcap 250 and Nifty Total Market indices 
+with effect from September 30, 2024. 
+ 
+As both Exicom Tele-Systems Ltd. and JNK India Ltd. breached one of the requirements of SEBI 
+Portfolio Concentration Norms for Equity Exchange Traded Funds (ETFs) and Index Funds related to 
+impact cost, the Committee has decided to revoke its earlier decision to include both these stocks 
+announced on August 23, 2024. 
+ 
+Following changes shall be made in various indices as a result of revocation of inclusion of Exicom 
+Tele-Systems Ltd. and JNK India Ltd. in various indices: 
+ 
+Sr. 
+No. Index Name Security Name Symbol Remarks 
+1 Nifty Microcap 
+250 
+Exicom Tele-Systems Ltd. EXICOM Inclusion revoked 
+JNK India Ltd. JNKINDIA Inclusion revoked 
+DCM Shriram Ltd. DCMSHRIRAM Inclusion 
+Lakshmi Machine Works Ltd. LAXMIMACH Inclusion 
+2 Nifty Total 
+Market 
+Exicom Tele-Systems Ltd. EXICOM Inclusion revoked 
+JNK India Ltd. JNKINDIA Inclusion revoked 
+ 
+ 
+DCM Shriram Ltd. DCMSHRIRAM Exclusion revoked 
+Lakshmi Machine Works Ltd. LAXMIMACH Inclusion 
+ 
+This press release should be read in consonance with the press release issued on August 23, 2024. 
+ 
+C. Replacements on account of monthly review of Nifty Shariah indices: 
+ 
+On account of monthly review of Shariah compliance, replacement of stocks in Nifty Shariah indices 
+shall be made as listed hereunder: 
+ 
+1) Nifty50 Shariah 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 LTIMindtree Ltd. LTIM 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Bharat Petroleum Corporation Ltd. BPCL 
+2 Trent Ltd. TRENT 
+ 
+2) Nifty500 Shariah 
+ 
+The following companies are being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Aether Industries Ltd. AETHER 
+2 Allcargo Logistics Ltd. ALLCARGO 
+3 Anupam Rasayan India Ltd. ANURAS 
+4 Bharat Electronics Ltd. BEL 
+5 Clean Science and Technology Ltd. CLEAN 
+6 Engineers India Ltd. ENGINERSIN 
+7 EPL Ltd. EPL 
+8 FDC Ltd. FDC 
+9 Glenmark Life Sciences Ltd. GLS 
+10 GMM Pfaudler Ltd. GMMPFAUDLR 
+11 Happy Forgings Ltd. HAPPYFORGE 
+12 Indigo Paints Ltd. INDIGOPNTS 
+ 
+ 
+Sr. No. Company Name Symbol 
+13 Indus Towers Ltd. INDUSTOWER 
+14 Jai Balaji Industries Ltd. JAIBALAJI 
+15 Kaynes Technology India Ltd. KAYNES 
+16 Kfin Technologies Ltd. KFINTECH 
+17 KRBL Ltd. KRBL 
+18 Krishna Institute of Medical Sciences Ltd. KIMS 
+19 Laxmi Organic Industries Ltd. LXCHEM 
+20 Medplus Health Services Ltd. MEDPLUS 
+21 PCBL Ltd. PCBL 
+22 Prince Pipes and Fittings Ltd. PRINCEPIPE 
+23 RITES Ltd. RITES 
+24 Safari Industries (India) Ltd. SAFARI 
+25 Vaibhav Global Ltd. VAIBHAVGBL 
+26 Vedant Fashions Ltd. MANYAVAR 
+27 Zensar Technolgies Ltd. ZENSARTECH 
+ 
+The following companies are being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Anant Raj Ltd. ANANTRAJ 
+2 BASF India Ltd. BASF 
+3 Bharat Petroleum Corporation Ltd. BPCL 
+4 Bombay Burmah Trading Corporation Ltd. BBTC 
+5 GE T&D India Ltd. GET&D 
+6 Indian Oil Corporation Ltd. IOC 
+7 INOX India Ltd. INOXINDIA 
+8 Kirloskar Brothers Ltd. KIRLOSBROS 
+9 Netweb Technologies India Ltd. NETWEB 
+10 Ramkrishna Forgings Ltd. RKFORGE 
+11 Shipping Corporation of India Ltd. SCI 
+12 Sterling and Wilson Renewable Energy Ltd. SWSOLAR 
+13 Suzlon Energy Ltd. SUZLON 
+14 Vinati Organics Ltd. VINATIORGA 
+ 
+ 
+ 
+3) Nifty Shariah 25 
+ 
+ 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Bharat Electronics Ltd. BEL 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Cummins India Ltd. CUMMINSIND 
+ 
+D. Change in maintenance guidelines for Investable Weight Factor (IWF) calculation: 
+ 
+Parameter Existing Methodology Revised Methodology 
+Investible Weight Factor 
+(IWF) calculation 
+The IWF is rounded to two 
+decimals. For example: 0.12 
+The IWF will be rounded to six 
+decimals. For example: 0.123456 
+ 
+For detailed guidelines regarding calculation of IWF’s,  please refer index methodology document 
+published on our website www.niftyindices.com. 
+ 
+About NSE Indices Limited:  
+NSE Indices Limited (formerly known as India Index Services & Products Ltd. - IISL), a subsidiary of 
+NSE, provides a variety of indices and index related services for the capital markets. The company 
+focuses on the index as a core product. The company owns  and manages a portfolio of indices under 
+the Nifty brand of NSE, including the flagship index, the Nifty 50. Nifty equity indices comprises 
+broad-based benchmark indices, sectoral indices, strategy indices, thematic indices, and customised 
+indices. NSE In dices Limited also maintains fixed income indices based on Government of India 
+securities, corporate bonds, money market instruments and hybrid indices. Many investment products 
+based on Nifty indices have been developed within India and abroad. These incl ude index -based 
+derivatives traded on NSE and NSE International Exchange IFSC Limited (NSE IX) and a number of 
+index funds and exchange traded funds. The flagship 'Nifty 50' index is widely tracked and traded as 
+the benchmark for Indian Capital Markets.  
+For more information, please visit: www.niftyindices.com 
+Press contact: 
+Email ID: cc@nse.co.in  

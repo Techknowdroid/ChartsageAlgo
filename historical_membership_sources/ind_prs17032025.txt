@@ -1,0 +1,202 @@
+ 
+ 
+ 
+PRESS RELEASE 
+Mumbai, March 17, 2025 
+Replacement in indices 
+ 
+NSE vide its circular NSE/CML/67118 dated March 13, 2025 has announced suspension of trading in 
+equity shares of ICICI Securities Ltd. The Index Maintenance Sub-Committee (Equity) of NSE Indices 
+Limited has decided to replace ICICI Securities Ltd.  from various indices as listed hereunder.  These 
+changes shall become effective from March 21, 2025 (close of March 20, 2025). 
+ 
+ 
+1) Nifty 500 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 ICICI Securities Ltd. ISEC 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Raymond Lifestyle Ltd. RAYMONDLSL 
+ 
+The above replacement will also be applicable to Nifty500 Equal Weight, Nifty500 Multicap 50:25:25 
+and Nifty500 LargeMidSmall Equal-Cap Weighted indices. 
+ 
+ 
+2) Nifty Smallcap 250 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 ICICI Securities Ltd. ISEC 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Raymond Lifestyle Ltd. RAYMONDLSL 
+ 
+ 
+ 
+3) Nifty MidSmallcap 400 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 ICICI Securities Ltd. ISEC 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Raymond Lifestyle Ltd. RAYMONDLSL 
+ 
+4) Revocation of replacement of stocks in Nifty Microcap 250 index 
+ 
+On February 21, 2025, inclusion of Raymond Lifestyle Ltd.  in Nifty Microcap 250  index was 
+announced effective March 28, 2025. On account of inclusion of Raymond Lifestyle Ltd. in Nifty 500 
+index effective March 21, 2025, inclusion of Raymond Lifestyle Ltd.  in Nifty Microcap 250 index 
+effective March 28, 2025 is revoked and accordingly exclusion of Thirumalai Chemicals Ltd.  from 
+Nifty Microcap 250 index is revoked effective March 28, 2025. 
+ 
+Sr. No. Company Name Symbol Remarks 
+1 Raymond Lifestyle Ltd. RAYMONDLSL Inclusion revoked 
+2 Thirumalai Chemicals Ltd. TIRUMALCHM Exclusion revoked 
+ 
+5) Nifty Total Market 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 ICICI Securities Ltd. ISEC 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Raymond Lifestyle Ltd. RAYMONDLSL 
+ 
+Note: On February 21, 2025 , inclusion of Raymond Lifestyle Ltd. in Nifty Total Market index was 
+announced effective March 28, 2025. On account of inclusion of Raymond Lifestyle Ltd. as replacement 
+of ICICI Securities Ltd. in Nifty 500 and therefore in Nifty Total Market index effective March 21, 2025, 
+inclusion of Raymond Lifestyle Ltd. announced on effective March 28, 2025 is revoked and accordingly 
+exclusion of Thirumalai Chemicals Ltd. from Nifty Total Market index is revoked effective March 28, 
+2025. 
+ 
+ 
+ 
+6) Nifty India New Age Consumption 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 ICICI Securities Ltd. ISEC 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Aditya Birla Sun Life AMC Ltd. ABSLAMC 
+ 
+7) Nifty Smallcap250 Quality 50 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 ICICI Securities Ltd. ISEC 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 RITES Ltd. RITES 
+ 
+8) Nifty500 Quality 50  
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 ICICI Securities Ltd. ISEC 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Schneider Electric Infrastructure Ltd. SCHNEIDER 
+ 
+ 
+ 
+ 
+9) Nifty Smallcap250 Momentum Quality 100 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 ICICI Securities Ltd. ISEC 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Blue Star Ltd. BLUESTARCO 
+ 
+ 
+10) Nifty MidSmallcap400 Momentum Quality 100  
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 ICICI Securities Ltd. ISEC 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Blue Star Ltd. BLUESTARCO 
+ 
+ 
+11) Nifty500 Multicap Momentum Quality 50 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 ICICI Securities Ltd. ISEC 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 AstraZenca Pharma India Ltd. ASTRAZEN 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+12) Nifty500 Multifactor MQVLv 50 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 ICICI Securities Ltd. ISEC 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Muthoot Finance Ltd. MUTHOOTFIN 
+ 
+ 
+About NSE Indices Limited:  
+NSE Indices Limited (formerly known as India Index Services & Products Ltd. - IISL), a subsidiary of 
+NSE, provides a variety of indices and index related services for the capital markets. The company 
+focuses on the index as a core product. The company owns  and manages a portfolio of indices under 
+the Nifty brand of NSE, including the flagship index, the Nifty 50. Nifty equity indices comprises 
+broad-based benchmark indices, sectoral indices, strategy indices, thematic indices and customised 
+indices. NSE Ind ices Limited also maintains fixed income indices based on Government of India 
+securities, corporate bonds, money market instruments and hybrid indices. Many investment products 
+based on Nifty indices have been developed within India and abroad. These inclu de index -based 
+derivatives traded on NSE and NSE International Exchange IFSC Limited (NSE IX) and a number of 
+index funds and exchange traded funds. The flagship 'Nifty 50' index is widely tracked and traded as 
+the benchmark for Indian Capital Markets.  
+For more information, please visit: www.niftyindices.com 
+Press contact: 
+Email ID: cc@nse.co.in 
+ 
+ 
+  

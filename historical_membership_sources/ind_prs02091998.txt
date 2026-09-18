@@ -1,0 +1,248 @@
+National Stock Exchange of India Ltd.
+http://www.nseindia.com/[25-03-2011 12:42:25]
+EQUITIES
+FUTIDX
+IISL
+-----
+Products &
+Services
+-----
+IISL Indices
+-----
+Index Concepts
+-----
+Statistics
+-----
+Index Funds
+-----
+IISL Press
+Releases
+-----
+FAQs
+-----
+IISL - Publications
+-----
+Licensing
+-----
+Contact Us
+-----
+  Home > Indices  > IISL Press Releases  > Sep 2, 1998
+Press Release
+Change in indices w.e.f. Oct 7, 1998
+India Index Services & Products Limited (IISL), a joint venture company of National
+Stock Exchange of India Limited (NSE) and The Credit Rating Information Services of India
+Limited (CRISIL) has been set up to provide indices and index related services. IISL has a
+consulting and license agreement with Standard & Poor's Financial Services (S&P), for co-
+branding its indices. All the erstwhile indices of NSE and CRISIL have been transferred to
+IISL which now maintains and disseminates these indices. The indices of IISL are now
+known under the following names:
+S.No. Old Name New Name
+1 Nifty S&P CNX Nifty
+2 Defty S&P CNX Defty
+3 Crisil 500 Equity Index  S&P CNX 500 Equity Index 
+4 Nifty Junior CNX Nifty Junior
+5 Crisil Midcap 200 CNX Midcap 200 Index
+6 Crisil PSE CNX PSE Index
+7 Crisil IBG CNX IBG Index
+8 Crisil MNC CNX MNC Index
+PSE indicates Public Sector Enterprises
+IBG indicates Indian Business Group
+MNC indicates Multinational Corporation
+In order to ensure a high degree of reliability of indices and to ensure that indices
+dynamically reflect the market IISL carries out quarterly review of its various indices. IISL
+has set up an Index Policy Committee
+ consisting of eminent personalities in the field of
+finance, trading members, academicians and representatives of NSE, CRISIL and S&P to
+look into macro issues pertaining to index management and to lay down broad operational
+guidelines for managing the indices. The Committee will meet atleast twice a year.
+IISL has further constituted an Index Maintenance Sub-Committee
+ comprising of
+representatives of NSE, CRISIL and S&P whose primary function is to oversee index
+maintance and ensure that operational activities related to index maintenance are carried
+out as per the policy guidelines framed by Index Policy Committee. The Sub-Committee will
+meet atleast four times in a year.
+The Index Maintenance Sub-Committee of India Index Services & Products Ltd. (IISL) met
+on September 2, 1998 to finalise changes in various indices.
+The changes being made in the various indices is enclosed:
+(1) S&P CNX Nifty
+Changes in S&P CNX Nifty
+Market Capitalisation as
+on Sept. 1, 1998. (Rs.
+million)
+Avg. Impact Cost (Aug. 97 to
+July. 98) Portfolio Size: Rs. 50
+lakhs
+  Buy Sell Avg.
+National Stock Exchange of India Ltd.
+http://www.nseindia.com/[25-03-2011 12:42:25]
+Inclusions
+Infosys Technologies Ltd.
+(INFOSYSTCH) 39065 0.32 0.32 0.32
+NIIT Limited (NIIT) 38612 0.46 0.46 0.46
+Bank of India (BANKINDIA) 16997 0.43 0.43 0.43
+Smithkline Beecham
+Consumer Healthcare Ltd.
+(SMITHKBECH)
+20029 0.41 0.39 0.41
+Hero Honda Motors Ltd.
+(HEROHONDA) 22958 0.31 0.31 0.31
+Proctor & Gamble India
+Ltd.(P&G) 17111 0.33 0.33 0.33
+Cipla Ltd. (CIPLA) 15481 0.44 0.44 0.44
+ 
+Exclusions 
+Bharat Petroleum Corporation
+Ltd. (BPCL) 34928 1.14 1.07 1.11
+Ashok Leyland Limited
+(ASHOKLEY) 700 0.61 0.60 0.60
+Indo Gulf Fertilisers &
+Chemicals Corp. Ltd.
+(INFOGULF)
+6616 0.59 0.58 0.59
+Andhra Valley Power Supply
+Company Ltd. (ANDRAVALLY) 4961 0.53 0.53 0.53
+Thermax Limited (THERMAX) 4432 0.49 0.49 0.49
+Mangalore Refinery and
+Petrochemicals Ltd. (MRPL) 6328 0.50 0.49 0.49
+Ponds India Limited (PONDS) 35420 0.22 0.22 0.22
+Note: (i)The security Ponds India Limited (PONDS) is being excluded from the Index since
+it is being merged with Hindustan Levers Limited (HINDLEVER).
+(ii) The security Bharat Petroleum Corporation Ltd. (BPCL) has been excluded since it has
+been trading at an average impact cost of more than 1.5% for 45% of the trading days in
+the last one year.
+With this the total market capitalisation of S&P CNX Nifty is Rs. 18,35,000 millions which
+accounts for 46% of the total market capitalisation on the NSE.
+(2) CNX Nifty Junior
+Changes in CNX Nifty Junior
+Market Capitalisation as
+on Sept. 1, 1998. (Rs.
+million)
+Avg. Impact Cost (Aug. 97 to
+July. 98) Portfolio Size: Rs. 25
+lakhs
+  Buy Sell Avg.
+Inclusions
+Bank of Baroda
+(BANKBARODA) 23177 0.73 0.68 0.71
+Tata Infotech Ltd.
+(TATAUNSYS) 18992 0.88 0.87 0.88
+Dr. Reddy's Laboratries Ltd.
+(DRREDDY) 10608 0.27 0.26 0.27
+Satyam Computers Services
+Ltd. (SATYAMCOMP) 11693 0.86 0.85 0.86
+Zee Telefilms Ltd. (ZEETELE) 10176 1.35 1.34 1.35
+Pentafour Software & Exports
+National Stock Exchange of India Ltd.
+http://www.nseindia.com/[25-03-2011 12:42:25]
+ 
+ 
+Ltd. (PENTSFWARE) 9906 1.16 1.16 1.16
+Nirma Limited (NIRMA) 10334 1.38 1.43 1.41
+Nicholas Piramal India Limited
+(NICOLASPIR) 8463 0.66 0.61 0.64
+ICI India Limited (ICI) 9396 1.09 1.03 1.06
+ICICI Bank Limited
+(ICICIBANK) 5989 1.26 1.26 1.27
+Gujarat State Fertilisers &
+Chemicals Ltd. (GSFC) 5015 1.29 1.14 1.22
+ 
+Exclusions
+Nippon Denro Ispat Ltd.
+(NIPPONDENR) 847 1.80 1.66 1.73
+Hindustan Powerplus Ltd.
+(HINDPOWPLUS) 908 1.15 1.14 1.14
+GEC Alsthom India Ltd.
+(GECALSTHOM) 1323 1.13 1.13 1.13
+Kotak Mahindra Finance Ltd.
+(KOTAKMAH) 732 1.06 1.06 1.06
+Lakme India Limited (LAKME) 1148 0.59 0.59 0.59
+Cipla Ltd. (CIPLA) 15481 0.44 0.44 0.44
+Proctor & Gamble India
+Ltd.(P&G) 17111 0.34 0.34 0.34
+Smithkline Beecham
+Consumer Healthcare Ltd.
+(SMITHKBECH)
+20029 0.42 0.39 0.40
+Hero Honda Motors Ltd.
+(HEROHONDA) 22958 0.34 0.33 0.33
+NIIT Limited (NIIT) 38612 0.48 0.48 0.48
+Infosys Technologies Ltd.
+(INFOSYSTCH) 39065 0.33 0.33 0.33
+With this the total market capitalisation of CNX Nifty Junior is Rs. 3,39,522 millions which
+accounts for 8% of the total market capitalisation on the NSE. 
+(3) S&P CNX 500
+ Company excluded Company included
+S&P CNX 500 Equity Index Transport Corporation of India CMC Limited
+S&P CNX Travel and Transport Index
+(Industry Index) Transport Corporation of India  
+S&P CNX Computers Hardware Index
+(Industry Index)  CMC Limited
+(4) CNX MidCap 200
+The companies being excluded from the CNX MidCap 200 are:
+Name Industry
+Hamco Mining & Smelting Limited Aluminium
+NIIT Limited Computers Software
+Infosys Technologies Limited Computers Software
+National Stock Exchange of India Ltd.
+http://www.nseindia.com/[25-03-2011 12:42:25]
+Wipro Limited Diversified
+Prakash Industries Limited Diversified
+Birla VXL Limited Diversified
+Ashok Leyland Finance Limited Finance
+Chemplast Sanmar Limited Petrochemicals
+Ion Exchange India Limited Pollution Control Equipment
+Tata SSL Limited Steel And Steel Products
+Woolworth (India) Limited Textiles Other
+SIV Industries Limited Textiles Synthetic
+J K Industries Limited Tyres
+The companies being included in the CNX MidCap 200 are:
+Name Industry
+Indian Aluminium Company Limited Aluminium
+ICICI Banking Corporation Limited Banks
+Oriental Bank Of Commerce Banks
+Ingersoll Rand India Limited Compressors / Pumps
+Indian Rayon And Industries Limited Diversified
+Sundaram Finance Limited Finance
+Industrial Finance Corporation Of India Financial Institution
+Sterlite Industries India Limited Metals
+Asian Paints India Limited Paints
+Cochin Refineries Limited Refineries
+Great Eastern Shipping Company Limited Shipping
+George Williamson Assam Limited Tea And Coffee
+Duncan Industries Limited Tea And Coffee
+(5) CNX IBG Index
+The companies being excluded in the CNX IBG Index are:
+Name Group
+Southern Iron & Steel Co Ltd Lakshmi Group (Naidu G.V.)
+Sterling Computers Ltd Essar (Ruia) Group
+Anagram Finance Ltd Lalbhai Group
+Boehringer Manheim Ltd Piramal Ajay Group
+Modipon Limited Modi Kedarnath Group
+Rane (Madras) Ltd Rane Group
+Engine Valves Rane Group
+The companies being included in the CNX IBG Index are:
+Name Group
+Vam Organic Chemicals Ltd Bharatia Group
+National Stock Exchange of India Ltd.
+http://www.nseindia.com/[25-03-2011 12:42:25]
+Universal Cables Ltd Birla K.K. Group
+L G Balakrishnan Ltd Elgi Group
+Kirloskar Pneumatics Co Ltd Kirloskar Group
+Ceat Financial Services Ltd RPG Enterp. Group
+Tata Elxsi Ind Ltd Tata Group
+Premier Auto Electric Ltd Vinod Doshi Group
+(6) CNX MNC Index
+The companies being excluded in the CNX MNC Index are:
+Name Industry
+Hoechst Schering Agrevo Ltd Pesticides & Agrochem
+Pond's India Ltd Personal Care
+Nalco Chemicals India Ltd. Chemicals Speciality
+The companies being included in the CNX MNC Index are:
+Name Industry
+Burroughs Wellcome India Ltd Pharmaceuticals
+Parke Davis India Ltd Pharmaceuticals
+German Remedies Pharmaceuticals
+The above changes will come into effect on October 7, 1998.
+Place: Mumbai
+Date : September 2, 1998
+Top

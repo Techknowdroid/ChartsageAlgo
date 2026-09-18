@@ -1,0 +1,289 @@
+ 
+ 
+ 
+PRESS RELEASE 
+Mumbai, July 13, 2026 
+Replacement in indices 
+ 
+The Index Maintenance Sub -Committee (Equity) of NSE Indices Limited has decided to make the 
+following replacement in indices on account scheme of  amalgamation of J.B. Chemicals & 
+Pharmaceuticals Ltd. into Torrent Pharmaceuticals Ltd. These changes shall become effective from July 
+17, 2026 (close of July 16, 2026). 
+ 
+1) Nifty 500 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 J.B. Chemicals & Pharmaceuticals Ltd. JBCHEPHARM 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Prime Focus Ltd. PFOCUS 
+ 
+The above replacement will also be applicable to Nifty500 Equal Weight, Nifty500 Multicap 50:25:25 
+and Nifty500 LargeMidSmall Equal-Cap Weighted indices. 
+ 
+2) Nifty Smallcap 250 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 J.B. Chemicals & Pharmaceuticals Ltd. JBCHEPHARM 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Prime Focus Ltd. PFOCUS 
+ 
+ 
+ 
+ 
+ 
+ 
+3) Nifty MidSmallcap 400 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 J.B. Chemicals & Pharmaceuticals Ltd. JBCHEPHARM 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Prime Focus Ltd. PFOCUS 
+ 
+The above replacement will also be applicable to Nifty MidSmallcap400 50:50 index. 
+ 
+4) Nifty Microcap 250 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 Prime Focus Ltd. PFOCUS 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Grindwell Norton Ltd. GRINDWELL 
+ 
+5) Nifty Total Market 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 J.B. Chemicals & Pharmaceuticals Ltd. JBCHEPHARM 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Grindwell Norton Ltd. GRINDWELL 
+ 
+ 
+ 
+ 
+ 
+6) Nifty Smallcap 500 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 J.B. Chemicals & Pharmaceuticals Ltd. JBCHEPHARM 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Ratnamani Metals & Tubes Ltd. RATNAMANI 
+ 
+7) Nifty Pharma 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 J.B. Chemicals & Pharmaceuticals Ltd. JBCHEPHARM 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Sai Life Sciences Ltd. SAILIFE 
+ 
+8) Nifty500 Healthcare 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 J.B. Chemicals & Pharmaceuticals Ltd. JBCHEPHARM 
+ 
+No inclusion is being made in the index. 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+9) Nifty500 Multicap India Manufacturing 50:30:20 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 J.B. Chemicals & Pharmaceuticals Ltd. JBCHEPHARM 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Force Motors Ltd. FORCEMOT 
+ 
+10) Nifty MidSmall Healthcare 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 J.B. Chemicals & Pharmaceuticals Ltd. JBCHEPHARM 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Acutaas Chemicals Ltd. ACUTAAS 
+ 
+11) Nifty Smallcap250 Quality 50 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 J.B. Chemicals & Pharmaceuticals Ltd. JBCHEPHARM 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Indian Energy Exchange Ltd. IEX 
+ 
+ 
+ 
+ 
+ 
+ 
+12) Nifty500 Flexicap Quality 30 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 J.B. Chemicals & Pharmaceuticals Ltd. JBCHEPHARM 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Himadri Speciality Chemical Ltd. HSCL 
+ 
+13) Nifty MidSmallcap400 Momentum Quality 100 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 J.B. Chemicals & Pharmaceuticals Ltd. JBCHEPHARM 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Saregama India Ltd SAREGAMA 
+ 
+14) Nifty500 Multicap Momentum Quality 50 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 J.B. Chemicals & Pharmaceuticals Ltd. JBCHEPHARM 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Caplin Point Laboratories Ltd. CAPLIPOINT 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+15) Nifty Total Market Momentum Quality 50 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 J.B. Chemicals & Pharmaceuticals Ltd. JBCHEPHARM 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Caplin Point Laboratories Ltd. CAPLIPOINT 
+ 
+16) Nifty500 Low Volatility 50 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 J.B. Chemicals & Pharmaceuticals Ltd. JBCHEPHARM 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 NTPC Ltd. NTPC 
+ 
+17) Nifty500 Multifactor MQVLv 50 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 J.B. Chemicals & Pharmaceuticals Ltd. JBCHEPHARM 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 ITC Ltd. ITC 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+18) Nifty Smallcap250 Momentum Quality 100 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 J.B. Chemicals & Pharmaceuticals Ltd. JBCHEPHARM 
+ 
+The following company is being included: 
+ 
+Sr. No. Company Name Symbol 
+1 Zydus Wellness Ltd. ZYDUSWELL 
+ 
+19) Nifty500 Shariah 
+ 
+The following company is being excluded: 
+ 
+Sr. No. Company Name Symbol 
+1 J.B. Chemicals & Pharmaceuticals Ltd. JBCHEPHARM 
+ 
+No inclusion is being made in the index. 
+ 
+About NSE Indices Limited:  
+NSE Indices Limited (formerly known as India Index Services & Products Ltd. - IISL), a subsidiary of 
+NSE, provides a variety of indices and index related services for the capital markets. The company 
+focuses on the index as a core product. The company owns  and manages a portfolio of indices under 
+the Nifty brand of NSE, including the flagship index, the Nifty 50. Nifty equity indices comprises 
+broad-based benchmark indices, sectoral indices, strategy indices, thematic indices and customised 
+indices. NSE Ind ices Limited also maintains fixed income indices based on Government of India 
+securities, corporate bonds, money market instruments and hybrid indices. Many investment products 
+based on Nifty indices have been developed within India and abroad. These inclu de index -based 
+derivatives traded on NSE and NSE International Exchange IFSC Limited (NSE IX) and a number of 
+index funds and exchange traded funds. The flagship 'Nifty 50' index is widely tracked and traded as 
+the benchmark for Indian Capital Markets.  
+For more information, please visit: www.niftyindices.com 
+Press contact: 
+Email ID: cc@nse.co.in  
