@@ -106,6 +106,18 @@ here.
    not complete if their required files can run locally but cannot be restored
    from a newly created important backup.
 
+## GitHub source updates
+
+1. `update_github.py` is the standard helper for reviewing, committing and
+   pushing this repository after the user explicitly requests a GitHub update.
+2. Before publishing, review the staged file list and diff/stat, honour
+   `.gitignore`, and do not publish credentials, tokens, live databases,
+   archives, generated distributions, reports or other private/runtime data.
+3. Never treat GitHub as the restorable operational-data backup. Continue to
+   use `create_important_backup.py` for the complete local project backup.
+4. Do not commit or push merely because source files changed; publish only
+   when the user asks for it.
+
 ## When in doubt
 
 Re-read these rules before any read or write operation. The boundary is

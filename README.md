@@ -26,9 +26,22 @@ Use `create_important_backup.py` for a complete restorable local backup. Use
 `build_portable_bundle.py` when an explicitly requested, validated portable
 Windows distribution is required.
 
+## Updating GitHub after future changes
+
+Run the interactive safety helper from PowerShell in this folder:
+
+```powershell
+python update_github.py
+```
+
+It shows the changed and staged files, checks for common private-data mistakes,
+asks for a commit message, and requires confirmation before committing and
+pushing. It respects `.gitignore`. This is only a source-code update; run
+`create_important_backup.py` separately for a restorable backup containing the
+local databases and operational data.
+
 ## Safety
 
 The FINAL ChartInk application provides guidance and historical paper replay;
 it does not place Zerodha orders. Each user must configure their own broker and
 Telegram credentials locally. Secrets are never intended to be committed.
-
