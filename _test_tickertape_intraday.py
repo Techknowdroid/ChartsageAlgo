@@ -44,6 +44,35 @@ class _FakeClient:
 
 
 def main() -> None:
+    ist = timezone(timedelta(hours=5, minutes=30))
+    market_open = datetime(2026, 9, 21, 9, 15).time()
+    # A previous-session Tickertape candle must not trigger hundreds of
+    # per-symbol fallbacks on weekends, holidays, or before the market opens.
+    assert not provider.should_fetch_intraday_quotes(
+        date(2026, 9, 19),
+        datetime(2026, 9, 19, 12, 0, tzinfo=ist),
+        False,
+        market_open,
+    )
+    assert not provider.should_fetch_intraday_quotes(
+        date(2026, 9, 21),
+        datetime(2026, 9, 21, 9, 14, tzinfo=ist),
+        True,
+        market_open,
+    )
+    assert provider.should_fetch_intraday_quotes(
+        date(2026, 9, 21),
+        datetime(2026, 9, 21, 9, 15, tzinfo=ist),
+        True,
+        market_open,
+    )
+    assert provider.should_fetch_intraday_quotes(
+        date(2026, 9, 21),
+        datetime(2026, 9, 21, 16, 0, tzinfo=ist),
+        True,
+        market_open,
+    )
+
     original_factory = provider._new_client
     original_mapping = provider._ticker_to_sids
     try:

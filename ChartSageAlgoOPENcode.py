@@ -44,6 +44,7 @@ from tickertape_intraday import (
     get_session_price_mode,
     session_price_mode_label,
     set_session_price_mode,
+    should_fetch_intraday_quotes,
 )
 from startup_market_maintenance import (
     run_startup_maintenance_dialog,
@@ -6770,21 +6771,25 @@ def resolve_universes(
 def wilder_rma(series: pd.Series, period: int) -> pd.Series:
     """TradingView/Pine ta.rma: SMA seed, then alpha=1/period recursion."""
     values = pd.to_numeric(series, errors="coerce").astype(float)
-    result = pd.Series(np.nan, index=values.index, dtype=float)
-    valid_positions = np.flatnonzero(np.isfinite(values.to_numpy()))
+    raw = values.to_numpy(dtype=float, copy=False)
+    output = np.full(len(raw), np.nan, dtype=float)
+    valid_positions = np.flatnonzero(np.isfinite(raw))
     if len(valid_positions) < period:
-        return result
+        return pd.Series(output, index=values.index, dtype=float)
 
     seed_position = int(valid_positions[period - 1])
-    previous = float(values.iloc[valid_positions[:period]].mean())
-    result.iloc[seed_position] = previous
+    previous = float(raw[valid_positions[:period]].mean())
+    output[seed_position] = previous
     alpha = 1.0 / period
-    for position in range(seed_position + 1, len(values)):
-        current = float(values.iloc[position])
+    # NumPy array access avoids two expensive Pandas ``iloc`` operations for
+    # every historical bar of every scanned stock while preserving the exact
+    # TradingView-compatible recurrence and missing-value behavior.
+    for position in range(seed_position + 1, len(raw)):
+        current = raw[position]
         if math.isfinite(current):
             previous = alpha * current + (1.0 - alpha) * previous
-        result.iloc[position] = previous
-    return result
+        output[position] = previous
+    return pd.Series(output, index=values.index, dtype=float)
 
 
 def rsi(series: pd.Series, period: int) -> pd.Series:
@@ -7137,14 +7142,22 @@ def evaluate_ast(node: dict[str, Any], market: MarketData, evidence: list[dict[s
                 k = 1
             return sum(1 for outcome in outcomes if outcome) >= k
         return all(outcomes)
-    left = market.scalar(node["left"])
-    right = market.scalar(node["right"])
-    previous_left = market.scalar(node["left"], 1)
-    previous_right = market.scalar(node["right"], 1)
     if is_high_range_operator(node["operator"]):
+        # This operator has dedicated above/below percentages, so operand scale
+        # multipliers must never distort its Close-versus-prior-high comparison.
+        left_operand = {**node["left"], "multiplier": 1.0}
+        right_operand = {**node["right"], "multiplier": 1.0}
+        left = market.scalar(left_operand)
+        right = market.scalar(right_operand)
+        previous_left = market.scalar(left_operand, 1)
+        previous_right = market.scalar(right_operand, 1)
         above, below, _offset = range_rule_limits(node)
         matched = within_52_week_high_range(left, right, above, below)
     else:
+        left = market.scalar(node["left"])
+        right = market.scalar(node["right"])
+        previous_left = market.scalar(node["left"], 1)
+        previous_right = market.scalar(node["right"], 1)
         matched = compare_values(left, node["operator"], right, previous_left, previous_right)
     evidence.append(
         {
@@ -7277,37 +7290,45 @@ def evaluate_historical_ast(
             result = result & outcome
         return result
 
-    left = market.aligned(node["left"])
-    right = market.aligned(node["right"])
-    previous_left = market.aligned(node["left"], 1)
-    previous_right = market.aligned(node["right"], 1)
-    valid = np.isfinite(left) & np.isfinite(right)
     operator = node["operator"]
     if is_high_range_operator(operator):
+        left_operand = {**node["left"], "multiplier": 1.0}
+        right_operand = {**node["right"], "multiplier": 1.0}
+        left = market.aligned(left_operand)
+        right = market.aligned(right_operand)
+        previous_left = market.aligned(left_operand, 1)
+        previous_right = market.aligned(right_operand, 1)
+        valid = np.isfinite(left) & np.isfinite(right)
         above, below, _offset = range_rule_limits(node)
         lower_bound = right * (1.0 - below / 100.0)
         upper_bound = right * (1.0 + above / 100.0)
         matched = valid & (right > 0) & (left >= lower_bound) & (left <= upper_bound)
-    elif operator == ">":
-        matched = valid & (left > right)
-    elif operator == ">=":
-        matched = valid & (left >= right)
-    elif operator == "<":
-        matched = valid & (left < right)
-    elif operator == "<=":
-        matched = valid & (left <= right)
-    elif operator == "=":
-        matched = valid & (left == right)
-    elif operator == "!=":
-        matched = valid & (left != right)
     else:
-        previous_valid = np.isfinite(previous_left) & np.isfinite(previous_right)
-        if operator == "crosses above":
-            matched = valid & previous_valid & (left > right) & (previous_left <= previous_right)
-        elif operator == "crosses below":
-            matched = valid & previous_valid & (left < right) & (previous_left >= previous_right)
+        left = market.aligned(node["left"])
+        right = market.aligned(node["right"])
+        previous_left = market.aligned(node["left"], 1)
+        previous_right = market.aligned(node["right"], 1)
+        valid = np.isfinite(left) & np.isfinite(right)
+        if operator == ">":
+            matched = valid & (left > right)
+        elif operator == ">=":
+            matched = valid & (left >= right)
+        elif operator == "<":
+            matched = valid & (left < right)
+        elif operator == "<=":
+            matched = valid & (left <= right)
+        elif operator == "=":
+            matched = valid & (left == right)
+        elif operator == "!=":
+            matched = valid & (left != right)
         else:
-            raise ValueError(f"Unsupported operator: {operator}")
+            previous_valid = np.isfinite(previous_left) & np.isfinite(previous_right)
+            if operator == "crosses above":
+                matched = valid & previous_valid & (left > right) & (previous_left <= previous_right)
+            elif operator == "crosses below":
+                matched = valid & previous_valid & (left < right) & (previous_left >= previous_right)
+            else:
+                raise ValueError(f"Unsupported operator: {operator}")
     evidence.append(
         {
             "rule": expression_text(node),
@@ -7752,14 +7773,27 @@ class RuleScannerWorker(QThread):
         frames: dict[str, pd.DataFrame] = {}
         to_download: list[str] = []
         tickertape_candidates: dict[str, pd.DataFrame] = {}
-        use_tickertape = (
+        current_ist = get_ist_now()
+        tickertape_requested = (
             get_session_price_mode() == TICKERTAPE_PRICE_MODE
             and latest_request
             and bool(self.setup.get("include_current", False))
-            and as_of.date() == get_ist_now().date()
+            and as_of.date() == current_ist.date()
         )
+        use_tickertape = bool(
+            tickertape_requested
+            and should_fetch_intraday_quotes(
+                as_of.date(),
+                current_ist,
+                NSE_CALENDAR.is_session_date(current_ist.date()),
+                NSE_CALENDAR.session_open_time(
+                    current_ist.date(), NSE_MARKET_OPEN
+                ),
+            )
+        )
+        use_completed_official = bool(tickertape_requested and not use_tickertape)
         historical_end = as_of - pd.Timedelta(days=1)
-        if use_tickertape:
+        if tickertape_requested:
             required_completed_date = coverage_end_floor(historical_end).date()
             sync = ensure_recent_bhavcopy(
                 required_completed_date,
@@ -7779,24 +7813,39 @@ class RuleScannerWorker(QThread):
                     f"fallback remains active ({sync.error})",
                 )
         official_history_ready = bool(
-            use_tickertape
+            tickertape_requested
             and official_bhavcopy_history_covers(start, historical_end)
         )
+        if use_completed_official and official_history_ready:
+            progress(
+                1,
+                "No current NSE session is available yet; using completed "
+                f"official prices through {coverage_end_floor(historical_end).date().isoformat()}",
+            )
 
         def load_cached_symbol(
             symbol: str,
         ) -> tuple[str, pd.DataFrame, bool, bool]:
             cached = cache.load(symbol, start, as_of, adjusted)
             current_covered = bool(
-                not force_fresh
-                and not cached.empty
-                and cache.is_covered(
-                    symbol,
-                    start,
-                    as_of,
-                    adjusted,
-                    latest_request=latest_request,
-                    latest_cache_ttl_seconds=refresh_minutes * 60,
+                not cached.empty
+                and (
+                    (
+                        not force_fresh
+                        and cache.is_covered(
+                            symbol,
+                            start,
+                            as_of,
+                            adjusted,
+                            latest_request=latest_request,
+                            latest_cache_ttl_seconds=refresh_minutes * 60,
+                        )
+                    )
+                    or (
+                        use_completed_official
+                        and official_history_ready
+                        and not str(symbol).strip().upper().endswith(".BO")
+                    )
                 )
             )
             history_covered = bool(
@@ -9064,21 +9113,16 @@ class RuleDialog(QDialog):
 
     def _operator_changed(self, operator: str) -> None:
         is_range = operator == HIGH_52_WEEK_RANGE_OPERATOR
-        if is_range and not (
-            self.rule.get("left", {}).get("kind") == "field"
-            and self.rule["left"].get("name") == "Close"
-            and self.rule.get("right", {}).get("kind") == "field"
-            and self.rule["right"].get("name") == "52 Week High"
-        ):
+        if is_range:
             offset = (
                 int(self.rule["left"].get("offset", 0))
                 if self.rule.get("left", {}).get("kind") == "field"
                 else 0
             )
+            # The range itself supplies the percentage tolerances. Always
+            # normalize Close to scale 1 when this comparison is selected.
             self.rule["left"] = field_operand("Close", "D", offset)
-            self.rule["right"] = field_operand("52 Week High", "D", offset)
             self.left_label.setText(operand_text(self.rule["left"]))
-            self.right_label.setText(operand_text(self.rule["right"]))
         if is_range:
             self._lookback_changed()
         self.above_percent.setEnabled(is_range)
@@ -9146,6 +9190,9 @@ class RuleDialog(QDialog):
         if self.rule["operator"] == HIGH_52_WEEK_RANGE_OPERATOR:
             self.rule["above_percent"] = self.above_percent.value()
             self.rule["below_percent"] = self.below_percent.value()
+            self.rule["left"] = field_operand(
+                "Close", "D", int(self.rule["left"].get("offset", 0))
+            )
             self.rule["right"] = field_operand(
                 "52 Week High",
                 "D",

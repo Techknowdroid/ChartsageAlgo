@@ -16,7 +16,7 @@ import time
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, time as datetime_time, timedelta, timezone
 from typing import Any, Callable, Iterable
 
 
@@ -52,6 +52,29 @@ def session_price_mode_label() -> str:
     if _session_price_mode == TICKERTAPE_PRICE_MODE:
         return "TICKERTAPE batch prices"
     return "Original price approach"
+
+
+def should_fetch_intraday_quotes(
+    request_date: date,
+    current: datetime,
+    is_session_date: bool,
+    session_open: datetime_time,
+) -> bool:
+    """Return whether today's NSE session can have a current intraday candle.
+
+    Tickertape's public quote endpoint retains the previous trading session on
+    weekends, exchange holidays and before the cash market opens.  Treating
+    that legitimate previous-session timestamp as a quote for the calendar day
+    causes every symbol to be rejected as stale and needlessly invokes the
+    slow per-symbol fallback.  Once a real session has started, callers retain
+    the normal batch validation and safe fallback behavior.
+    """
+
+    return bool(
+        request_date == current.date()
+        and is_session_date
+        and current.time() >= session_open
+    )
 
 
 @dataclass(frozen=True)
