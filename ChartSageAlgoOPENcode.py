@@ -932,7 +932,7 @@ def default_setup() -> dict[str, Any]:
         "expression": group_node("AND"),
         "as_of_mode": "latest",
         "as_of_date": date.today().isoformat(),
-        "adjusted": False,
+        "adjusted": True,
         "include_current": True,
         "auto_run": True,
         "auto_run_start_time": "09:15",
@@ -14012,7 +14012,7 @@ class ScannerWindow(QMainWindow):
         col1_left.addLayout(date_form)
 
         self.adjusted = QCheckBox("Technical Adjusted prices (splits/bonus/consolidation)")
-        self.adjusted.setChecked(False)
+        self.adjusted.setChecked(True)
         self.adjusted.setToolTip(
             "Off uses immutable Official Raw NSE prices. On dynamically adjusts "
             "older OHLCV for validated NSE splits, bonuses and consolidations; "
@@ -15557,7 +15557,7 @@ class ScannerWindow(QMainWindow):
         self.historical.setChecked(not latest)
         qdate = QDate.fromString(setup.get("as_of_date", date.today().isoformat()), Qt.DateFormat.ISODate)
         self.as_of_date.setDate(qdate if qdate.isValid() else QDate.currentDate())
-        self.adjusted.setChecked(bool(setup.get("adjusted", False)))
+        self.adjusted.setChecked(bool(setup.get("adjusted", True)))
         self.include_current.setChecked(bool(setup.get("include_current", False)))
         self.auto_run.setChecked(bool(setup.get("auto_run", False)))
         start_time = setup.get("auto_run_start_time", "09:15")
@@ -15873,7 +15873,7 @@ class ScannerWindow(QMainWindow):
             "expression": copy.deepcopy(self.setup["expression"]),
             "as_of_mode": as_of_mode,
             "as_of_date": as_of_date_str,
-            "adjusted": bool(self._safe_widget_val("adjusted", "isChecked", self.setup.get("adjusted", False))),
+            "adjusted": bool(self._safe_widget_val("adjusted", "isChecked", self.setup.get("adjusted", True))),
             "include_current": bool(self._safe_widget_val("include_current", "isChecked", self.setup.get("include_current", False))),
             "auto_run": bool(self._safe_widget_val("auto_run", "isChecked", self.setup.get("auto_run", False))),
             "auto_run_start_time": self.auto_run_start_edit.time().toString("HH:mm"),

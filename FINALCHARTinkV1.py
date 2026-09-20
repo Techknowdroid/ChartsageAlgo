@@ -947,7 +947,7 @@ def default_setup() -> dict[str, Any]:
         "expression": group_node("AND"),
         "as_of_mode": "latest",
         "as_of_date": date.today().isoformat(),
-        "adjusted": False,
+        "adjusted": True,
         "include_current": True,
         "auto_run": True,
         "auto_run_start_time": "09:15",
@@ -8162,8 +8162,10 @@ class RuleScannerWorker(QThread):
         cache_futures = {
             cache_pool.submit(load_cached_symbol, symbol): symbol for symbol in symbols
         }
+        cache_total = len(cache_futures)
+        cache_progress_interval = max(1, cache_total // 50)
         try:
-            for future in as_completed(cache_futures):
+            for cache_index, future in enumerate(as_completed(cache_futures), 1):
                 self._check_cancelled()
                 symbol = cache_futures[future]
                 try:
@@ -8178,6 +8180,17 @@ class RuleScannerWorker(QThread):
                     to_download.append(symbol)
                     if history_covered:
                         tickertape_candidates[symbol] = cached
+                if (
+                    cache_index == 1
+                    or cache_index == cache_total
+                    or cache_index % cache_progress_interval == 0
+                ):
+                    progress(
+                        2 + int(cache_index / max(1, cache_total) * 23),
+                        f"Preparing shared price history: "
+                        f"{cache_index:,}/{cache_total:,} stocks | "
+                        f"ready {len(frames):,} | refresh needed {len(to_download):,}",
+                    )
         finally:
             cancelled = self._cancel.is_set()
             if cancelled:
@@ -8186,7 +8199,7 @@ class RuleScannerWorker(QThread):
             cache_pool.shutdown(wait=True, cancel_futures=cancelled)
         cache_hits = len(frames)
         progress(
-            2,
+            25,
             f"Universe {len(symbols):,} | cache hits {cache_hits:,} | "
             f"download queue {len(to_download):,}"
             + (f" | {eod_status}" if eod_status else ""),
@@ -8224,7 +8237,7 @@ class RuleScannerWorker(QThread):
                 accepted = set(batch.quotes)
                 to_download = [symbol for symbol in to_download if symbol not in accepted]
             progress(
-                3,
+                26,
                 f"Tickertape batch {len(batch.quotes):,}/{len(tickertape_candidates):,} "
                 f"accepted in {batch.elapsed_seconds:.2f}s | "
                 f"original fallback {len(to_download):,}",
@@ -8253,7 +8266,7 @@ class RuleScannerWorker(QThread):
                         # A single bad ticker/network response must not abort the universe.
                         download_failures += 1
                     progress(
-                        max(3, int(index / len(to_download) * 45)),
+                        26 + int(index / len(to_download) * 19),
                         f"Universe {len(symbols):,} | cache hits {cache_hits:,} | "
                         f"download progress {index:,}/{len(to_download):,}",
                     )
@@ -8385,7 +8398,10 @@ class FinalsetScannerWorker(RuleScannerWorker):
         NSE_CALENDAR.require_coverage(as_of.date(), as_of.date())
         try:
             lookback = max(
-                int(required_calendar_days(member.get("expression")))
+                max(
+                    int(required_calendar_days(member.get("expression"))),
+                    int(ranking_required_calendar_days(member)),
+                )
                 for _name, member in self._members
             )
         except (TypeError, ValueError):
@@ -8419,6 +8435,19 @@ class FinalsetScannerWorker(RuleScannerWorker):
         rows: list[dict[str, Any]] = []
         insufficient_symbols = 0
         timing_reference = pd.Timestamp.now(tz="Asia/Kolkata")
+        exact_member_lookbacks = bool(
+            self.setup.get("_finalchartink_exact_member_lookbacks", False)
+        )
+        member_starts = {
+            member_name: as_of
+            - pd.DateOffset(
+                days=max(
+                    int(required_calendar_days(member_setup.get("expression"))),
+                    int(ranking_required_calendar_days(member_setup)),
+                )
+            )
+            for member_name, member_setup in self._members
+        }
         symbols_with_data = [
             symbol for symbol in self.symbols
             if symbol in frames and not frames[symbol].empty
@@ -8458,15 +8487,51 @@ class FinalsetScannerWorker(RuleScannerWorker):
             )
             evidence: list[dict[str, Any]] = []
             matches: list[bool] = []
+            member_ranking_values: dict[str, dict[str, Any]] = {}
             for member_name, member_setup in self._members:
+                member_market = market
+                if exact_member_lookbacks:
+                    member_start = member_starts[member_name]
+                    member_frame = frames[symbol].loc[
+                        frames[symbol].index >= member_start
+                    ]
+                    member_market = MarketData(
+                        member_frame,
+                        as_of,
+                        bool(self.setup["include_current"]),
+                        symbol=symbol,
+                        account_name=account_name,
+                        holdings_path=self.cache_path.parent / "holdings_details.json",
+                        paper_store_data=(
+                            self._paper_store_data if self._paper_mode else None
+                        ),
+                        paper_account=(self._paper_account or ""),
+                        shared_series_cache=self.shared_series_cache,
+                        series_namespace=(
+                            *self._shared_frame_key(
+                                symbol, member_start, as_of, adjusted
+                            ),
+                            bool(self.setup["include_current"]),
+                        ),
+                    )
                 ev: list[dict[str, Any]] = []
                 try:
                     matched = evaluate_ast(
-                        member_setup.get("expression"), market, ev
+                        member_setup.get("expression"), member_market, ev
                     )
                 except Exception:
                     matched = False
                     ev = []
+                if matched and bool(member_setup.get("ranking_enabled", False)):
+                    ranking_row: dict[str, Any] = {}
+                    add_composite_rsi_ranking_values(
+                        ranking_row,
+                        member_setup,
+                        lambda period, current=member_market: current.scalar(
+                            field_operand("RSI", "D", 0, period)
+                        ),
+                    )
+                    member_ranking_values[member_name] = ranking_row
                 for item in ev:
                     item["member"] = member_name
                 matches.append(matched)
@@ -8537,6 +8602,17 @@ class FinalsetScannerWorker(RuleScannerWorker):
                     "Matched Members": ", ".join(matched_members),
                     "Evidence": " | ".join(evidence_parts),
                 }
+                if exact_member_lookbacks:
+                    row.update(
+                        {
+                            "Open": finite_or_none(last.get("Open")),
+                            "High": finite_or_none(last.get("High")),
+                            "Low": finite_or_none(last.get("Low")),
+                            PERCENT_CHANGE_COLUMN: finite_or_none(percent_change),
+                            "_Matched Member Names": matched_members,
+                            "_Member Ranking Values": member_ranking_values,
+                        }
+                    )
                 if self._paper_store_data is not None and self._paper_account:
                     holding = paper_lookup_holding(
                         self._paper_store_data, self._paper_account, symbol
@@ -14173,7 +14249,7 @@ class ScannerWindow(QMainWindow):
         col1_left.addLayout(date_form)
 
         self.adjusted = QCheckBox("Technical Adjusted prices (splits/bonus/consolidation)")
-        self.adjusted.setChecked(False)
+        self.adjusted.setChecked(True)
         self.adjusted.setToolTip(
             "Off uses immutable Official Raw NSE prices. On dynamically adjusts "
             "older OHLCV for validated NSE splits, bonuses and consolidations; "
@@ -15712,7 +15788,7 @@ class ScannerWindow(QMainWindow):
         self.historical.setChecked(not latest)
         qdate = QDate.fromString(setup.get("as_of_date", date.today().isoformat()), Qt.DateFormat.ISODate)
         self.as_of_date.setDate(qdate if qdate.isValid() else QDate.currentDate())
-        self.adjusted.setChecked(bool(setup.get("adjusted", False)))
+        self.adjusted.setChecked(bool(setup.get("adjusted", True)))
         self.include_current.setChecked(bool(setup.get("include_current", False)))
         self.auto_run.setChecked(bool(setup.get("auto_run", False)))
         start_time = setup.get("auto_run_start_time", "09:15")
@@ -16024,7 +16100,7 @@ class ScannerWindow(QMainWindow):
             "expression": copy.deepcopy(self.setup["expression"]),
             "as_of_mode": as_of_mode,
             "as_of_date": as_of_date_str,
-            "adjusted": bool(self._safe_widget_val("adjusted", "isChecked", self.setup.get("adjusted", False))),
+            "adjusted": bool(self._safe_widget_val("adjusted", "isChecked", self.setup.get("adjusted", True))),
             "include_current": bool(self._safe_widget_val("include_current", "isChecked", self.setup.get("include_current", False))),
             "auto_run": bool(self._safe_widget_val("auto_run", "isChecked", self.setup.get("auto_run", False))),
             "auto_run_start_time": self.auto_run_start_edit.time().toString("HH:mm"),
@@ -21308,9 +21384,9 @@ class FinalChartInkRecipeStore:
         try:
             payload = json.loads(self.path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
-            raise StateStoreError(f"FINAL ChartInk recipe file is invalid: {exc}") from exc
+            raise StateStoreError(f"FINAL ChartInk strategy file is invalid: {exc}") from exc
         if not isinstance(payload, dict) or not isinstance(payload.get("recipes", {}), dict):
-            raise StateStoreError("FINAL ChartInk recipe collection is invalid.")
+            raise StateStoreError("FINAL ChartInk strategy collection is invalid.")
         payload.setdefault("version", 1)
         payload.setdefault("active", "")
         payload.setdefault("recipes", {})
@@ -21344,6 +21420,7 @@ def finalchartink_defaults() -> dict[str, Any]:
         "end_time": "15:30",
         "trading_days_only": True,
         "publish_to_chartsage": False,
+        "telegram_master_enabled": True,
         "telegram_report_enabled": True,
         "telegram_xlsx_enabled": True,
         # Compatibility alias for recipes saved before the two Telegram
@@ -21420,8 +21497,22 @@ def normalize_finalchartink_recipe(raw: Any) -> dict[str, Any]:
         config["telegram_xlsx_enabled"] = bool(
             config.get("telegram_xlsx_enabled", True)
         )
+    config["telegram_master_enabled"] = bool(
+        config.get("telegram_master_enabled", True)
+        and (
+            config["telegram_report_enabled"]
+            or config["telegram_xlsx_enabled"]
+        )
+    )
+    if not config["telegram_master_enabled"]:
+        config["telegram_report_enabled"] = False
+        config["telegram_xlsx_enabled"] = False
     config["telegram_enabled"] = bool(
-        config["telegram_report_enabled"] or config["telegram_xlsx_enabled"]
+        config["telegram_master_enabled"]
+        and (
+            config["telegram_report_enabled"]
+            or config["telegram_xlsx_enabled"]
+        )
     )
     return config
 
@@ -21506,7 +21597,7 @@ def build_finalchartink_cycle_preview(
     feeders = list(normalized["feeder_templates"])
     scope = normalized["feeder_scope"]
     lines = [
-        f"RECIPE: {normalized['recipe_name']}",
+        f"STRATEGY: {normalized['recipe_name']}",
         (
             "DATE: Latest"
             if normalized["as_of_mode"] == "latest"
@@ -21662,7 +21753,7 @@ def validate_finalchartink_cycle_config(
                     f"Step 1 feeder '{feeder_name}' has no saved universe or "
                     "custom symbols. Select and save its universe in ChartSage, "
                     "use Step 2A Override/Combine, or uncheck this feeder for a "
-                    "direct-source-only recipe."
+                    "direct-source-only strategy."
                 )
     for key, label in (
         ("multirule_watchlist", "generated multi-rule watchlist"),
@@ -21876,7 +21967,7 @@ def publish_finalchartink_watchlists_to_chartsage(
             selected.append((private_name, published_name, symbols))
         if not selected:
             raise ValueError(
-                "No generated watchlists exist for this recipe. Run a full cycle first."
+                "No generated watchlists exist for this strategy. Run a full cycle first."
             )
 
         shared_watchlists = shared_store.load()
@@ -21993,7 +22084,7 @@ def build_finalchartink_telegram_messages(payload: dict[str, Any]) -> list[str]:
     reviews = [row for row in rows if str(row.get("Signal", "")).startswith("REVIEW")]
     lines = [
         "FINAL ChartInk V1 — Automated BUY / EXIT Guidance",
-        f"Recipe: {config['recipe_name']}",
+        f"Strategy: {config['recipe_name']}",
         f"Generated: {get_ist_now():%Y-%m-%d %H:%M:%S} IST",
         f"Feeder templates: {len(config['feeder_templates'])}",
         f"{config['multirule_watchlist']}: {int(payload.get('multirule_count', 0) or 0):,}",
@@ -22229,13 +22320,13 @@ def add_finalchartink_history_audit_sheet(
 ) -> None:
     """Add a human-readable, reproducible record of the complete backtest flow."""
     normalized = normalize_finalchartink_recipe(config)
-    sheet = workbook.create_sheet("Recipe Flow & Rules", 0)
+    sheet = workbook.create_sheet("Strategy Flow & Rules", 0)
     sheet.append(["Step", "Component", "Universe / Source", "Rule / Behaviour"])
 
     def add(step: str, component: str, source: str, details: str) -> None:
         sheet.append([step, component, source, details])
 
-    add("RUN", "Recipe", normalized["recipe_name"], "Exact saved recipe snapshot used by this backtest")
+    add("RUN", "Strategy", normalized["recipe_name"], "Exact saved strategy snapshot used by this backtest")
     history_months = int(
         config.get("history_months")
         or (int(config.get("history_years", 2) or 2) * 12)
@@ -22559,7 +22650,7 @@ def export_finalchartink_workbook(path: Path | str, payload: dict[str, Any]) -> 
     summary.append(["Item", "Value"])
     summary_rows = [
         ("Application", "FINAL ChartInk V1 — Guidance Only"),
-        ("Recipe", config["recipe_name"]),
+        ("Strategy", config["recipe_name"]),
         (
             "Price date",
             "Latest"
@@ -22603,8 +22694,21 @@ def export_finalchartink_workbook(path: Path | str, payload: dict[str, Any]) -> 
             "ChartSage publishing error",
             str(payload.get("chartsage_publish_error", "") or "None"),
         ),
-        ("Telegram text report", "Enabled" if config["telegram_report_enabled"] else "Disabled"),
-        ("Telegram XLSX attachment", "Enabled" if config["telegram_xlsx_enabled"] else "Disabled"),
+        ("Telegram delivery", "Enabled" if config["telegram_master_enabled"] else "Disabled"),
+        (
+            "Telegram text report",
+            "Enabled"
+            if config["telegram_master_enabled"]
+            and config["telegram_report_enabled"]
+            else "Disabled",
+        ),
+        (
+            "Telegram XLSX attachment",
+            "Enabled"
+            if config["telegram_master_enabled"]
+            and config["telegram_xlsx_enabled"]
+            else "Disabled",
+        ),
     ]
     for label, value in summary_rows:
         summary.append([label, _finalchartink_excel_value(value)])
@@ -22808,7 +22912,29 @@ class FinalChartInkCycleWorker(QThread):
         multirule_symbols: list[str] = []
         feeder_results: list[dict[str, Any]] = []
         feeder_match_rows: list[dict[str, Any]] = []
-        total = len(feeder_names)
+        feeder_specs: list[dict[str, Any]] = []
+        resolved_feeder_universes: dict[
+            tuple[tuple[str, ...], str],
+            tuple[list[str], list[str], dict[str, dict[str, str]]],
+        ] = {}
+
+        def resolve_feeder_setup(
+            setup: dict[str, Any],
+        ) -> tuple[list[str], list[str], dict[str, dict[str, str]]]:
+            universe_names = tuple(
+                str(value) for value in setup.get("universes", [])
+            )
+            custom_symbols = str(setup.get("custom_symbols", "") or "")
+            cache_key = (universe_names, custom_symbols)
+            cached = resolved_feeder_universes.get(cache_key)
+            if cached is None:
+                symbols, errors, symbol_details = resolve_universes(
+                    list(universe_names), custom_symbols, self._check
+                )
+                cached = (symbols, errors, symbol_details)
+                resolved_feeder_universes[cache_key] = cached
+            return cached
+
         for index, name in enumerate(feeder_names, 1):
             self._check()
             if name not in self.templates:
@@ -22840,41 +22966,174 @@ class FinalChartInkCycleWorker(QThread):
                 explicit_symbols = feeder_source_symbols
                 details = feeder_source_details
             elif config["feeder_scope"] == "COMBINE":
-                saved_symbols, _, saved_details = resolve_universes(
-                    setup.get("universes", []), setup.get("custom_symbols", ""), self._check
-                )
+                saved_symbols, _, saved_details = resolve_feeder_setup(setup)
                 explicit_symbols = list(dict.fromkeys(
                     saved_symbols + feeder_source_symbols
                 ))
                 details = dict(saved_details)
                 details.update(feeder_source_details)
-            phase_start = 5 + int((index - 1) * 43 / max(1, total))
-            phase_end = 5 + int(index * 43 / max(1, total))
-            self._emit(phase_start, f"Feeder {index}/{total}: {name}")
-            scanner = RuleScannerWorker(
-                setup,
-                symbols=explicit_symbols,
-                symbol_details=details,
-                cache_path=PRICE_CACHE_DB,
-                shared_frame_cache=self._shared_frame_cache,
-                shared_series_cache=self._shared_series_cache,
+            if explicit_symbols is None:
+                explicit_symbols, universe_errors, details = resolve_feeder_setup(
+                    setup
+                )
+                if not explicit_symbols:
+                    error_text = "\n".join(universe_errors) or (
+                        f"Feeder template '{name}' resolved to no symbols."
+                    )
+                    raise ValueError(error_text)
+            explicit_symbols = list(dict.fromkeys(explicit_symbols))
+            feeder_specs.append(
+                {
+                    "index": index,
+                    "name": name,
+                    "setup": setup,
+                    "symbols": explicit_symbols,
+                    "details": details or {},
+                }
             )
-            self._active_scanner = scanner
 
-            def report(percent: int, text: str, start: int = phase_start, end: int = phase_end, label: str = name) -> None:
-                mapped = start + int((end - start) * max(0, min(100, int(percent))) / 100)
-                self._emit(mapped, f"Feeder — {label}: {text}")
+        # Templates that scan the same effective universe are evaluated as one
+        # batch. Price history is loaded once, while every member keeps its own
+        # exact lookback and ranking configuration so results remain identical
+        # to independent scans.
+        grouped_specs: dict[tuple[str, ...], list[dict[str, Any]]] = {}
+        for spec in feeder_specs:
+            group_key = tuple(sorted(set(spec["symbols"])))
+            grouped_specs.setdefault(group_key, []).append(spec)
 
-            scan_report = scanner.scan(report)
-            self._active_scanner = None
+        rows_by_feeder: dict[str, list[dict[str, Any]]] = {}
+        scanned_by_feeder: dict[str, int] = {}
+        groups = list(grouped_specs.values())
+        group_total = max(1, len(groups))
+        for group_index, specs in enumerate(groups, 1):
+            self._check()
+            phase_start = 5 + int((group_index - 1) * 43 / group_total)
+            phase_end = 5 + int(group_index * 43 / group_total)
+            labels = [str(spec["name"]) for spec in specs]
+            group_label = (
+                labels[0]
+                if len(labels) == 1
+                else f"{len(labels)} rules on one shared universe"
+            )
+            self._emit(
+                phase_start,
+                f"Feeder batch {group_index}/{group_total}: {group_label}",
+            )
+
+            if len(specs) == 1:
+                spec = specs[0]
+                scanner: RuleScannerWorker = RuleScannerWorker(
+                    spec["setup"],
+                    symbols=spec["symbols"],
+                    symbol_details=spec["details"],
+                    cache_path=PRICE_CACHE_DB,
+                    shared_frame_cache=self._shared_frame_cache,
+                    shared_series_cache=self._shared_series_cache,
+                )
+
+                def report(
+                    percent: int,
+                    text: str,
+                    start: int = phase_start,
+                    end: int = phase_end,
+                    label: str = str(spec["name"]),
+                ) -> None:
+                    mapped = start + int(
+                        (end - start) * max(0, min(100, int(percent))) / 100
+                    )
+                    self._emit(mapped, f"Feeder — {label}: {text}")
+
+                self._active_scanner = scanner
+                scan_report = scanner.scan(report)
+                self._active_scanner = None
+                rows_by_feeder[str(spec["name"])] = scan_report.rows
+                scanned_by_feeder[str(spec["name"])] = scan_report.scanned_symbols
+            else:
+                synthetic = copy.deepcopy(specs[0]["setup"])
+                synthetic.update(
+                    {
+                        "template_name": "FINALCHARTink shared feeder batch",
+                        "is_final_template": True,
+                        "finalset_members": labels,
+                        "finalset_op": "OR",
+                        "finalset_k": 1,
+                        # Member-specific ranking values are captured while each
+                        # member is evaluated, then ranked independently below.
+                        # The synthetic OR batch itself must retain universe
+                        # order so it cannot reorder non-ranked member results.
+                        "ranking_enabled": False,
+                        "ranking_rsi_periods": [22, 44, 66],
+                        "ranking_top_n": 0,
+                        "ranking_watchlist_enabled": False,
+                        "_finalchartink_exact_member_lookbacks": True,
+                    }
+                )
+                batch_scanner = FinalsetScannerWorker(
+                    synthetic,
+                    templates=self.templates,
+                    symbols=specs[0]["symbols"],
+                    symbol_details=specs[0]["details"],
+                    cache_path=PRICE_CACHE_DB,
+                    shared_frame_cache=self._shared_frame_cache,
+                    shared_series_cache=self._shared_series_cache,
+                )
+
+                def batch_report(
+                    percent: int,
+                    text: str,
+                    start: int = phase_start,
+                    end: int = phase_end,
+                    label: str = group_label,
+                ) -> None:
+                    mapped = start + int(
+                        (end - start) * max(0, min(100, int(percent))) / 100
+                    )
+                    self._emit(mapped, f"Feeder batch — {label}: {text}")
+
+                self._active_scanner = batch_scanner
+                batch_report_data = batch_scanner.scan(batch_report)
+                self._active_scanner = None
+                for spec in specs:
+                    name = str(spec["name"])
+                    member_rows: list[dict[str, Any]] = []
+                    for source_row in batch_report_data.rows:
+                        if name not in source_row.get("_Matched Member Names", []):
+                            continue
+                        member_row = dict(source_row)
+                        member_row["Universe"] = spec["details"].get(
+                            member_row.get("Symbol", ""), {}
+                        ).get("Universe", "")
+                        ranking_values = source_row.get(
+                            "_Member Ranking Values", {}
+                        ).get(name, {})
+                        member_row.update(ranking_values)
+                        member_rows.append(member_row)
+                    rows_by_feeder[name] = rank_scan_rows(
+                        member_rows, spec["setup"]
+                    )
+                    scanned_by_feeder[name] = batch_report_data.scanned_symbols
+
+            self._emit(phase_end, f"Feeder batch {group_index}/{group_total} complete")
+
+        total = len(feeder_names)
+        for index, name in enumerate(feeder_names, 1):
             template_matches = build_finalchartink_feeder_match_rows(
-                name, scan_report.rows
+                name, rows_by_feeder.get(name, [])
             )
             symbols = [row["Symbol"] for row in template_matches]
             feeder_match_rows.extend(template_matches)
             multirule_symbols.extend(symbols)
-            feeder_results.append({"template": name, "matches": len(symbols), "scanned": scan_report.scanned_symbols})
-            self._emit(phase_end, f"Feeder {index}/{total} complete — {len(symbols):,} match(es)")
+            feeder_results.append(
+                {
+                    "template": name,
+                    "matches": len(symbols),
+                    "scanned": scanned_by_feeder.get(name, 0),
+                }
+            )
+            self._emit(
+                48,
+                f"Feeder {index}/{total} complete — {len(symbols):,} match(es)",
+            )
 
         multirule_symbols = list(dict.fromkeys(multirule_symbols))
         final_symbols = build_finalchartink_final_input_symbols(
@@ -24031,6 +24290,10 @@ class FinalChartInkWindow(QMainWindow):
         self.automation_timer = QTimer(self)
         self.automation_timer.setSingleShot(True)
         self.automation_timer.timeout.connect(self._automation_tick)
+        self._cycle_started_at: float | None = None
+        self._cycle_elapsed_timer = QTimer(self)
+        self._cycle_elapsed_timer.setInterval(1000)
+        self._cycle_elapsed_timer.timeout.connect(self._refresh_cycle_elapsed)
         self._initial_split_applied = False
         self._build_ui()
         self._load_recipes()
@@ -24063,19 +24326,19 @@ class FinalChartInkWindow(QMainWindow):
         left.addWidget(safety_banner)
 
         recipe_row = QHBoxLayout()
-        recipe_row.addWidget(QLabel("Saved recipe:"))
+        recipe_row.addWidget(QLabel("Saved BUY/EXIT strategy:"))
         self.recipe_combo = QComboBox()
         self.recipe_combo.currentIndexChanged.connect(self._recipe_selected)
         recipe_row.addWidget(self.recipe_combo, 1)
-        self.new_recipe_btn = QPushButton("New")
+        self.new_recipe_btn = QPushButton("New Strategy")
         self.new_recipe_btn.clicked.connect(self._new_recipe)
         recipe_row.addWidget(self.new_recipe_btn)
-        self.save_recipe_btn = QPushButton("Save Recipe")
+        self.save_recipe_btn = QPushButton("Save Strategy")
         self.save_recipe_btn.clicked.connect(self._save_recipe)
         recipe_row.addWidget(self.save_recipe_btn)
-        self.delete_recipe_btn = QPushButton("Delete Recipe")
+        self.delete_recipe_btn = QPushButton("Delete Strategy")
         self.delete_recipe_btn.setToolTip(
-            "Delete the selected saved recipe definition. Generated watchlists, "
+            "Delete the selected saved strategy definition. Generated watchlists, "
             "databases, scan results, and exported files are not deleted."
         )
         self.delete_recipe_btn.clicked.connect(self._delete_recipe)
@@ -24084,7 +24347,7 @@ class FinalChartInkWindow(QMainWindow):
         left.addLayout(recipe_row)
         form = QFormLayout()
         self.recipe_name_edit = QLineEdit()
-        form.addRow("Recipe name:", self.recipe_name_edit)
+        form.addRow("Strategy name:", self.recipe_name_edit)
         self.multirule_name_edit = QLineEdit("MultiruleWatchlist")
         form.addRow("Generated multi-rule watchlist:", self.multirule_name_edit)
         self.final_source_name_edit = QLineEdit("FINALCHARTINK INPUT")
@@ -24229,7 +24492,7 @@ class FinalChartInkWindow(QMainWindow):
         publish_row.addWidget(self.publish_to_chartsage_cb, 1)
         self.publish_now_btn = QPushButton("Publish Current Lists Now…")
         self.publish_now_btn.setToolTip(
-            "Copy the active recipe's existing generated lists to ChartSage once, "
+            "Copy the active strategy's existing generated lists to ChartSage once, "
             "without running another scan."
         )
         self.publish_now_btn.clicked.connect(self._publish_current_to_chartsage)
@@ -24241,7 +24504,7 @@ class FinalChartInkWindow(QMainWindow):
         rules_form = QFormLayout(rules_box)
         self.buy_set_combo = QComboBox()
         self.buy_set_combo.setToolTip(
-            "Choose No BUY rule for an EXIT-only recipe. At least one BUY or "
+            "Choose No BUY rule for an EXIT-only strategy. At least one BUY or "
             "SELL/EXIT rule must still be selected."
         )
         self.exit_set_combo = QComboBox()
@@ -24291,6 +24554,12 @@ class FinalChartInkWindow(QMainWindow):
         self.adjusted_cb.setChecked(True)
         self.current_cb = QCheckBox("Include current incomplete D/W/M bars")
         self.current_cb.setChecked(True)
+        self.telegram_master_cb = QCheckBox("Send Telegram messages")
+        self.telegram_master_cb.setChecked(True)
+        self.telegram_master_cb.setToolTip(
+            "Master switch for this strategy. Uncheck it to suppress all "
+            "Telegram messages and attachments while testing."
+        )
         self.telegram_report_cb = QCheckBox("Send consolidated Telegram report")
         self.telegram_report_cb.setChecked(True)
         self.telegram_report_cb.setToolTip(
@@ -24301,6 +24570,15 @@ class FinalChartInkWindow(QMainWindow):
         self.telegram_xlsx_cb.setToolTip(
             "Attach the formatted FINAL workbook to Telegram. This may be used "
             "with or without the text report."
+        )
+        self.telegram_master_cb.toggled.connect(
+            self._telegram_master_changed
+        )
+        self.telegram_report_cb.toggled.connect(
+            self._telegram_delivery_choice_changed
+        )
+        self.telegram_xlsx_cb.toggled.connect(
+            self._telegram_delivery_choice_changed
         )
         self.interval_spin = QSpinBox()
         self.interval_spin.setRange(1, 1440)
@@ -24314,6 +24592,7 @@ class FinalChartInkWindow(QMainWindow):
         options.addWidget(self.adjusted_cb, 1, 0)
         options.addWidget(self.current_cb, 1, 1)
         telegram_row = QHBoxLayout()
+        telegram_row.addWidget(self.telegram_master_cb)
         telegram_row.addWidget(self.telegram_report_cb)
         telegram_row.addWidget(self.telegram_xlsx_cb)
         telegram_row.addStretch(1)
@@ -24348,7 +24627,16 @@ class FinalChartInkWindow(QMainWindow):
         left.addLayout(actions)
         self.progress = QProgressBar()
         self.progress.setFormat("Ready")
-        left.addWidget(self.progress)
+        progress_row = QHBoxLayout()
+        progress_row.addWidget(self.progress, 1)
+        self.cycle_elapsed_label = QLabel("Elapsed: --:--")
+        self.cycle_elapsed_label.setMinimumWidth(145)
+        self.cycle_elapsed_label.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
+        self.cycle_elapsed_label.setStyleSheet("font-weight:600; color:#123b66;")
+        progress_row.addWidget(self.cycle_elapsed_label)
+        left.addLayout(progress_row)
         self.status_label = QLabel(
             "Original ChartSage files are read-only. This app writes only to FINALCHARTinkV1_data."
         )
@@ -24401,7 +24689,7 @@ class FinalChartInkWindow(QMainWindow):
         history_controls.addStretch(1)
         history_layout.addLayout(history_controls)
         history_note = QLabel(
-            "Evaluates the complete Step 1 → Step 2 → Step 3 recipe using "
+            "Evaluates the complete Step 1 → Step 2 → Step 3 strategy using "
             "completed historical daily snapshots. Step 2B still bypasses Step 1; "
             "supported NIFTY universes use verified point-in-time membership. "
             "Watchlists and custom symbol lists remain fixed because they have no "
@@ -24616,7 +24904,7 @@ class FinalChartInkWindow(QMainWindow):
             day for day in sorted(reference_observations)
             if start <= day <= end and reference_observations[day].get('price')
         ), '')
-        reference_source = 'Point-in-time recipe entry universe'
+        reference_source = 'Point-in-time strategy entry universe'
         if reference_day:
             reference_observation = reference_observations[reference_day]
         else:
@@ -24910,6 +25198,29 @@ class FinalChartInkWindow(QMainWindow):
         else:
             self.start_btn.setToolTip("")
 
+    def _telegram_master_changed(self, enabled: bool) -> None:
+        """Synchronize the master switch with its two delivery choices."""
+        if (
+            enabled
+            and not self.telegram_report_cb.isChecked()
+            and not self.telegram_xlsx_cb.isChecked()
+        ):
+            self.telegram_report_cb.setChecked(True)
+        elif not enabled:
+            self.telegram_report_cb.setChecked(False)
+            self.telegram_xlsx_cb.setChecked(False)
+        self.telegram_report_cb.setEnabled(bool(enabled))
+        self.telegram_xlsx_cb.setEnabled(bool(enabled))
+
+    def _telegram_delivery_choice_changed(self, _checked: bool) -> None:
+        """Turn off the master switch when no Telegram delivery remains."""
+        if (
+            self.telegram_master_cb.isChecked()
+            and not self.telegram_report_cb.isChecked()
+            and not self.telegram_xlsx_cb.isChecked()
+        ):
+            self.telegram_master_cb.setChecked(False)
+
     @staticmethod
     def _set_checked(widget: QListWidget, names: Iterable[str]) -> None:
         wanted = set(names)
@@ -24925,12 +25236,12 @@ class FinalChartInkWindow(QMainWindow):
         try:
             state = self.recipe_store.load()
         except StateStoreError as exc:
-            QMessageBox.warning(self, "Recipes unavailable", str(exc))
+            QMessageBox.warning(self, "Strategies unavailable", str(exc))
             state = {"version": 1, "active": "", "recipes": {}}
         self.recipe_state = state
         self.recipe_combo.blockSignals(True)
         self.recipe_combo.clear()
-        self.recipe_combo.addItem("— New unsaved recipe —", "")
+        self.recipe_combo.addItem("— New unsaved strategy —", "")
         for name in sorted(state["recipes"], key=str.upper):
             self.recipe_combo.addItem(name, name)
         index = self.recipe_combo.findData(state.get("active", ""))
@@ -25093,31 +25404,31 @@ class FinalChartInkWindow(QMainWindow):
         if not name or name not in recipes:
             QMessageBox.information(
                 self,
-                "Select a saved recipe",
-                "Select the saved recipe you want to delete.",
+                "Select a saved strategy",
+                "Select the saved strategy you want to delete.",
             )
             return
         if self.automation_active or (self.worker and self.worker.isRunning()):
             QMessageBox.information(
                 self,
-                "Recipe is in use",
+                "Strategy is in use",
                 "Stop automation or wait for the current cycle to finish before "
-                "deleting a saved recipe.",
+                "deleting a saved strategy.",
             )
             return
         if self.history_worker and self.history_worker.isRunning():
             QMessageBox.information(
                 self,
-                "Recipe is in use",
+                "Strategy is in use",
                 "Wait for the backtest history run to finish before deleting a "
-                "saved recipe.",
+                "saved strategy.",
             )
             return
         if QMessageBox.question(
             self,
-            "Delete saved recipe",
-            f"Delete the saved recipe '{name}'?\n\n"
-            "Only the recipe definition will be removed. Generated watchlists, "
+            "Delete saved strategy",
+            f"Delete the saved strategy '{name}'?\n\n"
+            "Only the strategy definition will be removed. Generated watchlists, "
             "databases, scan results, backtest history, and exported files will "
             "be kept.",
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
@@ -25133,7 +25444,7 @@ class FinalChartInkWindow(QMainWindow):
         try:
             self.recipe_store.save(updated)
         except (OSError, StateStoreError) as exc:
-            QMessageBox.warning(self, "Recipe not deleted", str(exc))
+            QMessageBox.warning(self, "Strategy not deleted", str(exc))
             return
 
         self._load_recipes()
@@ -25144,7 +25455,7 @@ class FinalChartInkWindow(QMainWindow):
         else:
             self._apply_config(finalchartink_defaults())
             self._update_delete_recipe_button()
-        self.status_label.setText(f"Deleted saved recipe '{name}'.")
+        self.status_label.setText(f"Deleted saved strategy '{name}'.")
 
     def _apply_config(self, raw: dict[str, Any]) -> None:
         config = normalize_finalchartink_recipe(raw)
@@ -25172,8 +25483,10 @@ class FinalChartInkWindow(QMainWindow):
         )
         self._date_mode_changed()
         self.publish_to_chartsage_cb.setChecked(config["publish_to_chartsage"])
+        self.telegram_master_cb.setChecked(config["telegram_master_enabled"])
         self.telegram_report_cb.setChecked(config["telegram_report_enabled"])
         self.telegram_xlsx_cb.setChecked(config["telegram_xlsx_enabled"])
+        self._telegram_master_changed(config["telegram_master_enabled"])
         self.interval_spin.setValue(config["interval_minutes"])
         self.start_time.setTime(QTime.fromString(config["start_time"], "HH:mm"))
         self.end_time.setTime(QTime.fromString(config["end_time"], "HH:mm"))
@@ -25204,11 +25517,15 @@ class FinalChartInkWindow(QMainWindow):
             "end_time": self.end_time.time().toString("HH:mm"),
             "trading_days_only": self.trading_days_cb.isChecked(),
             "publish_to_chartsage": self.publish_to_chartsage_cb.isChecked(),
+            "telegram_master_enabled": self.telegram_master_cb.isChecked(),
             "telegram_report_enabled": self.telegram_report_cb.isChecked(),
             "telegram_xlsx_enabled": self.telegram_xlsx_cb.isChecked(),
             "telegram_enabled": bool(
-                self.telegram_report_cb.isChecked()
-                or self.telegram_xlsx_cb.isChecked()
+                self.telegram_master_cb.isChecked()
+                and (
+                    self.telegram_report_cb.isChecked()
+                    or self.telegram_xlsx_cb.isChecked()
+                )
             ),
         })
 
@@ -25227,7 +25544,7 @@ class FinalChartInkWindow(QMainWindow):
             QMessageBox.information(
                 self,
                 "No generated watchlists",
-                "No generated watchlists exist for this recipe. Run a full cycle first.",
+                "No generated watchlists exist for this strategy. Run a full cycle first.",
             )
             return
         published_names = [
@@ -25265,19 +25582,19 @@ class FinalChartInkWindow(QMainWindow):
         config = self._config_from_ui()
         name = config["recipe_name"]
         if not name:
-            QMessageBox.warning(self, "Recipe name required", "Enter a recipe name.")
+            QMessageBox.warning(self, "Strategy name required", "Enter a strategy name.")
             return False
         self.recipe_state["recipes"][name] = config
         self.recipe_state["active"] = name
         try:
             self.recipe_store.save(self.recipe_state)
         except (OSError, StateStoreError) as exc:
-            QMessageBox.warning(self, "Recipe not saved", str(exc))
+            QMessageBox.warning(self, "Strategy not saved", str(exc))
             return False
         self._load_recipes()
         index = self.recipe_combo.findData(name)
         self.recipe_combo.setCurrentIndex(max(0, index))
-        self.status_label.setText(f"Saved recipe '{name}'.")
+        self.status_label.setText(f"Saved strategy '{name}'.")
         return True
 
     def _window_open(self) -> bool:
@@ -25444,6 +25761,9 @@ class FinalChartInkWindow(QMainWindow):
             return
         self.progress.setValue(1)
         self.progress.setFormat("%p% — Preparing cycle…")
+        self._cycle_started_at = _time.perf_counter()
+        self.cycle_elapsed_label.setText("Elapsed: 00:00")
+        self._cycle_elapsed_timer.start()
         self.run_btn.setEnabled(False)
         self.worker = FinalChartInkCycleWorker(config, self.templates, self.catalog)
         self.worker.progress.connect(self._cycle_progress)
@@ -25457,7 +25777,32 @@ class FinalChartInkWindow(QMainWindow):
         self.progress.setFormat(f"%p% — {text}")
         self.status_label.setText(text)
 
+    @staticmethod
+    def _format_cycle_elapsed(seconds: float) -> str:
+        total_seconds = max(0, int(seconds))
+        hours, remainder = divmod(total_seconds, 3600)
+        minutes, secs = divmod(remainder, 60)
+        if hours:
+            return f"{hours:d}:{minutes:02d}:{secs:02d}"
+        return f"{minutes:02d}:{secs:02d}"
+
+    def _cycle_elapsed_text(self) -> str:
+        if self._cycle_started_at is None:
+            return "00:00"
+        return self._format_cycle_elapsed(
+            _time.perf_counter() - self._cycle_started_at
+        )
+
+    def _refresh_cycle_elapsed(self) -> None:
+        if self._cycle_started_at is not None:
+            self.cycle_elapsed_label.setText(
+                f"Elapsed: {self._cycle_elapsed_text()}"
+            )
+
     def _cycle_succeeded(self, payload: dict[str, Any]) -> None:
+        elapsed_text = self._cycle_elapsed_text()
+        self._cycle_elapsed_timer.stop()
+        self.cycle_elapsed_label.setText(f"Completed in {elapsed_text}")
         rows = list(payload.get("guidance_rows", []) or [])
         historical = bool(payload.get("historical_mode", False))
         self.results_table.setRowCount(len(rows))
@@ -25519,6 +25864,9 @@ class FinalChartInkWindow(QMainWindow):
         self._refresh_inputs()
 
     def _cycle_failed(self, details: str) -> None:
+        elapsed_text = self._cycle_elapsed_text()
+        self._cycle_elapsed_timer.stop()
+        self.cycle_elapsed_label.setText(f"Stopped after {elapsed_text}")
         clean = str(details or "Cycle failed.")
         self.progress.setFormat("Cycle failed")
         self.status_label.setText(clean.splitlines()[-1] if clean.splitlines() else clean)
@@ -25526,6 +25874,8 @@ class FinalChartInkWindow(QMainWindow):
             QMessageBox.warning(self, "FINAL ChartInk cycle failed", clean[-1800:])
 
     def _cycle_finished(self) -> None:
+        self._cycle_elapsed_timer.stop()
+        self._cycle_started_at = None
         self.worker = None
         self.run_btn.setEnabled(True)
         if self.automation_active:
@@ -25564,7 +25914,7 @@ class FinalChartInkWindow(QMainWindow):
         self.run_btn.setEnabled(False)
         self.start_btn.setEnabled(False)
         self.history_progress.setValue(0)
-        self.history_progress.setFormat("Preparing historical recipe…")
+        self.history_progress.setFormat("Preparing historical strategy…")
         self.history_worker = FinalChartInkHistoryWorker(
             config,
             self.templates,
@@ -25775,6 +26125,8 @@ class FinalChartInkWindow(QMainWindow):
             return
         try:
             config = normalize_finalchartink_recipe(payload.get("config", {}))
+            if not config["telegram_master_enabled"]:
+                return
             send_report = bool(config["telegram_report_enabled"])
             send_xlsx = bool(config["telegram_xlsx_enabled"])
             if not (send_report or send_xlsx):
@@ -25806,7 +26158,7 @@ class FinalChartInkWindow(QMainWindow):
             )
             caption = (
                 f"FINAL ChartInk V1 — Guidance Only\n"
-                f"Recipe: {config['recipe_name']}\n"
+                f"Strategy: {config['recipe_name']}\n"
                 f"BUY: {buy_count} | EXIT/Weakness: {exit_count}\n"
                 f"Generated: {get_ist_now():%Y-%m-%d %H:%M:%S} IST"
             )
