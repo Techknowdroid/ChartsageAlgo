@@ -76,6 +76,20 @@ PRIVATE_FILENAMES = (
     "today_executed_orders.json",
     "zerodha_session.json",
 )
+RUNTIME_SOURCE_FILES = (
+    "ChartSageAlgoOPENcode.py",
+    "ChartSageStockAlerts.py",
+    "FINALCHARTinkV1.py",
+    "ChartSageBhavcopy.py",
+    "benchmark_history.py",
+    "historical_index_membership.py",
+    "membership_update.py",
+    "nse_calendar/__init__.py",
+    "paper_signal_replay.py",
+    "startup_market_maintenance.py",
+    "stock_alert_engine.py",
+    "tickertape_intraday.py",
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -152,6 +166,15 @@ def copy_shareable_data(output_dir: Path) -> None:
                 continue
             elif source.name.endswith(("-wal", "-shm")) or ".seeding." in source.name:
                 continue
+            elif source.suffix.lower() == ".xlsx":
+                # Generated reports are not runtime inputs and may contain the
+                # builder's private strategy results.
+                continue
+            elif any(
+                marker in source.name.lower()
+                for marker in ("_before_", "_backup_", ".superseded_")
+            ):
+                continue
             elif source.suffix.lower() in {".db", ".sqlite", ".sqlite3"}:
                 print(f"Creating consistent database copy: {dirname}/{relative}", flush=True)
                 sqlite_backup(source, target)
@@ -187,6 +210,35 @@ def copy_shareable_data(output_dir: Path) -> None:
     (output_dir / "telegram_settings.json").write_text(
         json.dumps(telegram_defaults, indent=2) + "\n", encoding="utf-8"
     )
+    # Alert definitions are personal strategy state. Distributions receive a
+    # valid empty database rather than the builder's saved alerts/history.
+    from stock_alert_engine import StockAlertStore
+
+    stock_alerts_path = output_dir / "stock_alerts.db"
+    StockAlertStore(stock_alerts_path)
+    normalize_sqlite_database(stock_alerts_path)
+
+
+def write_build_info(output_dir: Path) -> None:
+    """Record exactly which current source revision was compiled."""
+    source_hashes: dict[str, str] = {}
+    for relative in RUNTIME_SOURCE_FILES:
+        source = PROJECT_DIR / relative
+        if not source.is_file():
+            raise FileNotFoundError(f"Required runtime source is missing: {source}")
+        digest = hashlib.sha256()
+        with source.open("rb") as handle:
+            for block in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(block)
+        source_hashes[Path(relative).as_posix()] = digest.hexdigest()
+    payload = {
+        "built_at": datetime.now().astimezone().isoformat(timespec="seconds"),
+        "bundle_format": 1,
+        "compiled_source_sha256": source_hashes,
+    }
+    (output_dir / "BUILD_INFO.json").write_text(
+        json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
 
 
 def repair_qt_runtime_layout(output_dir: Path) -> None:
@@ -220,6 +272,7 @@ Built: {datetime.now():%d %B %Y %H:%M}
 
 APPLICATIONS
   ChartSageAlgo.exe       Main scanner
+  ChartSageStockAlerts.exe  Stock-specific technical alert monitor
   FINALCHARTinkV1.exe     Final ChartInk strategy-guidance scanner
   ChartSageBhavcopy.exe   Official NSE Bhavcopy feeder and maintenance GUI
 
@@ -227,7 +280,7 @@ HOW TO INSTALL
   1. Extract the whole ZIP to one writable folder, for example
      C:\\ChartSageSuite or D:\\Apps\\ChartSageSuite.
   2. Do not run an EXE from inside the ZIP.
-  3. Keep all three EXEs, the _internal folder, databases, JSON files, and data
+  3. Keep all four EXEs, the _internal folder, databases, JSON files, and data
      folders together. You may create shortcuts, but do not move an EXE alone.
   4. Avoid C:\\Program Files because the suite writes updates beside its EXEs.
 
@@ -306,18 +359,32 @@ def verify_manifest(output_dir: Path) -> None:
 def validate_output(output_dir: Path) -> None:
     required = (
         "ChartSageAlgo.exe",
+        "ChartSageStockAlerts.exe",
         "FINALCHARTinkV1.exe",
         "ChartSageBhavcopy.exe",
         "_internal",
         "bhavcopy_history.db",
         "price_cache.db",
         "historical_index_membership.db",
+        "benchmark_history.db",
         "historical_membership_sources",
+        "historical_membership_sources/current",
+        "BUILD_INFO.json",
+        "app_settings.json",
+        "custom_filter_examples.json",
+        "nse_symbols_cache.json",
+        "nse_trading_calendar.json",
         "scanner_templates.json",
         "watchlists.json",
+        "stock_alerts.db",
         "nse_bhavcopy_archive",
         "bhavcopy_snapshots",
         "FINALCHARTinkV1_data",
+        "FINALCHARTinkV1_data/finalchartink_nse_trading_calendar.json",
+        "FINALCHARTinkV1_data/finalchartink_price_cache.db",
+        "FINALCHARTinkV1_data/finalchartink_recipes.json",
+        "FINALCHARTinkV1_data/finalchartink_run_history.db",
+        "FINALCHARTinkV1_data/finalchartink_watchlists.json",
         "seed_data",
     )
     missing = [name for name in required if not (output_dir / name).exists()]
@@ -331,6 +398,25 @@ def validate_output(output_dir: Path) -> None:
     ]
     if leaked:
         raise RuntimeError("Private files unexpectedly entered bundle: " + ", ".join(leaked))
+    nested_private = sorted(
+        path.relative_to(output_dir).as_posix()
+        for path in output_dir.rglob("*")
+        if path.is_file() and path.name in PRIVATE_DATA_NAMES
+    )
+    if nested_private:
+        raise RuntimeError(
+            "Private runtime state unexpectedly entered bundle: "
+            + ", ".join(nested_private)
+        )
+    generated_reports = sorted(
+        path.relative_to(output_dir).as_posix()
+        for path in output_dir.rglob("*.xlsx")
+    )
+    if generated_reports:
+        raise RuntimeError(
+            "Generated reports unexpectedly entered bundle: "
+            + ", ".join(generated_reports[:20])
+        )
     required_qt_runtime = (
         "_internal/shiboken6/Shiboken.pyd",
         "_internal/shiboken6/shiboken6.abi3.dll",
@@ -408,6 +494,7 @@ def smoke_test_executables(output_dir: Path) -> None:
     )
     for executable_name in (
         "ChartSageAlgo.exe",
+        "ChartSageStockAlerts.exe",
         "FINALCHARTinkV1.exe",
         "ChartSageBhavcopy.exe",
     ):
@@ -490,6 +577,7 @@ def main() -> int:
     output_dir = run_pyinstaller(bundle_name)
     repair_qt_runtime_layout(output_dir)
     copy_shareable_data(output_dir)
+    write_build_info(output_dir)
     write_readme(output_dir)
     validate_output(output_dir)
     verify_packaged_databases(output_dir)

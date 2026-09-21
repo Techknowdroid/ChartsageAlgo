@@ -41,6 +41,41 @@ scanner_exe = EXE(
 )
 
 
+stock_alerts = Analysis(
+    ["ChartSageStockAlerts.py"],
+    pathex=[project_dir],
+    binaries=[],
+    datas=[],
+    hiddenimports=[
+        "nse_calendar",
+        "tickertape_intraday",
+        "ChartSageAlgoOPENcode",
+        "stock_alert_engine",
+        "ChartSageBhavcopy",
+    ],
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=[],
+    noarchive=False,
+    optimize=0,
+)
+stock_alerts_pyz = PYZ(stock_alerts.pure)
+stock_alerts_exe = EXE(
+    stock_alerts_pyz,
+    stock_alerts.scripts,
+    [],
+    exclude_binaries=True,
+    name="ChartSageStockAlerts",
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=False,
+    console=False,
+    disable_windowed_traceback=False,
+)
+
+
 final_scanner = Analysis(
     ["FINALCHARTinkV1.py"],
     pathex=[project_dir],
@@ -106,10 +141,13 @@ feeder_exe = EXE(
 
 coll = COLLECT(
     scanner_exe,
+    stock_alerts_exe,
     final_scanner_exe,
     feeder_exe,
     scanner.binaries,
     scanner.datas,
+    stock_alerts.binaries,
+    stock_alerts.datas,
     final_scanner.binaries,
     final_scanner.datas,
     feeder.binaries,

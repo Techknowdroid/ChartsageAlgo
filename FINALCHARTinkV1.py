@@ -5169,6 +5169,40 @@ def send_telegram_message(
         raise TelegramSendError(telegram_safe_error(exc, clean_token)) from exc
 
 
+def send_telegram_html_message(
+    token: str,
+    chat_id: str,
+    text: str,
+    post: Callable[..., Any] = requests.post,
+) -> None:
+    """Send one safely constructed HTML-formatted Telegram message."""
+    clean_token = validate_telegram_token(token)
+    clean_chat_id = validate_telegram_chat_id(chat_id)
+    try:
+        response = post(
+            f"https://api.telegram.org/bot{clean_token}/sendMessage",
+            json={
+                "chat_id": clean_chat_id,
+                "text": str(text),
+                "parse_mode": "HTML",
+            },
+            timeout=(5, 20),
+        )
+        try:
+            payload = response.json()
+        except Exception:
+            payload = {}
+        if not getattr(response, "ok", False) or not payload.get("ok", False):
+            description = payload.get("description") or (
+                f"Telegram HTTP error {getattr(response, 'status_code', 'unknown')}"
+            )
+            raise TelegramSendError(str(description))
+    except TelegramSendError:
+        raise
+    except Exception as exc:
+        raise TelegramSendError(telegram_safe_error(exc, clean_token)) from exc
+
+
 def send_telegram_document(
     token: str,
     chat_id: str,
@@ -5432,6 +5466,8 @@ class FinalChartInkTelegramWorker(QThread):
         document_caption: str,
         message_sender: Callable[[str, str, str], None] = send_telegram_message,
         document_sender: Callable[[str, str, Path | str, str], None] = send_telegram_document,
+        html_messages: Iterable[str] | None = None,
+        html_message_sender: Callable[[str, str, str], None] = send_telegram_html_message,
     ):
         super().__init__()
         self.token = str(token)
@@ -5440,6 +5476,8 @@ class FinalChartInkTelegramWorker(QThread):
         self.document_caption = str(document_caption)
         self.message_sender = message_sender
         self.document_sender = document_sender
+        self.html_messages = list(html_messages or [])
+        self.html_message_sender = html_message_sender
 
     def run(self) -> None:
         message_count = 0
@@ -5449,6 +5487,9 @@ class FinalChartInkTelegramWorker(QThread):
             try:
                 for message in delivery.messages:
                     self.message_sender(self.token, delivery.chat_id, message)
+                    message_count += 1
+                for message in self.html_messages:
+                    self.html_message_sender(self.token, delivery.chat_id, message)
                     message_count += 1
                 if self.document_path is not None:
                     self.document_sender(
@@ -9264,25 +9305,19 @@ def export_history_workbook(
     if workbook_enricher is not None:
         workbook_enricher(workbook)
 
-    for sheet in workbook.worksheets:
-        sheet.freeze_panes = "A2"
-        sheet.auto_filter.ref = sheet.dimensions
-        for cell in sheet[1]:
-            cell.font = Font(bold=True, color="FFFFFF")
-            cell.fill = PatternFill("solid", fgColor="1F4E78")
-            cell.alignment = Alignment(horizontal="center")
-        for column in range(1, sheet.max_column + 1):
-            max_length = max(
-                len(str(sheet.cell(row, column).value or ""))
-                for row in range(1, sheet.max_row + 1)
-            )
-            sheet.column_dimensions[get_column_letter(column)].width = min(
-                max(max_length + 2, 12), 80
-            )
-    if "Evidence" in headers:
-        evidence_column = get_column_letter(headers.index("Evidence") + 1)
-        for cell in matches[evidence_column]:
-            cell.alignment = Alignment(wrap_text=True, vertical="top")
+    for sheet, wrapped in (
+        (summary, set()),
+        (
+            matches,
+            {
+                "Matched Members", "Feeder Matches", "Evidence",
+                DATA_SOURCE_COLUMN, PRICE_BASIS_COLUMN,
+            },
+        ),
+        (config, {"Value"}),
+        (expression, {"Readable expression", "JSON AST"}),
+    ):
+        _style_finalchartink_sheet(sheet, wrap_headers=wrapped)
     if PERCENT_CHANGE_COLUMN in headers:
         change_column = get_column_letter(headers.index(PERCENT_CHANGE_COLUMN) + 1)
         for cell in matches[change_column][1:]:
@@ -21420,6 +21455,7 @@ def finalchartink_defaults() -> dict[str, Any]:
         "end_time": "15:30",
         "trading_days_only": True,
         "publish_to_chartsage": False,
+        "manual_timestamp_snapshots": True,
         "telegram_master_enabled": True,
         "telegram_report_enabled": True,
         "telegram_xlsx_enabled": True,
@@ -21480,6 +21516,7 @@ def normalize_finalchartink_recipe(raw: Any) -> dict[str, Any]:
     for key in (
         "include_multirule", "technical_adjusted", "include_current",
         "trading_days_only", "publish_to_chartsage",
+        "manual_timestamp_snapshots",
     ):
         config[key] = bool(config.get(key, finalchartink_defaults()[key]))
     # Old recipes had one switch that meant "send report and workbook". When
@@ -21612,7 +21649,14 @@ def build_finalchartink_cycle_preview(
         lines.append("  • None selected")
 
     lines.extend(["", "STEP 2A — WHERE THE FEEDERS WILL SCAN"])
-    if scope == "OVERRIDE":
+    if not feeders:
+        lines.append("  Inactive: no Step 1 rule template is selected")
+        if normalized["feeder_sources"]:
+            lines.append(
+                "  Preserved but ignored selection(s): "
+                + ", ".join(normalized["feeder_sources"])
+            )
+    elif scope == "OVERRIDE":
         lines.append("  Mode: Override every template's saved universe")
         sources = normalized["feeder_sources"]
         lines.append("  Checked source(s): " + (", ".join(sources) or "None"))
@@ -21679,6 +21723,15 @@ def build_finalchartink_cycle_preview(
         f"  • {buy_name}",
         f"  • {exit_name}",
     ])
+    if historical:
+        lines.append("  Timestamped snapshots: Not created during historical tests")
+    elif normalized["manual_timestamp_snapshots"]:
+        lines.append(
+            "  Timestamped snapshots: Yes — preserve dated copies of all four "
+            "watchlists for this manual run"
+        )
+    else:
+        lines.append("  Timestamped snapshots: No")
     if normalized["publish_to_chartsage"] and not historical:
         lines.extend(["", "CHARTSAGE COPIES CREATED/UPDATED"])
         lines.extend(
@@ -21738,7 +21791,11 @@ def validate_finalchartink_cycle_config(
         return f"The selected final BUY rule no longer exists: {buy_set}"
     if exit_set and exit_set not in templates:
         return f"The selected final SELL/EXIT rule no longer exists: {exit_set}"
-    if normalized["feeder_scope"] == "OVERRIDE" and not normalized["feeder_sources"]:
+    if (
+        feeders
+        and normalized["feeder_scope"] == "OVERRIDE"
+        and not normalized["feeder_sources"]
+    ):
         return "Select at least one Step 2A source for feeder Override mode."
     if normalized["feeder_scope"] == "SAVED":
         for feeder_name in feeders:
@@ -21932,6 +21989,49 @@ def finalchartink_recipe_watchlist_names(config: dict[str, Any]) -> list[str]:
     ))
 
 
+def build_finalchartink_timestamped_watchlists(
+    config: dict[str, Any],
+    multirule_symbols: Iterable[str],
+    final_symbols: Iterable[str],
+    buy_symbols: Iterable[str],
+    exit_symbols: Iterable[str],
+    existing_names: Iterable[str] = (),
+    generated_at: datetime | None = None,
+) -> tuple[dict[str, list[str]], list[dict[str, Any]]]:
+    """Create collision-safe, chronologically sortable manual-run snapshots."""
+    normalized = normalize_finalchartink_recipe(config)
+    stamp = (generated_at or get_ist_now()).strftime("%Y%m%d_%H%M%S")
+    definitions = [
+        ("Step 1 multi-rule output", normalized["multirule_watchlist"], multirule_symbols),
+        ("Combined final input", normalized["final_input_watchlist"], final_symbols),
+        ("Step 3 BUY results", f"{normalized['recipe_name']} BUY RESULTS", buy_symbols),
+        ("Step 3 EXIT results", f"{normalized['recipe_name']} EXIT RESULTS", exit_symbols),
+    ]
+    reserved = {str(name) for name in existing_names}
+    snapshots: dict[str, list[str]] = {}
+    records: list[dict[str, Any]] = []
+    for role, base_name, raw_symbols in definitions:
+        candidate = f"{base_name} {stamp}"
+        suffix = 2
+        while candidate in reserved:
+            candidate = f"{base_name} {stamp}_{suffix:02d}"
+            suffix += 1
+        reserved.add(candidate)
+        symbols = sorted({
+            str(symbol).strip().upper()
+            for symbol in raw_symbols
+            if str(symbol).strip()
+        })
+        snapshots[candidate] = symbols
+        records.append({
+            "role": role,
+            "name": candidate,
+            "symbol_count": len(symbols),
+            "timestamp_ist": stamp,
+        })
+    return snapshots, records
+
+
 def finalchartink_chartsage_watchlist_name(private_name: str) -> str:
     """Build a ChartSage-manageable, collision-resistant published name."""
     clean = re.sub(r"[^A-Za-z0-9\s_-]+", " ", str(private_name or ""))
@@ -22045,11 +22145,24 @@ def finalchartink_source_hover_text(
     if not symbols:
         contents = "<i>This watchlist is empty.</i>"
     else:
+        preview_limit = 32
+        preview_symbols = symbols[:preview_limit]
         lines = [
-            ", ".join(html.escape(symbol) for symbol in symbols[index:index + 8])
-            for index in range(0, len(symbols), 8)
+            ", ".join(
+                html.escape(symbol)
+                for symbol in preview_symbols[index:index + 8]
+            )
+            for index in range(0, len(preview_symbols), 8)
         ]
         contents = "<br/>".join(lines)
+        if len(symbols) > preview_limit:
+            contents += (
+                f"<br/><br/><i>Showing the first {preview_limit:,} of "
+                f"{len(symbols):,} stocks. Double-click this source to view "
+                "the complete scrollable list.</i>"
+            )
+        else:
+            contents += "<br/><br/><i>Double-click to open this list.</i>"
     timing = ""
     details = metadata or {}
     if details.get("created_at"):
@@ -22091,15 +22204,77 @@ def build_finalchartink_telegram_messages(payload: dict[str, Any]) -> list[str]:
         f"Final input symbols: {int(payload.get('final_source_count', 0) or 0):,}",
         f"BUY: {len(buys)} | EXIT/Weakness: {len(exits)} | REVIEW: {len(reviews)}",
     ]
+    feeder_templates = list(config.get("feeder_templates", []))
     feeder_sources = list(config.get("feeder_sources", []))
     final_sources = list(config.get("final_additional_sources", []))
+    scope_text = (
+        "inactive - no Step 1 rule template is selected"
+        if not feeder_templates
+        else {
+            "SAVED": "use each Step 1 template's saved universe",
+            "OVERRIDE": "replace each Step 1 saved universe with Step 2A sources",
+            "COMBINE": "combine each Step 1 saved universe with Step 2A sources",
+        }.get(config.get("feeder_scope", "SAVED"), "use configured Step 2A mode")
+    )
+    lines.extend(["", "STRATEGY CONFIGURATION USED", "Step 1 rule templates:"])
+    if feeder_templates:
+        lines.extend(f"- {name}" for name in feeder_templates)
+    else:
+        lines.append("- None selected")
+    lines.extend([
+        f"Step 2A mode: {scope_text}",
+        "Step 2A selected universes/watchlists: "
+        + (
+            (", ".join(feeder_sources) + " (preserved but ignored)")
+            if feeder_sources and not feeder_templates
+            else ", ".join(feeder_sources) if feeder_sources
+            else "None selected"
+        ),
+        "Step 2B direct universes/watchlists: "
+        + (", ".join(final_sources) if final_sources else "None selected"),
+        (
+            "Step 2B behaviour: selected universe/watchlist stocks bypass all "
+            "Step 1 rules and Step 1 saved universes and go directly to Step 3."
+        ),
+        f"Step 3 final BUY rule/set: {config['buy_finalset'] or 'None selected'}",
+        f"Step 3 final EXIT rule/set: {config['exit_finalset'] or 'None selected'}",
+    ])
+    for item in payload.get("selected_rule_rows", []) or []:
+        stage = str(item.get("Stage", ""))
+        members = str(item.get("Member Templates", "") or "").strip()
+        if members and "Step 3" in stage:
+            side = "BUY" if "BUY" in stage and "SELL" not in stage else "EXIT"
+            lines.append(f"Step 3 {side} member rules: {members}")
+    historical = bool(payload.get("historical_mode", False)) or (
+        config.get("as_of_mode") == "historical"
+    )
+    output_verb = "Logical output names (not written in historical mode)" if historical else "Watchlists created/updated"
     lines.extend([
         "",
-        "Step 2A feeder scan sources: "
-        + (", ".join(feeder_sources) if feeder_sources else "Saved template universes"),
-        "Step 2B additional final-input sources: "
-        + (", ".join(final_sources) if final_sources else "None"),
+        output_verb + ":",
+        f"- Step 1 multi-rule output: {config['multirule_watchlist']}",
+        f"- Combined final input: {config['final_input_watchlist']}",
+        f"- Step 3 BUY results: {config['recipe_name']} BUY RESULTS",
+        f"- Step 3 EXIT results: {config['recipe_name']} EXIT RESULTS",
     ])
+    timestamped = list(payload.get("timestamped_watchlists", []) or [])
+    if timestamped:
+        lines.extend(["", "Timestamped manual-run snapshots:"])
+        for item in timestamped:
+            lines.append(
+                f"- {item.get('role', 'Snapshot')}: "
+                f"{item.get('name', '')} "
+                f"({int(item.get('symbol_count', 0) or 0):,} stocks)"
+            )
+    else:
+        lines.append("- Timestamped manual-run snapshots: None created")
+    published_names = [
+        str(item.get("published_name", "")).strip()
+        for item in payload.get("chartsage_published_watchlists", []) or []
+        if str(item.get("published_name", "")).strip()
+    ]
+    if published_names:
+        lines.append("- ChartSage published copies: " + ", ".join(published_names))
 
     def add_section(title: str, selected: list[dict[str, Any]]) -> None:
         lines.extend(["", f"{title} ({len(selected)}):"])
@@ -22123,6 +22298,62 @@ def build_finalchartink_telegram_messages(payload: dict[str, Any]) -> list[str]:
     return chunk_telegram_lines(
         lines,
         continuation_header=f"FINAL ChartInk V1 — {config['recipe_name']} (continued)",
+    )
+
+
+def build_finalchartink_compact_telegram_messages(
+    payload: dict[str, Any],
+) -> list[str]:
+    """Build a names-only HTML summary sent after the detailed Telegram report."""
+    config = normalize_finalchartink_recipe(payload.get("config", {}))
+    rows = list(payload.get("guidance_rows", []) or [])
+
+    def symbols_with_prefix(*prefixes: str) -> list[str]:
+        selected: list[str] = []
+        seen: set[str] = set()
+        for row in rows:
+            signal = str(row.get("Signal", "") or "").strip().upper()
+            if not signal.startswith(prefixes):
+                continue
+            symbol = str(row.get("Symbol", "") or "").strip().upper()
+            if symbol and symbol not in seen:
+                seen.add(symbol)
+                selected.append(symbol)
+        return selected
+
+    reviews = symbols_with_prefix("REVIEW")
+    review_set = set(reviews)
+    buys = [symbol for symbol in symbols_with_prefix("BUY") if symbol not in review_set]
+    exits = [symbol for symbol in symbols_with_prefix("EXIT") if symbol not in review_set]
+    generated = get_ist_now()
+    safe_strategy = html.escape(config["recipe_name"][:500])
+    lines = [
+        "<b>FINAL BUY / EXIT STOCK LIST</b>",
+        f"Strategy: {safe_strategy}",
+        f"Generated: {generated:%Y-%m-%d %H:%M:%S} IST",
+        "",
+    ]
+
+    def add_section(indicator: str, heading: str, symbols: list[str]) -> None:
+        lines.append(f"{indicator} <b>{heading}</b> — {len(symbols)}")
+        if symbols:
+            lines.extend(
+                f"<b>{index}. {html.escape(symbol)}</b>"
+                for index, symbol in enumerate(symbols, 1)
+            )
+        else:
+            lines.append("None")
+        lines.append("")
+
+    add_section("🟢", "BUY STOCKS", buys)
+    add_section("🔴", "EXIT STOCKS", exits)
+    if reviews:
+        add_section("🟠", "BUY + EXIT REVIEW", reviews)
+    if lines and not lines[-1]:
+        lines.pop()
+    return chunk_telegram_lines(
+        lines,
+        continuation_header="<b>FINAL BUY / EXIT STOCK LIST (continued)</b>",
     )
 
 
@@ -22153,6 +22384,32 @@ def _finalchartink_excel_value(value: Any) -> Any:
     return "'" + text if text.startswith(("=", "+", "-", "@")) else text
 
 
+def _fit_finalchartink_row_heights(sheet: Any) -> None:
+    """Estimate wrapped Excel row heights after final column widths are known."""
+    for row_index in range(1, sheet.max_row + 1):
+        required_lines = 1
+        for column_index in range(1, sheet.max_column + 1):
+            cell = sheet.cell(row_index, column_index)
+            text = str(cell.value or "")
+            if not text:
+                continue
+            width = float(
+                sheet.column_dimensions[get_column_letter(column_index)].width or 12
+            )
+            logical_lines = text.splitlines() or [""]
+            if cell.alignment.wrap_text or len(logical_lines) > 1:
+                usable_width = max(1, int(width) - 1)
+                line_count = sum(
+                    max(1, math.ceil(len(line) / usable_width))
+                    for line in logical_lines
+                )
+                required_lines = max(required_lines, line_count)
+        base_height = 30 if row_index == 1 else 18
+        estimated_height = max(base_height, required_lines * 15 + 3)
+        # Excel's supported maximum row height is 409.5 points.
+        sheet.row_dimensions[row_index].height = min(409.5, estimated_height)
+
+
 def _style_finalchartink_sheet(sheet: Any, *, wrap_headers: set[str] | None = None) -> None:
     wrap_headers = wrap_headers or set()
     thin_side = Side(style="thin", color="A6A6A6")
@@ -22172,15 +22429,27 @@ def _style_finalchartink_sheet(sheet: Any, *, wrap_headers: set[str] | None = No
         sheet.row_dimensions[1].height = 30
     for column_index in range(1, sheet.max_column + 1):
         header = str(sheet.cell(1, column_index).value or "")
+        column_text = [
+            str(sheet.cell(row_index, column_index).value or "")
+            for row_index in range(1, sheet.max_row + 1)
+        ]
         max_length = max(
-            len(str(sheet.cell(row_index, column_index).value or ""))
-            for row_index in range(1, min(sheet.max_row, 250) + 1)
+            max(
+                (len(line) for line in text.splitlines()),
+                default=0,
+            )
+            for text in column_text
         )
         width_limit = 70 if header in wrap_headers else 34
+        requires_wrap = (
+            header in wrap_headers
+            or max_length + 2 > width_limit
+            or any("\n" in text or "\r" in text for text in column_text)
+        )
         sheet.column_dimensions[get_column_letter(column_index)].width = min(
             max(max_length + 2, 12), width_limit
         )
-        if header in wrap_headers:
+        if requires_wrap:
             for row_index in range(2, sheet.max_row + 1):
                 sheet.cell(row_index, column_index).alignment = Alignment(
                     wrap_text=True, vertical="top"
@@ -22193,6 +22462,7 @@ def _style_finalchartink_sheet(sheet: Any, *, wrap_headers: set[str] | None = No
     ):
         for cell in row:
             cell.border = all_borders
+    _fit_finalchartink_row_heights(sheet)
 
 
 def _finalchartink_export_rule_logic(
@@ -22303,6 +22573,239 @@ def build_finalchartink_selected_rule_rows(
     return rows
 
 
+def add_finalchartink_strategy_explanation_sheet(
+    workbook: Workbook,
+    config: dict[str, Any],
+    selected_rule_rows: Iterable[dict[str, Any]] | None = None,
+    *,
+    outputs_created: bool = True,
+    published_watchlists: Iterable[str] | None = None,
+    timestamped_watchlists: Iterable[dict[str, Any]] | None = None,
+) -> None:
+    """Add an enduring guide to the selected strategy and every routing mode."""
+    normalized = normalize_finalchartink_recipe(config)
+    sheet = workbook.create_sheet("How Strategy Works", 1)
+    sheet.append(["Section", "Topic", "Explanation / Exact Selection"])
+
+    def add(section: str, topic: str, explanation: Any) -> None:
+        sheet.append([
+            section,
+            topic,
+            _finalchartink_excel_value(explanation),
+        ])
+
+    rule_rows = list(selected_rule_rows or [])
+    step1_details = {
+        str(item.get("Template", "")).strip(): item
+        for item in rule_rows
+        if "Step 1" in str(item.get("Stage", ""))
+    }
+    step3_details = {
+        "BUY" if "BUY" in str(item.get("Stage", ""))
+        and "SELL" not in str(item.get("Stage", "")) else "EXIT": item
+        for item in rule_rows
+        if "Step 3" in str(item.get("Stage", ""))
+    }
+
+    add("ACTUAL RUN", "Strategy name", normalized["recipe_name"])
+    output_status = "Created/updated by this run" if outputs_created else (
+        "Logical output name only; historical and paper runs do not write watchlists"
+    )
+    output_watchlists = [
+        ("Step 1 generated multi-rule watchlist", normalized["multirule_watchlist"]),
+        ("Combined Final Input watchlist", normalized["final_input_watchlist"]),
+        ("Step 3 BUY Results watchlist", f"{normalized['recipe_name']} BUY RESULTS"),
+        ("Step 3 EXIT Results watchlist", f"{normalized['recipe_name']} EXIT RESULTS"),
+    ]
+    for topic, name in output_watchlists:
+        add("ACTUAL RUN - OUTPUT WATCHLISTS", topic, f"{name} | {output_status}")
+    snapshot_rows = list(timestamped_watchlists or [])
+    if snapshot_rows:
+        for item in snapshot_rows:
+            add(
+                "ACTUAL RUN - OUTPUT WATCHLISTS",
+                f"Timestamped snapshot — {item.get('role', 'Snapshot')}",
+                f"{item.get('name', '')} | "
+                f"{int(item.get('symbol_count', 0) or 0):,} stocks",
+            )
+    else:
+        add(
+            "ACTUAL RUN - OUTPUT WATCHLISTS",
+            "Timestamped manual-run snapshots",
+            "None created",
+        )
+    published_names = [
+        str(name).strip() for name in (published_watchlists or []) if str(name).strip()
+    ]
+    if published_names:
+        for name in published_names:
+            add("ACTUAL RUN - OUTPUT WATCHLISTS", "ChartSage published copy", name)
+    else:
+        add(
+            "ACTUAL RUN - OUTPUT WATCHLISTS",
+            "ChartSage published copies",
+            "None",
+        )
+    if normalized["feeder_templates"]:
+        for name in normalized["feeder_templates"]:
+            detail = step1_details.get(name, {})
+            saved = str(detail.get("Saved Universe(s)", "") or "").strip()
+            suffix = f" | Saved universe(s): {saved}" if saved else ""
+            add("ACTUAL RUN - STEP 1", "Selected rule template", name + suffix)
+    else:
+        add("ACTUAL RUN - STEP 1", "Selected rule templates", "None selected")
+
+    scope = normalized["feeder_scope"]
+    has_step1 = bool(normalized["feeder_templates"])
+    scope_text = (
+        "Inactive because no Step 1 rule template is selected."
+        if not has_step1
+        else {
+            "SAVED": "Use each selected Step 1 template's own saved universe only.",
+            "OVERRIDE": (
+                "Replace every selected Step 1 template's saved universe with the "
+                "selected Step 2A sources."
+            ),
+            "COMBINE": (
+                "Combine every selected Step 1 template's saved universe with the "
+                "selected Step 2A sources."
+            ),
+        }[scope]
+    )
+    add("ACTUAL RUN - STEP 2A", "Feeder universe mode", scope_text)
+    if normalized["feeder_sources"]:
+        for name in normalized["feeder_sources"]:
+            add(
+                "ACTUAL RUN - STEP 2A",
+                "Selected universe/watchlist" if has_step1 else "Preserved inactive selection",
+                name,
+            )
+    else:
+        add("ACTUAL RUN - STEP 2A", "Selected universes/watchlists", "None selected")
+
+    if normalized["final_additional_sources"]:
+        for name in normalized["final_additional_sources"]:
+            add("ACTUAL RUN - STEP 2B", "Direct universe/watchlist", name)
+    else:
+        add("ACTUAL RUN - STEP 2B", "Direct universes/watchlists", "None selected")
+    add(
+        "ACTUAL RUN - STEP 2B",
+        "Important behaviour",
+        "Step 2B sources bypass all Step 1 rules and Step 1 saved universes. "
+        "Stocks from the selected Step 2B universes and/or watchlists are sent "
+        "directly to Step 3 for final BUY/EXIT evaluation.",
+    )
+    add(
+        "ACTUAL RUN - STEP 2",
+        "Include Step 1 matches in final input",
+        (
+            "Yes" if normalized["include_multirule"] else "No"
+        ) if has_step1 else "Inactive - no Step 1 rule template is selected",
+    )
+
+    for side, key in (("BUY", "buy_finalset"), ("EXIT", "exit_finalset")):
+        name = normalized[key] or "None selected"
+        add("ACTUAL RUN - STEP 3", f"Final {side} rule/set", name)
+        detail = step3_details.get(side, {})
+        members = str(detail.get("Member Templates", "") or "").strip()
+        combination = str(detail.get("Combination", "") or "").strip()
+        if members:
+            add(
+                "ACTUAL RUN - STEP 3",
+                f"{side} member rule templates",
+                members + (f" | Combination: {combination}" if combination else ""),
+            )
+
+    add(
+        "CORE LOGIC",
+        "Final input formula",
+        "Final Input = included Step 1 matching stocks + all stocks from selected "
+        "Step 2B sources. Duplicate symbols are removed before Step 3.",
+    )
+    add(
+        "STEP 1",
+        "Purpose",
+        "Each selected Step 1 rule template evaluates stocks from its effective "
+        "scan source UNIVERSE or Watchlist. The effective source i.e universe or "
+        "watchlist is determined by the Step-2A mode. A stock is filtered through "
+        "this route only when that template's rule from STEP-1 matches it.",
+    )
+    add(
+        "STEP 2A",
+        "Purpose",
+        "Step 2A controls where the selected Step-1 rule templates scan. It is "
+        "not a direct final-input route. Step 2A has no role when no Step-1 rule "
+        "template is selected, even if universes or watchlists are selected in Step 2A.",
+    )
+    add(
+        "STEP 2B",
+        "Purpose",
+        "Step 2B is the direct-input route. It contributes every stock from each "
+        "selected universe/watchlist without applying Step 1 rules or Step 1 universes.",
+    )
+    add(
+        "STEP 3",
+        "Purpose",
+        "The selected final BUY and EXIT rules evaluate the de-duplicated Final Input. "
+        "A missing BUY or EXIT selection produces no signals for that respective side.",
+    )
+    add(
+        "STEP 3",
+        "Final Rule Sets",
+        "AND requires every enabled member rule; OR requires any one enabled member; "
+        "K-of-N requires at least the configured number of enabled member rules.",
+    )
+    add(
+        "COMBINATION 1",
+        "Filtered route: Step 1 + Step 2A -> Step 3",
+        "Step 1 templates scan their saved, replaced or combined Step 2A sources. "
+        "Only Step 1 matches enter the Final Input when Step 1 output is included.",
+    )
+    add(
+        "COMBINATION 2",
+        "Direct route: Step 2B -> Step 3",
+        "All stocks from selected Step 2B universes/watchlists enter the Final Input "
+        "directly and are evaluated only by Step 3.",
+    )
+    add(
+        "COMBINATION 3",
+        "Combined route: Step 1 + Step 2A + Step 2B -> Step 3",
+        "Step 1 matches and all Step 2B stocks are united, duplicates are removed, "
+        "and the resulting Final Input is evaluated by Step 3.",
+    )
+    add(
+        "COMBINATION 4",
+        "Run Step 1 but exclude its output",
+        "Step 1 can still create/update its generated multi-rule watchlist, but its "
+        "matches do not enter Step 3 unless they also arrive through Step 2B.",
+    )
+    add(
+        "EXAMPLE",
+        "Filtered plus direct sources",
+        "An RSI Step 1 rule scans NIFTY 500 and matches 20 stocks. Step 2B supplies "
+        "50 Momentum Leaders directly. If 5 symbols overlap, Step 3 evaluates 65 "
+        "unique stocks: 20 + 50 - 5.",
+    )
+    add(
+        "EXAMPLE",
+        "Why Step 2A is not a direct input",
+        "Selecting NIFTY Bank in Step 2A makes selected Step 1 templates scan that "
+        "universe according to the chosen mode. It does not send every NIFTY Bank "
+        "stock to Step 3; only Step 1 matches can proceed through that route.",
+    )
+
+    _style_finalchartink_sheet(sheet, wrap_headers={"Topic", "Explanation / Exact Selection"})
+    sheet.column_dimensions["A"].width = 28
+    sheet.column_dimensions["B"].width = 42
+    sheet.column_dimensions["C"].width = 110
+    for row_index in range(2, sheet.max_row + 1):
+        for column_index in range(1, 4):
+            sheet.cell(row_index, column_index).alignment = Alignment(
+                wrap_text=True, vertical="top"
+            )
+    _fit_finalchartink_row_heights(sheet)
+
+
 def finalchartink_history_period_label(months: int) -> str:
     months = int(months)
     if months == 12:
@@ -22359,12 +22862,19 @@ def add_finalchartink_history_audit_sheet(
         "Completed daily snapshots; weekly/monthly rules use their latest completed candles",
     )
     scope = normalized["feeder_scope"]
-    scope_text = {
-        "SAVED": "Use each Step 1 template's saved universe only",
-        "OVERRIDE": "Replace every Step 1 template's saved universe with Step 2A sources",
-        "COMBINE": "Combine each template's saved universe with Step 2A sources",
-    }[scope]
+    has_step1 = bool(normalized["feeder_templates"])
+    scope_text = (
+        "Inactive because no Step 1 rule template is selected"
+        if not has_step1
+        else {
+            "SAVED": "Use each Step 1 template's saved universe only",
+            "OVERRIDE": "Replace every Step 1 template's saved universe with Step 2A sources",
+            "COMBINE": "Combine each template's saved universe with Step 2A sources",
+        }[scope]
+    )
     step2a = ", ".join(normalized["feeder_sources"]) or "None selected"
+    if not has_step1 and normalized["feeder_sources"]:
+        step2a += " (preserved but ignored)"
     add("STEP 2A", "Feeder universe mode", step2a, scope_text)
 
     if normalized["feeder_templates"]:
@@ -22455,11 +22965,17 @@ def add_finalchartink_history_audit_sheet(
     sheet.column_dimensions["C"].width = 58
     sheet.column_dimensions["D"].width = 100
     for row_index in range(2, sheet.max_row + 1):
-        sheet.row_dimensions[row_index].height = 72
         for column_index in range(1, 5):
             sheet.cell(row_index, column_index).alignment = Alignment(
                 wrap_text=True, vertical="top"
             )
+    _fit_finalchartink_row_heights(sheet)
+    add_finalchartink_strategy_explanation_sheet(
+        workbook,
+        normalized,
+        build_finalchartink_selected_rule_rows(normalized, templates),
+        outputs_created=False,
+    )
 
 
 def export_finalchartink_history_workbook(
@@ -22643,11 +23159,11 @@ def export_finalchartink_workbook(path: Path | str, payload: dict[str, Any]) -> 
             "Template", "Saved Universe(s)", "Member Templates", "Complete Rule Logic"
         },
     )
-    for row_index in range(2, selected_rules.max_row + 1):
-        selected_rules.row_dimensions[row_index].height = 72
-
     summary = workbook.create_sheet("Run Summary")
     summary.append(["Item", "Value"])
+    timestamped_watchlists = list(
+        payload.get("timestamped_watchlists", []) or []
+    )
     summary_rows = [
         ("Application", "FINAL ChartInk V1 — Guidance Only"),
         ("Strategy", config["recipe_name"]),
@@ -22662,20 +23178,50 @@ def export_finalchartink_workbook(path: Path | str, payload: dict[str, Any]) -> 
         ("Multi-rule symbols", int(payload.get("multirule_count", 0) or 0)),
         ("Final input watchlist", config["final_input_watchlist"]),
         ("Final input symbols", int(payload.get("final_source_count", 0) or 0)),
-        ("BUY suggestions", sum(str(row.get("Signal", "")) == "BUY" for row in rows)),
-        ("EXIT/Weakness suggestions", sum(str(row.get("Signal", "")).startswith("EXIT") for row in rows)),
-        ("BUY + EXIT reviews", sum(str(row.get("Signal", "")).startswith("REVIEW") for row in rows)),
-        ("BUY final rule/set", config["buy_finalset"]),
-        ("EXIT final rule/set", config["exit_finalset"] or "None"),
+        ("BUY Results watchlist", f"{config['recipe_name']} BUY RESULTS"),
+        ("EXIT Results watchlist", f"{config['recipe_name']} EXIT RESULTS"),
+        (
+            "Timestamped snapshots enabled for manual runs",
+            "Yes" if config["manual_timestamp_snapshots"] else "No",
+        ),
+        ("Timestamped snapshots created", len(timestamped_watchlists)),
+        (
+            "Step 1 selected rule templates",
+            ", ".join(config["feeder_templates"]) or "None selected",
+        ),
+        (
+            "Step 2A feeder universe mode",
+            "Inactive - no Step 1 rule template is selected"
+            if not config["feeder_templates"]
+            else {
+                "SAVED": "Use each Step 1 template's saved universe only",
+                "OVERRIDE": "Replace Step 1 saved universes with Step 2A sources",
+                "COMBINE": "Combine Step 1 saved universes with Step 2A sources",
+            }[config["feeder_scope"]],
+        ),
+        ("BUY final rule/set", config["buy_finalset"] or "None selected"),
+        ("EXIT final rule/set", config["exit_finalset"] or "None selected"),
         ("Price basis", "Technical Adjusted" if config["technical_adjusted"] else "Official Raw"),
         (
             "Step 2A feeder scan sources",
-            ", ".join(config["feeder_sources"]) or "Saved template universes",
+            (
+                ", ".join(config["feeder_sources"]) + " (preserved but ignored)"
+                if config["feeder_sources"] and not config["feeder_templates"]
+                else ", ".join(config["feeder_sources"]) or "None selected"
+            ),
         ),
         (
             "Step 2B additional final-input sources",
-            ", ".join(config["final_additional_sources"]) or "None",
+            ", ".join(config["final_additional_sources"]) or "None selected",
         ),
+        (
+            "Step 2B behaviour",
+            "Selected universe/watchlist stocks bypass all Step 1 rules and Step 1 "
+            "saved universes and are sent directly to Step 3.",
+        ),
+        ("BUY suggestions", sum(str(row.get("Signal", "")) == "BUY" for row in rows)),
+        ("EXIT/Weakness suggestions", sum(str(row.get("Signal", "")).startswith("EXIT") for row in rows)),
+        ("BUY + EXIT reviews", sum(str(row.get("Signal", "")).startswith("REVIEW") for row in rows)),
         (
             "Publish generated watchlists to ChartSage",
             "Suppressed for historical test"
@@ -22710,12 +23256,54 @@ def export_finalchartink_workbook(path: Path | str, payload: dict[str, Any]) -> 
             else "Disabled",
         ),
     ]
+    snapshot_insert_at = next(
+        (
+            index
+            for index, item in enumerate(summary_rows)
+            if item[0] == "Publish generated watchlists to ChartSage"
+        ),
+        len(summary_rows),
+    )
+    for item in timestamped_watchlists:
+        summary_rows.insert(
+            snapshot_insert_at,
+            (
+                f"Timestamped snapshot — {item.get('role', 'Snapshot')}",
+                f"{item.get('name', '')} "
+                f"({int(item.get('symbol_count', 0) or 0):,} stocks)",
+            ),
+        )
+        snapshot_insert_at += 1
+    for item in rule_rows:
+        stage = str(item.get("Stage", ""))
+        members = str(item.get("Member Templates", "") or "").strip()
+        if members and "Step 3" in stage:
+            side = "BUY" if "BUY" in stage and "SELL" not in stage else "EXIT"
+            combination = str(item.get("Combination", "") or "").strip()
+            summary_rows.append(
+                (
+                    f"{side} final-set member rules",
+                    members + (f" | Combination: {combination}" if combination else ""),
+                )
+            )
     for label, value in summary_rows:
         summary.append([label, _finalchartink_excel_value(value)])
     for row_index in range(2, summary.max_row + 1):
         if isinstance(summary.cell(row_index, 2).value, int):
             summary.cell(row_index, 2).number_format = '#,##0'
     _style_finalchartink_sheet(summary, wrap_headers={"Value"})
+    add_finalchartink_strategy_explanation_sheet(
+        workbook,
+        config,
+        rule_rows,
+        outputs_created=config["as_of_mode"] != "historical",
+        published_watchlists=[
+            str(item.get("published_name", ""))
+            for item in payload.get("chartsage_published_watchlists", []) or []
+            if str(item.get("published_name", "")).strip()
+        ],
+        timestamped_watchlists=timestamped_watchlists,
+    )
 
     feeders = workbook.create_sheet("Feeder Summary")
     feeders.append(["Template", "Scanned", "Matches", "Match Rate"])
@@ -22815,11 +23403,19 @@ class FinalChartInkCycleWorker(QThread):
     failed = Signal(str)
     progress = Signal(int, str)
 
-    def __init__(self, config: dict[str, Any], templates: dict[str, dict[str, Any]], catalog: dict[str, tuple[str, Any]]):
+    def __init__(
+        self,
+        config: dict[str, Any],
+        templates: dict[str, dict[str, Any]],
+        catalog: dict[str, tuple[str, Any]],
+        *,
+        create_timestamped_snapshots: bool = False,
+    ):
         super().__init__()
         self.config = normalize_finalchartink_recipe(config)
         self.templates = copy.deepcopy(templates)
         self.catalog = copy.deepcopy(catalog)
+        self.create_timestamped_snapshots = bool(create_timestamped_snapshots)
         self._cancel = threading.Event()
         self._active_scanner: RuleScannerWorker | None = None
         # One bounded-lifetime cache for this cycle only. It is discarded with
@@ -22893,7 +23489,11 @@ class FinalChartInkCycleWorker(QThread):
             if not name or not re.fullmatch(r"[A-Za-z0-9\s_-]+", name):
                 raise ValueError(f"Invalid watchlist name: {name!r}")
 
-        feeder_source_names = list(config["feeder_sources"])
+        # Step 2A exists only to supply symbols to Step 1 feeder templates.
+        # Ignore preserved Step 2A selections entirely for a Step-2B-only run.
+        feeder_source_names = (
+            list(config["feeder_sources"]) if feeder_names else []
+        )
         feeder_source_symbols: list[str] = []
         feeder_source_details: dict[str, dict[str, str]] = {}
         if feeder_source_names:
@@ -23203,6 +23803,7 @@ class FinalChartInkCycleWorker(QThread):
             and str(row.get("Symbol", "")).strip()
         })
         historical = config["as_of_mode"] == "historical"
+        timestamped_watchlists: list[dict[str, Any]] = []
         if not historical:
             private_watchlists = finalchartink_watchlist_payload(WATCHLISTS_FILE)
             previously_existing = set(private_watchlists)
@@ -23212,6 +23813,20 @@ class FinalChartInkCycleWorker(QThread):
                 f"{config['recipe_name']} BUY RESULTS": buy_symbols,
                 f"{config['recipe_name']} EXIT RESULTS": exit_symbols,
             }
+            if self.create_timestamped_snapshots:
+                snapshots, timestamped_watchlists = (
+                    build_finalchartink_timestamped_watchlists(
+                        config,
+                        multirule_symbols,
+                        final_symbols,
+                        buy_symbols,
+                        exit_symbols,
+                        existing_names=(
+                            set(private_watchlists) | set(generated_watchlists)
+                        ),
+                    )
+                )
+                generated_watchlists.update(snapshots)
             private_watchlists.update(generated_watchlists)
             WatchlistStore(WATCHLISTS_FILE).save(private_watchlists)
             record_finalchartink_watchlist_writes(
@@ -23240,6 +23855,7 @@ class FinalChartInkCycleWorker(QThread):
             "chartsage_published_watchlists": chartsage_published_watchlists,
             "chartsage_publish_error": chartsage_publish_error,
             "historical_mode": historical,
+            "timestamped_watchlists": timestamped_watchlists,
             "selected_rule_rows": build_finalchartink_selected_rule_rows(
                 config, self.templates
             ),
@@ -23582,7 +24198,8 @@ class FinalChartInkHistoryWorker(QThread):
             raise ValueError(error)
 
         historical_indices: set[str] = set()
-        if self.config["feeder_scope"] in {"OVERRIDE", "COMBINE"}:
+        feeder_names = list(self.config["feeder_templates"])
+        if feeder_names and self.config["feeder_scope"] in {"OVERRIDE", "COMBINE"}:
             historical_indices.update(
                 name for name in self.config["feeder_sources"]
                 if name in HISTORICAL_NIFTY_INDICES
@@ -23606,7 +24223,8 @@ class FinalChartInkHistoryWorker(QThread):
 
         feeder_sources, feeder_details = ([], {})
         if (
-            self.config["feeder_sources"]
+            feeder_names
+            and self.config["feeder_sources"]
             and self.config["feeder_scope"] in {"OVERRIDE", "COMBINE"}
         ):
             feeder_sources, feeder_details = self._resolve_period_sources(
@@ -23626,7 +24244,6 @@ class FinalChartInkHistoryWorker(QThread):
             paper_source_specs.append(
                 (list(self.config["final_additional_sources"]), "")
             )
-        feeder_names = list(self.config["feeder_templates"])
         reports: list[HistoryReport] = []
         task_total = max(
             1,
@@ -24366,6 +24983,7 @@ class FinalChartInkWindow(QMainWindow):
         self.feeder_list = QListWidget()
         self.feeder_list.setMinimumHeight(200)
         self.feeder_list.itemChanged.connect(self._sync_rule_preview)
+        self.feeder_list.itemChanged.connect(self._update_step2_source_controls)
         feeders_layout.addWidget(self.feeder_list)
         feeder_buttons = QHBoxLayout()
         select_all = QPushButton("Select visible")
@@ -24408,10 +25026,10 @@ class FinalChartInkWindow(QMainWindow):
         sources_layout.addLayout(source_actions)
         source_split = QSplitter(Qt.Orientation.Horizontal)
 
-        feeder_source_box = QGroupBox(
+        self.feeder_source_box = QGroupBox(
             "Step 2A — Select Universes or Watchlists to RUN the Step 1 feeder Rule template Filters on"
         )
-        feeder_source_layout = QVBoxLayout(feeder_source_box)
+        feeder_source_layout = QVBoxLayout(self.feeder_source_box)
         self.feeder_scope_combo = QComboBox()
         self.feeder_scope_combo.addItem(
             "Use Step-1 feeder template's saved universe only,nothing else from Step 2A below", "SAVED"
@@ -24433,6 +25051,7 @@ class FinalChartInkWindow(QMainWindow):
         self.source_list = QListWidget()
         self.source_list.setMinimumHeight(170)
         self.source_list.setMouseTracking(True)
+        self.source_list.itemDoubleClicked.connect(self._show_source_details)
         feeder_source_layout.addWidget(self.source_list)
         feeder_hint = QLabel(
             "Step 2A selections control only where the feeder rules scan. They "
@@ -24441,7 +25060,7 @@ class FinalChartInkWindow(QMainWindow):
         feeder_hint.setWordWrap(True)
         feeder_hint.setStyleSheet("color:#555; font-size:10px;")
         feeder_source_layout.addWidget(feeder_hint)
-        source_split.addWidget(feeder_source_box)
+        source_split.addWidget(self.feeder_source_box)
 
         final_source_box = QGroupBox(
             "Step 2B — Sources added directly to the final BUY/EXIT input"
@@ -24463,6 +25082,9 @@ class FinalChartInkWindow(QMainWindow):
         self.final_source_list = QListWidget()
         self.final_source_list.setMinimumHeight(170)
         self.final_source_list.setMouseTracking(True)
+        self.final_source_list.itemDoubleClicked.connect(
+            self._show_source_details
+        )
         final_source_layout.addWidget(self.final_source_list)
         final_formula = QLabel(
             "Important: Stocks from universes or sources selected in the "
@@ -24609,6 +25231,15 @@ class FinalChartInkWindow(QMainWindow):
         left.addLayout(options)
 
         actions = QHBoxLayout()
+        self.timestamp_snapshots_cb = QCheckBox(
+            "Create timestamped watchlist snapshots"
+        )
+        self.timestamp_snapshots_cb.setChecked(True)
+        self.timestamp_snapshots_cb.setToolTip(
+            "For manually started latest-data runs, preserve dated copies of the "
+            "Step 1 output, Final Input, BUY Results and EXIT Results watchlists. "
+            "Repeating automation and historical tests do not create snapshots."
+        )
         self.run_btn = QPushButton("▶ Run Full Cycle Now")
         self.run_btn.setToolTip(
             "Review all feeder sources and watchlists that will be read, "
@@ -24621,6 +25252,7 @@ class FinalChartInkWindow(QMainWindow):
         self.stop_btn = QPushButton("Stop Automation")
         self.stop_btn.clicked.connect(self._stop_automation)
         self.stop_btn.setEnabled(False)
+        actions.addWidget(self.timestamp_snapshots_cb)
         actions.addWidget(self.run_btn)
         actions.addWidget(self.start_btn)
         actions.addWidget(self.stop_btn)
@@ -25129,9 +25761,15 @@ class FinalChartInkWindow(QMainWindow):
                                 cell.data_type = 's'
                     sheet.freeze_panes = 'A2'
                     sheet.auto_filter.ref = sheet.dimensions
+                    _style_finalchartink_sheet(
+                        sheet,
+                        wrap_headers={"Reason", "Evidence", "Matched Members"},
+                    )
             settings = workbook.create_sheet('Replay assumptions')
+            settings.append(["Setting", "Value"])
             for key, value in self.paper_settings.items():
                 settings.append([key, value])
+            _style_finalchartink_sheet(settings, wrap_headers={"Value"})
             config, templates, report = self.paper_audit
             add_finalchartink_history_audit_sheet(workbook, config, templates, report)
             workbook.save(path)
@@ -25182,6 +25820,7 @@ class FinalChartInkWindow(QMainWindow):
     def _date_mode_changed(self, *_args: Any) -> None:
         historical = self.historical_radio.isChecked()
         self.historical_date.setEnabled(historical)
+        self.timestamp_snapshots_cb.setEnabled(not historical)
         if not self.automation_active:
             self.start_btn.setEnabled(not historical)
         for widget in (
@@ -25274,11 +25913,24 @@ class FinalChartInkWindow(QMainWindow):
         )
 
     def _update_step2_source_controls(self, *_args: Any) -> None:
-        uses_step2a = str(self.feeder_scope_combo.currentData() or "SAVED") in {
-            "OVERRIDE", "COMBINE"
-        }
+        has_step1 = bool(self._checked(self.feeder_list))
+        uses_step2a = has_step1 and str(
+            self.feeder_scope_combo.currentData() or "SAVED"
+        ) in {"OVERRIDE", "COMBINE"}
+        self.feeder_source_box.setEnabled(has_step1)
         self.source_search.setEnabled(uses_step2a)
         self.source_list.setEnabled(uses_step2a)
+        self.include_multirule_cb.setEnabled(has_step1)
+        self.feeder_source_box.setToolTip(
+            "" if has_step1 else (
+                "Inactive: select at least one Step 1 rule template to use Step 2A."
+            )
+        )
+        self.include_multirule_cb.setToolTip(
+            "Include the stocks that pass the selected Step 1 rules in the final input."
+            if has_step1
+            else "Inactive because no Step 1 rule template is selected."
+        )
 
     def _refresh_source_catalog(self, show_status: bool = False) -> None:
         """Reload both watchlist stores while preserving valid UI selections."""
@@ -25286,6 +25938,7 @@ class FinalChartInkWindow(QMainWindow):
         old_final_sources = self._checked(self.final_source_list)
         self.catalog = finalchartink_source_catalog()
         watchlist_metadata = sync_finalchartink_watchlist_metadata(self.catalog)
+        self.source_watchlist_metadata = watchlist_metadata
         self.source_list.clear()
         self.final_source_list.clear()
         for name, (kind, source) in sorted(
@@ -25328,6 +25981,81 @@ class FinalChartInkWindow(QMainWindow):
                 f"watchlist(s), {private_count} private FINALCHARTinkV1 "
                 "watchlist(s), plus built-in universes."
             )
+
+    def _show_source_details(self, item: QListWidgetItem) -> None:
+        """Open a resizable, scrollable view instead of an oversized tooltip."""
+        name = str(item.data(Qt.ItemDataRole.UserRole) or "").strip()
+        entry = self.catalog.get(name)
+        if not entry:
+            return
+        kind, source = entry
+        dialog = QDialog(self)
+        dialog.setWindowTitle(f"Source contents — {name}")
+        dialog.resize(760, 680)
+        layout = QVBoxLayout(dialog)
+
+        details = getattr(self, "source_watchlist_metadata", {}).get(
+            _watchlist_metadata_key(kind, name), {}
+        )
+        symbols = sorted({
+            str(symbol).strip().upper()
+            for symbol in source
+            if str(symbol).strip()
+        }) if isinstance(source, list) else []
+        heading = QLabel(
+            f"<b>{html.escape(name)}</b><br/>"
+            f"Type: {html.escape(str(kind))}<br/>"
+            + (
+                f"Stocks: {len(symbols):,}"
+                if isinstance(source, list)
+                else "Built-in universe constituents are resolved when the scan runs."
+            )
+        )
+        heading.setWordWrap(True)
+        layout.addWidget(heading)
+
+        timing_parts: list[str] = []
+        if details.get("created_at"):
+            timing_parts.append(
+                "Created: " + _format_watchlist_timestamp(details["created_at"])
+            )
+        elif details.get("first_seen_at"):
+            timing_parts.append(
+                "First observed: "
+                + _format_watchlist_timestamp(details["first_seen_at"])
+            )
+        if details.get("contents_updated_at"):
+            timing_parts.append(
+                "Contents last changed: "
+                + _format_watchlist_timestamp(details["contents_updated_at"])
+            )
+        if timing_parts:
+            timing = QLabel(" | ".join(timing_parts))
+            timing.setWordWrap(True)
+            timing.setStyleSheet("color:#555;")
+            layout.addWidget(timing)
+
+        contents = QPlainTextEdit()
+        contents.setReadOnly(True)
+        contents.setLineWrapMode(QPlainTextEdit.LineWrapMode.NoWrap)
+        contents.setPlainText(
+            "\n".join(symbols)
+            if isinstance(source, list)
+            else "This built-in universe is loaded dynamically when the scan runs."
+        )
+        layout.addWidget(contents, 1)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        copy_button = buttons.addButton(
+            "Copy symbols", QDialogButtonBox.ButtonRole.ActionRole
+        )
+        copy_button.setEnabled(bool(symbols))
+        copy_button.clicked.connect(
+            lambda: QApplication.clipboard().setText("\n".join(symbols))
+        )
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        dialog.exec()
 
     def _open_private_watchlist_manager(self) -> None:
         try:
@@ -25483,6 +26211,9 @@ class FinalChartInkWindow(QMainWindow):
         )
         self._date_mode_changed()
         self.publish_to_chartsage_cb.setChecked(config["publish_to_chartsage"])
+        self.timestamp_snapshots_cb.setChecked(
+            config["manual_timestamp_snapshots"]
+        )
         self.telegram_master_cb.setChecked(config["telegram_master_enabled"])
         self.telegram_report_cb.setChecked(config["telegram_report_enabled"])
         self.telegram_xlsx_cb.setChecked(config["telegram_xlsx_enabled"])
@@ -25517,6 +26248,9 @@ class FinalChartInkWindow(QMainWindow):
             "end_time": self.end_time.time().toString("HH:mm"),
             "trading_days_only": self.trading_days_cb.isChecked(),
             "publish_to_chartsage": self.publish_to_chartsage_cb.isChecked(),
+            "manual_timestamp_snapshots": (
+                self.timestamp_snapshots_cb.isChecked()
+            ),
             "telegram_master_enabled": self.telegram_master_cb.isChecked(),
             "telegram_report_enabled": self.telegram_report_cb.isChecked(),
             "telegram_xlsx_enabled": self.telegram_xlsx_cb.isChecked(),
@@ -25765,7 +26499,16 @@ class FinalChartInkWindow(QMainWindow):
         self.cycle_elapsed_label.setText("Elapsed: 00:00")
         self._cycle_elapsed_timer.start()
         self.run_btn.setEnabled(False)
-        self.worker = FinalChartInkCycleWorker(config, self.templates, self.catalog)
+        self.worker = FinalChartInkCycleWorker(
+            config,
+            self.templates,
+            self.catalog,
+            create_timestamped_snapshots=bool(
+                manual
+                and config["as_of_mode"] == "latest"
+                and config["manual_timestamp_snapshots"]
+            ),
+        )
         self.worker.progress.connect(self._cycle_progress)
         self.worker.succeeded.connect(self._cycle_succeeded)
         self.worker.failed.connect(self._cycle_failed)
@@ -25853,6 +26596,12 @@ class FinalChartInkWindow(QMainWindow):
             self.status_label.setText(
                 self.status_label.text()
                 + f" ChartSage publishing failed: {publish_error}"
+            )
+        timestamped = list(payload.get("timestamped_watchlists", []) or [])
+        if timestamped:
+            self.status_label.setText(
+                self.status_label.text()
+                + f" Created {len(timestamped)} timestamped watchlist snapshot(s)."
             )
         if (
             not historical
@@ -26136,6 +26885,10 @@ class FinalChartInkWindow(QMainWindow):
             if not token or not enabled:
                 raise TelegramSettingsError("Configure Telegram in the original ChartSage application first.")
             messages = build_finalchartink_telegram_messages(payload) if send_report else []
+            compact_messages = (
+                build_finalchartink_compact_telegram_messages(payload)
+                if send_report else []
+            )
             deliveries = [
                 TelegramDelivery(
                     f"finalchartink:{item['key']}:{item['chat_id']}",
@@ -26167,6 +26920,7 @@ class FinalChartInkWindow(QMainWindow):
                 deliveries,
                 xlsx_path,
                 caption,
+                html_messages=compact_messages,
             )
             self.telegram_worker.succeeded.connect(
                 lambda result: self.status_label.setText(

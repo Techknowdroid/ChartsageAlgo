@@ -7,6 +7,7 @@ This helper is intentionally conservative:
 * it refuses to mix its work with files that are already staged;
 * it displays the proposed file list and summary before committing;
 * it checks staged filenames and text for common credential mistakes; and
+* it proposes a concise conventional commit message from the staged files; and
 * it requires explicit confirmation before both commit and push.
 
 This is a source-control update, not a restorable operational-data backup.
@@ -77,6 +78,82 @@ def confirm(prompt: str) -> bool:
 def staged_paths() -> list[str]:
     output = run_git("diff", "--cached", "--name-only", "-z")
     return [path for path in output.split("\0") if path]
+
+
+def staged_changes() -> list[tuple[str, str]]:
+    """Return ``(status, current_path)`` pairs for the staged snapshot."""
+    output = run_git("diff", "--cached", "--name-status", "--find-renames")
+    changes: list[tuple[str, str]] = []
+    for line in output.splitlines():
+        parts = line.split("\t")
+        if len(parts) < 2:
+            continue
+        status = parts[0].strip().upper()
+        # Rename/copy records contain old and new paths; describe the current one.
+        current_path = parts[-1].strip()
+        if current_path:
+            changes.append((status, current_path))
+    return changes
+
+
+def _join_subjects(subjects: list[str]) -> str:
+    if len(subjects) == 1:
+        return subjects[0]
+    if len(subjects) == 2:
+        return f"{subjects[0]} and {subjects[1]}"
+    return "ChartSage application suite"
+
+
+def suggest_commit_message(changes: list[tuple[str, str]]) -> str:
+    """Create a conservative commit subject from the staged file inventory."""
+    if not changes:
+        return "chore: update project files"
+
+    product_rules = (
+        ("stock alert monitoring", {
+            "chartsagestockalerts.py", "stock_alert_engine.py",
+            "launch_stock_alerts.py", "runchartsagestockalerts.cmd",
+        }),
+        ("final strategy workflow", {"finalchartinkv1.py"}),
+        ("scanner workflow", {"chartsagealgoopencode.py"}),
+        ("market-data maintenance", {"chartsagebhavcopy.py"}),
+        ("backtesting", {"runbacktest52.py"}),
+    )
+    product_areas: list[str] = []
+    product_statuses: list[str] = []
+    lower_changes = [(status, path.replace("\\", "/").casefold()) for status, path in changes]
+    for area, filenames in product_rules:
+        matching = [
+            status for status, path in lower_changes
+            if Path(path).name in filenames
+        ]
+        if matching:
+            product_areas.append(area)
+            product_statuses.extend(matching)
+
+    if product_areas:
+        verb = "add" if product_statuses and all(s.startswith("A") for s in product_statuses) else "improve"
+        return f"feat: {verb} {_join_subjects(product_areas)}"
+
+    paths = [path for _status, path in lower_changes]
+    if all(path.endswith((".md", ".txt")) for path in paths):
+        return "docs: update project documentation"
+    if all(
+        Path(path).name.startswith(("test_", "_test_"))
+        or "/tests/" in f"/{path}"
+        for path in paths
+    ):
+        return "test: update project test coverage"
+    if all(
+        path.endswith(".spec")
+        or Path(path).name.startswith("build_")
+        or "packag" in Path(path).name
+        for path in paths
+    ):
+        return "build: update portable packaging"
+    if any(Path(path).name.startswith("create_important_backup") for path in paths):
+        return "chore: improve project backup tooling"
+    return "chore: update ChartSage project files"
 
 
 def check_staged_content(paths: list[str]) -> list[str]:
@@ -175,8 +252,13 @@ def main() -> int:
         return 2
 
     message = (args.message or "").strip()
-    while not message:
-        message = input("\nEnter a short commit message: ").strip()
+    if not message:
+        suggested = suggest_commit_message(staged_changes())
+        print(f"\nSuggested commit message: {suggested}")
+        replacement = input(
+            "Press Enter to use it, or type a replacement: "
+        ).strip()
+        message = replacement or suggested
 
     if not confirm(f'Commit these files as "{message}"?'):
         print("Nothing was committed or pushed. The reviewed files remain staged.")
