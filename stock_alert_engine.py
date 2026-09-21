@@ -6,6 +6,7 @@ import copy
 import json
 import sqlite3
 import threading
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -64,8 +65,18 @@ class StockAlertStore:
         connection.execute("PRAGMA busy_timeout=30000")
         return connection
 
+    @contextmanager
+    def _database(self):
+        """Yield a transactional connection and always release its file lock."""
+        connection = self._connect()
+        try:
+            with connection:
+                yield connection
+        finally:
+            connection.close()
+
     def _initialize(self) -> None:
-        with self._lock, self._connect() as database:
+        with self._lock, self._database() as database:
             database.execute("PRAGMA journal_mode=WAL")
             database.executescript(
                 """
@@ -177,7 +188,7 @@ class StockAlertStore:
         timestamp = now_iso()
         columns = ", ".join(clean)
         placeholders = ", ".join("?" for _ in clean)
-        with self._lock, self._connect() as database:
+        with self._lock, self._database() as database:
             cursor = database.execute(
                 f"INSERT INTO alerts ({columns}, created_at, updated_at) "
                 f"VALUES ({placeholders}, ?, ?)",
@@ -188,7 +199,7 @@ class StockAlertStore:
     def update_alert(self, alert_id: int, value: dict[str, Any]) -> None:
         clean = self._clean_definition(value)
         assignments = ", ".join(f"{key}=?" for key in clean)
-        with self._lock, self._connect() as database:
+        with self._lock, self._database() as database:
             cursor = database.execute(
                 f"UPDATE alerts SET {assignments}, last_condition=NULL, "
                 "last_error='', updated_at=? WHERE id=?",
@@ -198,11 +209,11 @@ class StockAlertStore:
                 raise KeyError(f"Alert {alert_id} no longer exists.")
 
     def delete_alert(self, alert_id: int) -> None:
-        with self._lock, self._connect() as database:
+        with self._lock, self._database() as database:
             database.execute("DELETE FROM alerts WHERE id=?", (int(alert_id),))
 
     def set_enabled(self, alert_id: int, enabled: bool) -> None:
-        with self._lock, self._connect() as database:
+        with self._lock, self._database() as database:
             database.execute(
                 "UPDATE alerts SET enabled=?, updated_at=? WHERE id=?",
                 (int(bool(enabled)), now_iso(), int(alert_id)),
@@ -210,14 +221,14 @@ class StockAlertStore:
 
     def list_alerts(self, enabled_only: bool = False) -> list[dict[str, Any]]:
         where = "WHERE enabled=1" if enabled_only else ""
-        with self._lock, self._connect() as database:
+        with self._lock, self._database() as database:
             rows = database.execute(
                 f"SELECT * FROM alerts {where} ORDER BY enabled DESC, symbol, name, id"
             ).fetchall()
         return [self._row(row) for row in rows if row is not None]  # type: ignore[list-item]
 
     def get_alert(self, alert_id: int) -> dict[str, Any] | None:
-        with self._lock, self._connect() as database:
+        with self._lock, self._database() as database:
             row = database.execute(
                 "SELECT * FROM alerts WHERE id=?", (int(alert_id),)
             ).fetchone()
@@ -234,7 +245,7 @@ class StockAlertStore:
         disable: bool = False,
     ) -> None:
         timestamp = now_iso()
-        with self._lock, self._connect() as database:
+        with self._lock, self._database() as database:
             database.execute(
                 "UPDATE alerts SET last_condition=?, last_evaluated_at=?, "
                 "last_triggered_at=CASE WHEN ? THEN ? ELSE last_triggered_at END, "
@@ -260,7 +271,7 @@ class StockAlertStore:
     def record_error(self, alert_id: int, message: str) -> None:
         timestamp = now_iso()
         clean = str(message or "Evaluation failed").strip()[-4000:]
-        with self._lock, self._connect() as database:
+        with self._lock, self._database() as database:
             database.execute(
                 "UPDATE alerts SET last_evaluated_at=?, last_error=?, updated_at=? "
                 "WHERE id=?",
@@ -287,7 +298,7 @@ class StockAlertStore:
                 continue
             if value <= current:
                 self.set_enabled(int(alert["id"]), False)
-                with self._lock, self._connect() as database:
+                with self._lock, self._database() as database:
                     database.execute(
                         "INSERT INTO events(alert_id,event_type,occurred_at,message) "
                         "VALUES(?,?,?,?)",
@@ -297,7 +308,7 @@ class StockAlertStore:
         return changed
 
     def list_events(self, limit: int = 500) -> list[dict[str, Any]]:
-        with self._lock, self._connect() as database:
+        with self._lock, self._database() as database:
             rows = database.execute(
                 "SELECT events.*, alerts.name AS alert_name, alerts.symbol AS symbol "
                 "FROM events JOIN alerts ON alerts.id=events.alert_id "
@@ -307,7 +318,7 @@ class StockAlertStore:
         return [dict(row) for row in rows]
 
     def get_setting(self, key: str, default: Any) -> Any:
-        with self._lock, self._connect() as database:
+        with self._lock, self._database() as database:
             row = database.execute(
                 "SELECT value FROM settings WHERE key=?", (str(key),)
             ).fetchone()
@@ -320,7 +331,7 @@ class StockAlertStore:
 
     def set_setting(self, key: str, value: Any) -> None:
         payload = json.dumps(value)
-        with self._lock, self._connect() as database:
+        with self._lock, self._database() as database:
             database.execute(
                 "INSERT INTO settings(key,value) VALUES(?,?) "
                 "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
@@ -328,6 +339,6 @@ class StockAlertStore:
             )
 
     def quick_check(self) -> str:
-        with self._lock, self._connect() as database:
+        with self._lock, self._database() as database:
             row = database.execute("PRAGMA quick_check").fetchone()
         return str(row[0]) if row else "no result"

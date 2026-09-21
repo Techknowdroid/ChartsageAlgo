@@ -114,12 +114,20 @@ def ensure_inside_project(path: Path) -> Path:
 
 def sqlite_backup(source: Path, destination: Path) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
-    with sqlite3.connect(f"file:{source.as_posix()}?mode=ro", uri=True) as source_db:
-        with sqlite3.connect(destination) as destination_db:
-            source_db.backup(destination_db, pages=4096)
+    source_db = sqlite3.connect(f"file:{source.as_posix()}?mode=ro", uri=True)
+    destination_db = sqlite3.connect(destination)
+    try:
+        source_db.backup(destination_db, pages=4096)
+        destination_db.commit()
+    finally:
+        destination_db.close()
+        source_db.close()
     normalize_sqlite_database(destination)
-    with sqlite3.connect(f"file:{destination.as_posix()}?mode=ro", uri=True) as check_db:
+    check_db = sqlite3.connect(f"file:{destination.as_posix()}?mode=ro", uri=True)
+    try:
         result = check_db.execute("PRAGMA quick_check").fetchone()
+    finally:
+        check_db.close()
     if result != ("ok",):
         raise RuntimeError(f"SQLite verification failed for {destination}: {result!r}")
 
@@ -129,11 +137,15 @@ def normalize_sqlite_database(path: Path) -> None:
     # A copied WAL-mode database otherwise leaves -wal/-shm sidecars in the
     # archive and changes on its first open. A portable snapshot is safer as
     # one file; the apps may enable WAL again normally when they need it.
-    with sqlite3.connect(path) as database:
+    database = sqlite3.connect(path, timeout=30)
+    try:
+        database.execute("PRAGMA busy_timeout=30000")
         database.execute("PRAGMA wal_checkpoint(TRUNCATE)")
         database.commit()
         mode = database.execute("PRAGMA journal_mode=DELETE").fetchone()
         database.commit()
+    finally:
+        database.close()
     if not mode or str(mode[0]).lower() != "delete":
         raise RuntimeError(f"Could not normalize SQLite journal mode for {path}")
 
