@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 IST = timezone(timedelta(hours=5, minutes=30))
 TRIGGER_ONCE = "ONCE"
 TRIGGER_TRANSITION = "TRANSITION"
@@ -103,6 +103,9 @@ class StockAlertStore:
                     trigger_count INTEGER NOT NULL DEFAULT 0,
                     last_close REAL,
                     last_evidence TEXT NOT NULL DEFAULT '',
+                    last_telegram_at TEXT NOT NULL DEFAULT '',
+                    last_telegram_status TEXT NOT NULL DEFAULT '',
+                    last_telegram_error TEXT NOT NULL DEFAULT '',
                     last_error TEXT NOT NULL DEFAULT '',
                     created_at TEXT NOT NULL,
                     updated_at TEXT NOT NULL
@@ -128,6 +131,19 @@ class StockAlertStore:
                 );
                 """
             )
+            existing_columns = {
+                str(row[1])
+                for row in database.execute("PRAGMA table_info(alerts)").fetchall()
+            }
+            for name, declaration in (
+                ("last_telegram_at", "TEXT NOT NULL DEFAULT ''"),
+                ("last_telegram_status", "TEXT NOT NULL DEFAULT ''"),
+                ("last_telegram_error", "TEXT NOT NULL DEFAULT ''"),
+            ):
+                if name not in existing_columns:
+                    database.execute(
+                        f"ALTER TABLE alerts ADD COLUMN {name} {declaration}"
+                    )
             database.execute(
                 "INSERT OR REPLACE INTO metadata(key, value) VALUES('schema_version', ?)",
                 (str(SCHEMA_VERSION),),
@@ -202,7 +218,8 @@ class StockAlertStore:
         with self._lock, self._database() as database:
             cursor = database.execute(
                 f"UPDATE alerts SET {assignments}, last_condition=NULL, "
-                "last_error='', updated_at=? WHERE id=?",
+                "last_error=CASE WHEN last_telegram_error<>'' "
+                "THEN last_telegram_error ELSE '' END, updated_at=? WHERE id=?",
                 (*clean.values(), now_iso(), int(alert_id)),
             )
             if cursor.rowcount != 1:
@@ -250,7 +267,9 @@ class StockAlertStore:
                 "UPDATE alerts SET last_condition=?, last_evaluated_at=?, "
                 "last_triggered_at=CASE WHEN ? THEN ? ELSE last_triggered_at END, "
                 "trigger_count=trigger_count+?, last_close=?, last_evidence=?, "
-                "last_error='', enabled=CASE WHEN ? THEN 0 ELSE enabled END, "
+                "last_error=CASE WHEN last_telegram_error<>'' "
+                "THEN last_telegram_error ELSE '' END, "
+                "enabled=CASE WHEN ? THEN 0 ELSE enabled END, "
                 "updated_at=? WHERE id=?",
                 (
                     int(bool(matched)), timestamp, int(triggered), timestamp,
@@ -267,6 +286,35 @@ class StockAlertStore:
                         str(evidence), "Alert condition matched",
                     ),
                 )
+
+    def record_telegram_delivery(
+        self,
+        alert_id: int,
+        succeeded: bool,
+        details: str,
+    ) -> None:
+        """Persist the delivery outcome separately from the rule trigger."""
+        timestamp = now_iso()
+        clean = str(details or "Telegram delivery failed").strip()[-4000:]
+        status = clean if succeeded else "Failed"
+        error = "" if succeeded else clean
+        event_type = "TELEGRAM_SENT" if succeeded else "TELEGRAM_FAILED"
+        with self._lock, self._database() as database:
+            exists = database.execute(
+                "SELECT 1 FROM alerts WHERE id=?", (int(alert_id),)
+            ).fetchone()
+            if exists is None:
+                return
+            database.execute(
+                "UPDATE alerts SET last_telegram_at=?, last_telegram_status=?, "
+                "last_telegram_error=?, last_error=?, updated_at=? WHERE id=?",
+                (timestamp, status, error, error, timestamp, int(alert_id)),
+            )
+            database.execute(
+                "INSERT INTO events(alert_id,event_type,occurred_at,message) "
+                "VALUES(?,?,?,?)",
+                (int(alert_id), event_type, timestamp, clean),
+            )
 
     def record_error(self, alert_id: int, message: str) -> None:
         timestamp = now_iso()

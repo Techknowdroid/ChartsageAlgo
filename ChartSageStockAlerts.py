@@ -935,6 +935,7 @@ class StockAlertWindow(QMainWindow):
             ("Enable / Pause", self._toggle_alert),
             ("Evaluate Selected Now", self._evaluate_selected),
             ("Alert History…", self._show_history),
+            ("Telegram Settings / Test…", self._open_telegram_settings),
             ("↻ Reload Rule Templates", self._load_templates),
         ):
             button = QPushButton(label)
@@ -943,11 +944,12 @@ class StockAlertWindow(QMainWindow):
         actions.addStretch(1)
         layout.addLayout(actions)
 
-        self.table = QTableWidget(0, 14)
+        self.table = QTableWidget(0, 16)
         self.table.setHorizontalHeaderLabels([
             "Active", "Symbol", "Alert name", "Alert rule", "Candle",
             "Interval", "Notify policy", "Condition", "Last evaluated",
-            "Last triggered", "Triggers", "Last close", "Telegram", "Last error",
+            "Last triggered", "Triggers", "Last close", "Telegram",
+            "Last Telegram attempt", "Last Telegram status", "Last error",
         ])
         self.table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
@@ -957,7 +959,8 @@ class StockAlertWindow(QMainWindow):
         header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
         header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(13, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(14, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(15, QHeaderView.ResizeMode.Stretch)
         layout.addWidget(self.table, 1)
 
         self.progress = QProgressBar()
@@ -1025,7 +1028,9 @@ class StockAlertWindow(QMainWindow):
                 f"{alert['interval_minutes']} min", TRIGGER_LABELS.get(alert["trigger_mode"], alert["trigger_mode"]),
                 condition_text, alert["last_evaluated_at"], alert["last_triggered_at"],
                 alert["trigger_count"], "" if alert["last_close"] is None else alert["last_close"],
-                "On" if alert["telegram_enabled"] else "Off", alert["last_error"],
+                "On" if alert["telegram_enabled"] else "Off",
+                alert.get("last_telegram_at", ""),
+                alert.get("last_telegram_status", ""), alert["last_error"],
             ]
             for column, value in enumerate(values):
                 item = QTableWidgetItem(str(value or ""))
@@ -1035,7 +1040,14 @@ class StockAlertWindow(QMainWindow):
                     item.setToolTip(f"Source: {alert['template_name']}")
                 if column == 7 and condition is True:
                     item.setBackground(Qt.GlobalColor.green)
-                if column == 13 and alert["last_error"]:
+                if column == 14 and str(
+                    alert.get("last_telegram_status", "")
+                ).startswith("Telegram sent"):
+                    item.setBackground(Qt.GlobalColor.green)
+                if column == 14 and alert.get("last_telegram_error"):
+                    item.setBackground(Qt.GlobalColor.red)
+                    item.setToolTip(str(alert["last_telegram_error"]))
+                if column == 15 and alert["last_error"]:
                     item.setBackground(Qt.GlobalColor.red)
                 self.table.setItem(row_index, column, item)
             if selected_id == int(alert["id"]):
@@ -1054,6 +1066,14 @@ class StockAlertWindow(QMainWindow):
             return
         self._refresh_table()
         self.status.setText(f"Created stock alert #{alert_id}.")
+
+    def _open_telegram_settings(self) -> None:
+        dialog = core.TelegramSettingsDialog(core.TelegramSettingsStore(), self)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            self.status.setText(
+                "Telegram settings saved. The Telegram Settings window also "
+                "provides Send test message for an immediate delivery check."
+            )
 
     def _edit_alert(self, *_args: Any) -> None:
         alert_id = self._require_selected()
@@ -1258,7 +1278,7 @@ class StockAlertWindow(QMainWindow):
                 message += "\nEvidence: " + evidence
             self.status.setText(f"TRIGGERED: {alert['symbol']} — {alert['name']}")
             if alert["telegram_enabled"]:
-                self._send_telegram(message)
+                self._send_telegram(int(alert["id"]), message)
         else:
             self.status.setText(
                 f"{alert['symbol']}: " + ("condition remains matched." if matched else "condition not matched.")
@@ -1278,15 +1298,28 @@ class StockAlertWindow(QMainWindow):
         self.current_alert_id = None
         QTimer.singleShot(0, self._scheduler_tick)
 
-    def _send_telegram(self, message: str) -> None:
+    def _telegram_succeeded(self, alert_id: int, result: str) -> None:
+        self.store.record_telegram_delivery(alert_id, True, result)
+        self.status.setText(self.status.text() + " " + result)
+        self._refresh_table()
+
+    def _telegram_failed(self, alert_id: int, error: str) -> None:
+        safe_error = str(error or "Telegram delivery failed").strip()
+        self.store.record_telegram_delivery(alert_id, False, safe_error)
+        self.status.setText(self.status.text() + " Telegram failed: " + safe_error)
+        self._refresh_table()
+
+    def _send_telegram(self, alert_id: int, message: str) -> None:
         worker = TelegramAlertWorker(message)
         self.telegram_workers.add(worker)
         worker.succeeded.connect(
-            lambda result: self.status.setText(self.status.text() + " " + result)
+            lambda result, current_id=alert_id: self._telegram_succeeded(
+                current_id, result
+            )
         )
         worker.failed.connect(
-            lambda error: self.status.setText(
-                self.status.text() + " Telegram failed: " + error
+            lambda error, current_id=alert_id: self._telegram_failed(
+                current_id, error
             )
         )
         worker.finished.connect(lambda: self.telegram_workers.discard(worker))

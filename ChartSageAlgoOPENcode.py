@@ -2803,6 +2803,30 @@ class TelegramSettingsStore:
         self.path = Path(path)
         self.keyring = keyring_module
 
+    def _activate_windows_backend(self) -> bool:
+        """Select the bundled Windows vault backend when discovery chose none."""
+        if os.name != "nt" or self.keyring is not keyring:
+            return False
+        try:
+            from keyring.backends.Windows import WinVaultKeyring
+
+            backend = WinVaultKeyring()
+            if float(getattr(backend, "priority", 0)) <= 0:
+                return False
+            self.keyring.set_keyring(backend)
+            return True
+        except Exception:
+            return False
+
+    def _keyring_call(self, method_name: str, *arguments: str) -> Any:
+        """Call keyring once normally, then retry with WinVault on Windows."""
+        try:
+            return getattr(self.keyring, method_name)(*arguments)
+        except Exception as first_error:
+            if not self._activate_windows_backend():
+                raise first_error
+            return getattr(self.keyring, method_name)(*arguments)
+
     @staticmethod
     def default_destinations() -> list[dict[str, Any]]:
         return [
@@ -2857,7 +2881,8 @@ class TelegramSettingsStore:
             return environment_token
         try:
             return (
-                self.keyring.get_password(
+                self._keyring_call(
+                    "get_password",
                     TELEGRAM_KEYRING_SERVICE, TELEGRAM_KEYRING_ACCOUNT
                 )
                 or ""
@@ -2904,7 +2929,8 @@ class TelegramSettingsStore:
                 "Group 1 and Group 2 cannot use the same enabled Chat ID."
             )
         try:
-            self.keyring.set_password(
+            self._keyring_call(
+                "set_password",
                 TELEGRAM_KEYRING_SERVICE,
                 TELEGRAM_KEYRING_ACCOUNT,
                 clean_token,
@@ -9422,9 +9448,9 @@ class TelegramSettingsDialog(QDialog):
         self.buttons.rejected.connect(self.reject)
         actions.addWidget(self.buttons)
         layout.addLayout(actions)
+        load_errors: list[str] = []
         try:
-            token, destinations = self.store.load()
-            self.token.setText(token)
+            destinations = self.store.load_destinations()
             for destination in destinations:
                 key = str(destination["key"])
                 if key not in self.destination_chat_id:
@@ -9436,7 +9462,18 @@ class TelegramSettingsDialog(QDialog):
                     bool(destination.get("enabled", False))
                 )
         except TelegramSettingsError as exc:
-            self.status.setText(str(exc))
+            load_errors.append(str(exc))
+        try:
+            token = self.store.load_token()
+            self.token.setText(token)
+            if not token:
+                load_errors.append(
+                    "No saved Telegram bot token was found in Windows Credential Manager."
+                )
+        except TelegramSettingsError as exc:
+            load_errors.append(str(exc))
+        if load_errors:
+            self.status.setText("\n".join(load_errors))
             self.status.setStyleSheet("color: #9c0006")
 
     def _credentials(self) -> tuple[str, list[dict[str, Any]]]:
