@@ -1,4 +1,4 @@
-"""FINAL ChartInk V1 — independent multi-rule guidance application.
+"""FINAL ChartSage V1 — independent multi-rule guidance application.
 
 This file contains its own scanner engine derived from ChartSage's proven
 logic.  It reads the original templates, official Bhavcopy history, existing
@@ -79,8 +79,8 @@ _app_dir = Path(sys.executable).parent if getattr(sys, "frozen", False) else Pat
 _bundled_browsers = _app_dir / "playwright-browsers"
 if _bundled_browsers.exists():
     os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(_bundled_browsers)
-from PySide6.QtCore import QDate, QObject, QPoint, QThread, QTime, QTimer, Qt, Signal
-from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap
+from PySide6.QtCore import QDate, QEvent, QObject, QPoint, QThread, QTime, QTimer, Qt, Signal
+from PySide6.QtGui import QColor, QIcon, QPainter, QPen, QPixmap, QStandardItemModel
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QAbstractSpinBox,
@@ -128,6 +128,91 @@ from PySide6.QtWidgets import (
 )
 
 
+class CheckableComboBox(QComboBox):
+    """Compact multi-select combo whose checked values are combined by OR."""
+
+    selectionChanged = Signal()
+
+    def __init__(self, parent: QWidget | None = None, *, empty_text: str = "None selected"):
+        super().__init__(parent)
+        self._empty_text = str(empty_text)
+        self.setEditable(True)
+        self.lineEdit().setReadOnly(True)
+        self.lineEdit().setPlaceholderText(self._empty_text)
+        self.view().viewport().installEventFilter(self)
+        self.model().dataChanged.connect(lambda *_args: self._refresh_text())
+
+    def addCheckItem(self, text: str, data: Any) -> None:
+        self.addItem(str(text), data)
+        index = self.count() - 1
+        model = self.model()
+        if isinstance(model, QStandardItemModel):
+            item = model.item(index)
+            if item is not None:
+                item.setCheckable(True)
+        self.setItemData(index, Qt.CheckState.Unchecked, Qt.ItemDataRole.CheckStateRole)
+
+    def checkedData(self) -> list[str]:
+        return [
+            str(self.itemData(index) or "").strip()
+            for index in range(self.count())
+            if self.itemData(index, Qt.ItemDataRole.CheckStateRole)
+            == Qt.CheckState.Checked
+            and str(self.itemData(index) or "").strip()
+        ]
+
+    def setCheckedData(self, values: Iterable[Any]) -> None:
+        wanted = {str(value).strip() for value in values if str(value).strip()}
+        self.blockSignals(True)
+        for index in range(self.count()):
+            checked = str(self.itemData(index) or "").strip() in wanted
+            self.setItemData(
+                index,
+                Qt.CheckState.Checked if checked else Qt.CheckState.Unchecked,
+                Qt.ItemDataRole.CheckStateRole,
+            )
+        self.blockSignals(False)
+        self._refresh_text()
+        self.selectionChanged.emit()
+
+    def _toggle_index(self, model_index: Any) -> None:
+        index = int(model_index.row())
+        current = self.itemData(index, Qt.ItemDataRole.CheckStateRole)
+        self.setItemData(
+            index,
+            Qt.CheckState.Unchecked
+            if current == Qt.CheckState.Checked
+            else Qt.CheckState.Checked,
+            Qt.ItemDataRole.CheckStateRole,
+        )
+        self._refresh_text()
+        self.selectionChanged.emit()
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if watched is self.view().viewport():
+            if event.type() == QEvent.Type.MouseButtonPress:
+                # Consume the combo's normal selection press. Otherwise Qt's
+                # delegate toggles the check state again after our handler.
+                return True
+            if event.type() == QEvent.Type.MouseButtonRelease:
+                model_index = self.view().indexAt(event.position().toPoint())
+                if model_index.isValid():
+                    self._toggle_index(model_index)
+                return True
+        return super().eventFilter(watched, event)
+
+    def _refresh_text(self) -> None:
+        names = self.checkedData()
+        if not names:
+            text = self._empty_text
+        elif len(names) == 1:
+            text = names[0]
+        else:
+            text = f"{len(names)} selected — match ANY (OR)"
+        self.lineEdit().setText(text)
+        self.setToolTip("\n".join(names) if names else self._empty_text)
+
+
 def get_ist_now() -> datetime:
     """Return the current time in India (IST) as an offset-naive datetime."""
     utc_now = datetime.now(timezone.utc)
@@ -173,7 +258,7 @@ PAPER_TRADES_FILE = DATA_DIR / "finalchartink_paper_trades.json"
 PAPER_TRADES_DB = DATA_DIR / "finalchartink_paper_trades.db"
 FINAL_RECIPE_FILE = DATA_DIR / "finalchartink_recipes.json"
 FINAL_RUN_HISTORY_DB = DATA_DIR / "finalchartink_run_history.db"
-FINAL_XLSX_FILE = DATA_DIR / "FINALCHARTinkV1_Final_Results.xlsx"
+FINAL_XLSX_FILE = DATA_DIR / "FINALChartSageV1_Final_Results.xlsx"
 FINALCHARTINK_GUIDANCE_ONLY = True
 _BACKGROUND_WORKERS: set[QThread] = set()
 _HOLDINGS_STORE_LOCK = threading.RLock()
@@ -499,7 +584,7 @@ AVAILABLE_HISTORY_START_DATE = date(2014, 1, 1)
 LOOKBACK_HIGH_UNITS = ("Days", "Weeks", "Months", "Years", ALL_AVAILABLE_HISTORY_UNIT)
 LOOKBACK_HIGH_BARS_PER_UNIT = {"Days": 1, "Weeks": 5, "Months": 21, "Years": 252}
 MAX_LOOKBACK_HIGH_BARS = 252 * 30
-PNL_FIELDS = ("Profit %", "Stop Loss %")
+PNL_FIELDS = ("Profit %", "Loss %", "Stop Loss %")
 FIELDS = (
     "Open",
     "High",
@@ -697,9 +782,12 @@ FILTER_EXAMPLE_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "Portfolio & ALGO Profit / Stop Loss",
+        "Paper holdings and portfolio Take Profit / Stop Loss",
         (
             "Profit % >= 7%",
+            "Loss % >= 5%",
+            "Profit % <= -5%",
+            "Stop Loss % <= -5%",
             "Stop Loss % <= 5%",
         ),
     ),
@@ -1227,7 +1315,9 @@ def normalize_general_universes(
     Falls back to NIFTY 500 when stripping leaves the universe list empty.
     Returns ``(setup, changed, removed_universes)``. ALGO setups are untouched.
     """
-    if is_algo_template_setup(name, setup):
+    if is_algo_template_setup(name, setup) or expression_has_pnl_rules(
+        setup.get("expression")
+    ):
         return setup, False, []
     unis = list(setup.get("universes", []))
     removed = [u for u in unis if is_holdings_universe(u)]
@@ -1895,11 +1985,11 @@ def merge_visible_result_order(
 
 
 def expression_has_pnl_rules(node: dict[str, Any] | None) -> bool:
-    """Checks whether an AST expression contains Profit % or Stop Loss % rules."""
+    """Checks whether an AST expression contains holding-dependent P&L rules."""
     if not isinstance(node, dict):
         return False
     node_type = node.get("type") or node.get("kind")
-    pnl_names = {"Profit %", "Stop Loss %", "P&L %", "P&L Amount"}
+    pnl_names = {"Profit %", "Loss %", "Stop Loss %", "P&L %", "P&L Amount"}
     if node_type == "rule":
         left = node.get("left", {})
         right = node.get("right", {})
@@ -1934,7 +2024,7 @@ def split_position_or_exit_expression(
         or str(expression.get("op", "AND")).upper() != "OR"
     ):
         raise ValueError(
-            "A Step 3 EXIT template that mixes Profit % or Stop Loss % "
+            "A Step 3 EXIT template that mixes Profit %, Loss %, or Stop Loss % "
             "with technical rules must combine separate branches using OR."
         )
     position_children: list[dict[str, Any]] = []
@@ -1975,8 +2065,8 @@ def finalchartink_exit_scope_warning(
         ]
         if pnl_members:
             return (
-                "Important: This FINAL RULE SET contains holding-dependent Profit % "
-                "or Stop Loss % rules. They cannot be distributed across a FINAL "
+                "Important: This FINAL RULE SET contains holding-dependent Profit %, "
+                "Loss %, or Stop Loss % rules. They cannot be distributed across a FINAL "
                 "RULE SET; place all such branches inside one standalone Step 3 "
                 "EXIT template using OR."
             )
@@ -1992,15 +2082,15 @@ def finalchartink_exit_scope_warning(
         return f"Important: Unsupported mixed EXIT logic. {exc}"
     if technical_expression is None:
         return (
-            "Important: This is a holding-dependent Profit %/Stop Loss % EXIT "
+            "Important: This is a holding-dependent Profit/Loss EXIT "
             "template. Current Results cannot evaluate it and will produce no "
             "broad EXIT signals. Paper Backtest evaluates it against simulated "
             "holdings."
         )
     return (
-        "Important: This EXIT template mixes holding-dependent Profit %/Stop "
-        "Loss % rules with technical OR rules. Current Results ignores the "
-        "Profit/Stop-Loss branches and evaluates only the technical branches. "
+        "Important: This EXIT template mixes holding-dependent Profit/Loss "
+        "rules with technical OR rules. Current Results ignores the "
+        "Profit/Loss branches and evaluates only the technical branches. "
         "Paper Backtest evaluates every branch against simulated holdings."
     )
 
@@ -2150,7 +2240,7 @@ class RuleParser:
     FIELD_RE = re.compile(
         r"^(?:(daily|weekly|monthly|d|w|m)\s+)?"
         r"(52\s*week\s*high(?:\s*distance\s*%)?|macd\s+(?:line|signal|histogram)|"
-        r"profit\s*%|stop\s*loss\s*%|p&l\s*%|pnl\s*%|p&l\s*amount|pnl\s*amount|profit|stop\s*loss|p&l|pnl|"
+        r"profit\s*%|loss\s*%|stop\s*loss\s*%|p&l\s*%|pnl\s*%|p&l\s*amount|pnl\s*amount|profit|loss|stop\s*loss|p&l|pnl|"
         r"open|high|low|close|volume|rsi|sma|ema|adx|obv|supertrend)"
         r"(?:"
         r"\s*\(\s*(?:(?:daily|weekly|monthly\s+)?close\s*,\s*)?(\d+)(?:\s*,\s*(\d+(?:\.\d+)?))?(?:\s*,\s*(\d+))?\s*\)"
@@ -2302,7 +2392,9 @@ class RuleParser:
             )
         elif "profit" in lower_name:
             canonical = "Profit %"
-        elif "stop" in lower_name or "loss" in lower_name:
+        elif lower_name in {"loss", "loss %"}:
+            canonical = "Loss %"
+        elif "stop" in lower_name:
             canonical = "Stop Loss %"
         elif "p&l" in lower_name or "pnl" in lower_name:
             canonical = "P&L Amount" if "amount" in lower_name else "P&L %"
@@ -2808,7 +2900,7 @@ class OrderSubmissionUncertainError(RuntimeError):
 
 
 class GuidanceOnlyOrderBlocked(RuntimeError):
-    """FINAL ChartInk V1 is intentionally incapable of submitting broker orders."""
+    """FINAL ChartSage V1 is intentionally incapable of submitting broker orders."""
 
 
 def atomic_write_json(path: Path, payload: dict[str, Any]) -> None:
@@ -3656,7 +3748,7 @@ class PaperTradesStore:
         return {
             "placed": False,
             "reason": (
-                "Paper-trade mutation is disabled in FINAL ChartInk V1; "
+                "Paper-trade mutation is disabled in FINAL ChartSage V1; "
                 "guidance results are watchlists and Telegram reports only."
             ),
             "symbol": str(symbol).strip().upper(),
@@ -4543,7 +4635,7 @@ class ZerodhaOrderExecutor:
     ) -> dict[str, Any]:
         del symbol, quantity, transaction_type, order_type, product, price, exchange
         raise GuidanceOnlyOrderBlocked(
-            "Order submission is disabled in FINAL ChartInk V1. This application "
+            "Order submission is disabled in FINAL ChartSage V1. This application "
             "produces BUY and SELL/EXIT guidance only."
         )
 
@@ -5210,7 +5302,7 @@ def send_telegram_document(
     caption: str = "",
     post: Callable[..., Any] = requests.post,
 ) -> None:
-    """Upload one private FINAL ChartInk XLSX file through Telegram Bot API."""
+    """Upload one private FINAL ChartSage XLSX file through Telegram Bot API."""
     clean_token = validate_telegram_token(token)
     clean_chat_id = validate_telegram_chat_id(chat_id)
     path = Path(document_path).resolve()
@@ -6211,6 +6303,30 @@ def official_bhavcopy_file_dates(
         return {pd.Timestamp(row[0]).normalize() for row in rows}
     except (sqlite3.Error, TypeError, ValueError):
         return set()
+    finally:
+        connection.close()
+
+
+def latest_official_bhavcopy_session(
+    on_or_before: date | pd.Timestamp | str,
+) -> date | None:
+    """Return the newest validated official price session up to a target date."""
+    try:
+        target = pd.Timestamp(on_or_before).date().isoformat()
+    except (TypeError, ValueError):
+        return None
+    connection = _official_history_connection()
+    if connection is None:
+        return None
+    try:
+        row = connection.execute(
+            "SELECT MAX(trade_date) FROM bhavcopy_files "
+            "WHERE status='ok' AND trade_date<=?",
+            (target,),
+        ).fetchone()
+        return date.fromisoformat(str(row[0])) if row and row[0] else None
+    except (sqlite3.Error, TypeError, ValueError):
+        return None
     finally:
         connection.close()
 
@@ -7325,7 +7441,14 @@ class MarketData:
                 )
             buy_price = float(holding.get("buy_price", 0)) if holding else 0.0
             if buy_price > 0:
-                result = (frame["Close"] - buy_price).div(buy_price).mul(100.0)
+                profit_percent = (
+                    (frame["Close"] - buy_price).div(buy_price).mul(100.0)
+                )
+                result = (
+                    profit_percent.mul(-1.0).clip(lower=0.0)
+                    if name == "Loss %"
+                    else profit_percent
+                )
             else:
                 result = pd.Series(np.nan, index=frame.index)
         else:
@@ -8700,6 +8823,230 @@ class FinalsetScannerWorker(RuleScannerWorker):
 class HistoryScannerWorker(RuleScannerWorker):
     """Evaluate one immutable rule setup across a selected historical period."""
 
+    def __init__(
+        self,
+        setup: dict[str, Any],
+        symbols: list[str] | None = None,
+        symbol_details: dict[str, dict[str, str]] | None = None,
+        cache_path: Path = PRICE_CACHE_DB,
+        downloader: Callable[[str, pd.Timestamp, pd.Timestamp, bool], pd.DataFrame] = download_symbol,
+        shared_history_frames: dict[tuple[Any, ...], pd.DataFrame] | None = None,
+        shared_history_start: pd.Timestamp | str | None = None,
+    ):
+        super().__init__(
+            setup,
+            symbols=symbols,
+            symbol_details=symbol_details,
+            cache_path=cache_path,
+            downloader=downloader,
+        )
+        self.shared_history_frames = shared_history_frames
+        self.shared_history_start = (
+            pd.Timestamp(shared_history_start).normalize()
+            if shared_history_start is not None
+            else None
+        )
+
+    def _history_pool_key(
+        self, symbol: str, as_of: pd.Timestamp, adjusted: bool
+    ) -> tuple[Any, ...]:
+        return (
+            str(Path(self.cache_path).absolute()).casefold(),
+            str(symbol).strip().upper(),
+            pd.Timestamp(as_of).date().isoformat(),
+            bool(adjusted),
+            get_session_price_mode(),
+        )
+
+    def _load_history_frame(
+        self,
+        cache: PriceCache,
+        symbol: str,
+        download_start: pd.Timestamp,
+        as_of: pd.Timestamp,
+        adjusted: bool,
+    ) -> tuple[pd.DataFrame, bool, bool]:
+        """Return (exact frame, covered, reused) without changing rule boundaries.
+
+        A FINAL history run may evaluate several templates over the same stock
+        with different warm-up periods. The pool stores one maximum-lookback
+        adjusted frame, but every caller receives the same exact date slice it
+        requested before this optimization. If the maximum range is not fully
+        available, the original exact-range path remains authoritative.
+        """
+        pool = self.shared_history_frames
+        key = self._history_pool_key(symbol, as_of, adjusted)
+        if pool is not None:
+            prepared = pool.get(key)
+            pooled_start = (
+                pd.Timestamp(
+                    prepared.attrs.get(
+                        "chartsage_history_pool_request_start",
+                        prepared.index.min() if not prepared.empty else as_of,
+                    )
+                ).normalize()
+                if prepared is not None
+                else as_of
+            )
+            pooled_end = (
+                pd.Timestamp(
+                    prepared.attrs.get(
+                        "chartsage_history_pool_request_end",
+                        prepared.index.max() if not prepared.empty else as_of,
+                    )
+                ).normalize()
+                if prepared is not None
+                else as_of
+            )
+            if (
+                prepared is not None
+                and not prepared.empty
+                and pooled_start <= download_start
+                and pooled_end >= as_of
+            ):
+                return (
+                    prepared.loc[
+                        (prepared.index >= download_start)
+                        & (prepared.index <= as_of)
+                    ].copy(),
+                    True,
+                    True,
+                )
+
+        shared_start = self.shared_history_start
+        if pool is not None and shared_start is not None:
+            shared_start = min(shared_start, download_start)
+            prepared = cache.load(symbol, shared_start, as_of, adjusted)
+            shared_covered = bool(
+                not prepared.empty
+                and cache.is_covered(symbol, shared_start, as_of, adjusted)
+            )
+            if shared_covered:
+                prepared.attrs["chartsage_history_pool_request_start"] = (
+                    pd.Timestamp(shared_start).date().isoformat()
+                )
+                prepared.attrs["chartsage_history_pool_request_end"] = (
+                    pd.Timestamp(as_of).date().isoformat()
+                )
+                if len(pool) < MAX_CYCLE_FRAME_CACHE or key in pool:
+                    pool[key] = prepared
+                return (
+                    prepared.loc[
+                        (prepared.index >= download_start)
+                        & (prepared.index <= as_of)
+                    ].copy(),
+                    True,
+                    False,
+                )
+            # Avoid repeating the same read when this rule already requested
+            # the maximum shared range; otherwise retain the exact fallback.
+            if shared_start == download_start:
+                return prepared, False, False
+
+        cached = cache.load(symbol, download_start, as_of, adjusted)
+        covered = bool(
+            not cached.empty
+            and cache.is_covered(symbol, download_start, as_of, adjusted)
+        )
+        return cached, covered, False
+
+    def _history_result_row(
+        self,
+        *,
+        cache: PriceCache,
+        symbol: str,
+        stamp: pd.Timestamp,
+        adjusted: bool,
+        market: HistoricalMarketData,
+        percent_changes: pd.Series,
+        ranking_series: dict[int, pd.Series],
+        leaf_evidence: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        """Build one fully detailed historical match row.
+
+        Ranking-enabled Top-N scans call this only after the winning symbols
+        for a date are known. Keeping the original row construction in one
+        method preserves identical evidence and report columns for both paths.
+        """
+        last = market.daily.loc[stamp]
+        if isinstance(last, pd.DataFrame):
+            last = last.iloc[-1]
+        evidence_parts: list[str] = []
+        row = {
+            "Symbol": symbol,
+            "Universe": self.symbol_details.get(symbol, {}).get("Universe", ""),
+            "Sector": self.symbol_details.get(symbol, {}).get("Sector", "") or "n/a",
+            "Industry": self.symbol_details.get(symbol, {}).get("Industry", ""),
+            "Market Cap": self.symbol_details.get(symbol, {}).get("Market Cap", ""),
+            "As Of": stamp.date().isoformat(),
+            DATA_SOURCE_COLUMN: cache.candle_source(symbol, stamp, adjusted),
+            PRICE_BASIS_COLUMN: price_basis_label(adjusted),
+            "Open": finite_or_none(last.get("Open")),
+            "High": finite_or_none(last.get("High")),
+            "Low": finite_or_none(last.get("Low")),
+            "Close": finite_or_none(last.get("Close")),
+            RSI_D_COLUMN: finite_or_none(
+                market.aligned(field_operand("RSI", "D", 0, 14)).get(stamp, np.nan)
+            ),
+            RSI_1DAY_AGO_COLUMN: finite_or_none(
+                market.aligned(field_operand("RSI", "D", 1, 14)).get(stamp, np.nan)
+            ),
+            PERCENT_CHANGE_COLUMN: finite_or_none(percent_changes.get(stamp, np.nan)),
+            "Volume": finite_or_none(last.get("Volume")),
+        }
+        # Current holdings are not historical facts. Do not attach them to
+        # past rows or imply that historical portfolio P&L was reconstructed.
+        row[HOLDING_QTY_COLUMN] = None
+        row[BUY_PRICE_COLUMN] = None
+        row[PNL_PCT_COLUMN] = None
+        row[PNL_AMT_COLUMN] = None
+        add_composite_rsi_ranking_values(
+            row,
+            self.setup,
+            lambda period: ranking_series[period].get(stamp, np.nan),
+        )
+        for item in leaf_evidence:
+            rule_matched = (
+                bool(item["matched"].at[stamp])
+                if "matched" in item and hasattr(item["matched"], "at")
+                else True
+            )
+            if not rule_matched:
+                continue
+            left = float(item["left"].at[stamp])
+            right = float(item["right"].at[stamp])
+            previous_left = float(item["previous_left"].at[stamp])
+            previous_right = float(item["previous_right"].at[stamp])
+            evidence_parts.append(
+                f"{item['rule']} [{format_number(left)} vs {format_number(right)}]"
+            )
+            for side, value in (("left", left), ("right", right)):
+                operand = item[f"{side}_operand"]
+                if operand.get("kind") != "field":
+                    continue
+                row[operand_text(operand)] = finite_or_none(value)
+                if operand["name"] == "52 Week High Distance %":
+                    offset = int(operand.get("offset", 0))
+                    close_operand = field_operand("Close", "D", offset)
+                    high_operand = matching_lookback_high_operand(operand)
+                    close_label = "Close" if offset == 0 else operand_text(close_operand)
+                    row[close_label] = finite_or_none(
+                        market.aligned(close_operand).at[stamp]
+                    )
+                    row[operand_text(high_operand)] = finite_or_none(
+                        market.aligned(high_operand).at[stamp]
+                    )
+            if item["operator"] in {"crosses above", "crosses below"}:
+                for side, value in (
+                    ("left", previous_left),
+                    ("right", previous_right),
+                ):
+                    operand = item[f"{side}_operand"]
+                    if operand.get("kind") == "field":
+                        row[f"Previous {operand_text(operand)}"] = finite_or_none(value)
+        row["Evidence"] = " | ".join(evidence_parts)
+        return row
+
     def scan(self, progress: Callable[[int, str], None] | None = None) -> HistoryReport:
         validate_ast(self.setup["expression"])
         validate_ranking_setup(self.setup)
@@ -8752,18 +9099,30 @@ class HistoryScannerWorker(RuleScannerWorker):
         cache = PriceCache(self.cache_path)
         frames: dict[str, pd.DataFrame] = {}
         to_download: list[str] = []
-        for symbol in self.symbols:
+        shared_reuses = 0
+        progress(1, f"Checking cached price history for {len(self.symbols):,} symbols")
+        for cache_index, symbol in enumerate(self.symbols, 1):
             self._check_cancelled()
-            cached = cache.load(symbol, download_start, as_of, adjusted)
-            if (
-                cache.is_covered(symbol, download_start, as_of, adjusted)
-                and not cached.empty
-            ):
+            cached, covered, reused = self._load_history_frame(
+                cache, symbol, download_start, as_of, adjusted
+            )
+            if covered and not cached.empty:
                 frames[symbol] = cached
+                shared_reuses += int(reused)
             else:
                 to_download.append(symbol)
+            if cache_index == len(self.symbols) or cache_index % 25 == 0:
+                progress(
+                    1 + int(cache_index / max(1, len(self.symbols)) * 7),
+                    f"Checking cached prices: {cache_index:,}/{len(self.symbols):,} symbols"
+                    + (f" | shared reuse {shared_reuses:,}" if shared_reuses else ""),
+                )
         cache_hits = len(frames)
-        progress(2, f"{cache_hits} cache hits; downloading {len(to_download)}")
+        progress(
+            8,
+            f"Price history ready for {cache_hits:,}; refresh needed for {len(to_download):,}"
+            + (f"; shared frames reused {shared_reuses:,}" if shared_reuses else ""),
+        )
 
         downloaded = 0
         download_failures = 0
@@ -8809,8 +9168,8 @@ class HistoryScannerWorker(RuleScannerWorker):
                         download_failures += 1
                         download_failed_symbols.append(symbol)
                     progress(
-                        max(3, int(index / len(to_download) * 45)),
-                        f"Downloaded {index}/{len(to_download)}",
+                        8 + int(index / len(to_download) * 27),
+                        f"Refreshing price history: {index:,}/{len(to_download):,} symbols",
                     )
             finally:
                 cancelled = self._cancel.is_set()
@@ -8822,11 +9181,25 @@ class HistoryScannerWorker(RuleScannerWorker):
         rows_by_date: dict[str, list[dict[str, Any]]] = {}
         all_dates: set[str] = set()
         insufficient_symbols = 0
+        ranking_top_n = max(0, int(self.setup.get("ranking_top_n", 0) or 0))
+        defer_ranked_rows = bool(
+            self.setup.get("ranking_enabled", False) and ranking_top_n > 0
+        )
+        ranking_candidates: dict[str, list[dict[str, Any]]] = {}
+        ranking_states: dict[str, dict[str, Any]] = {}
         symbols_with_data = [
             symbol
             for symbol in self.symbols
             if symbol in frames and not frames[symbol].empty
         ]
+        progress(
+            35,
+            (
+                f"Evaluating and ranking candidates across {len(symbols_with_data):,} symbols"
+                if defer_ranked_rows
+                else f"Evaluating rule across {len(symbols_with_data):,} symbols"
+            ),
+        )
         for symbol_index, symbol in enumerate(symbols_with_data, 1):
             self._check_cancelled()
             market = HistoricalMarketData(frames[symbol], as_of, symbol=symbol)
@@ -8855,109 +9228,109 @@ class HistoryScannerWorker(RuleScannerWorker):
             for match_index, stamp in enumerate(matched_dates):
                 if match_index % 100 == 0:
                     self._check_cancelled()
-                last = market.daily.loc[stamp]
-                if isinstance(last, pd.DataFrame):
-                    last = last.iloc[-1]
-                evidence_parts: list[str] = []
-                row = {
-                    "Symbol": symbol,
-                    "Universe": self.symbol_details.get(symbol, {}).get("Universe", ""),
-                    "Sector": self.symbol_details.get(symbol, {}).get("Sector", "") or "n/a",
-                    "Industry": self.symbol_details.get(symbol, {}).get("Industry", ""),
-                    "Market Cap": self.symbol_details.get(symbol, {}).get("Market Cap", ""),
-                    "As Of": stamp.date().isoformat(),
-                    DATA_SOURCE_COLUMN: cache.candle_source(symbol, stamp, adjusted),
-                    PRICE_BASIS_COLUMN: price_basis_label(adjusted),
-                    "Open": finite_or_none(last.get("Open")),
-                    "High": finite_or_none(last.get("High")),
-                    "Low": finite_or_none(last.get("Low")),
-                    "Close": finite_or_none(last.get("Close")),
-                    RSI_D_COLUMN: finite_or_none(
-                        market.aligned(field_operand("RSI", "D", 0, 14)).get(
-                            stamp, np.nan
-                        )
-                    ),
-                    RSI_1DAY_AGO_COLUMN: finite_or_none(
-                        market.aligned(field_operand("RSI", "D", 1, 14)).get(
-                            stamp, np.nan
-                        )
-                    ),
-                    PERCENT_CHANGE_COLUMN: finite_or_none(
-                        percent_changes.get(stamp, np.nan)
-                    ),
-                    "Volume": finite_or_none(last.get("Volume")),
+                if defer_ranked_rows:
+                    candidate = {"Symbol": symbol}
+                    add_composite_rsi_ranking_values(
+                        candidate,
+                        self.setup,
+                        lambda period: ranking_series[period].get(stamp, np.nan),
+                    )
+                    ranking_candidates.setdefault(
+                        stamp.date().isoformat(), []
+                    ).append(candidate)
+                else:
+                    row = self._history_result_row(
+                        cache=cache,
+                        symbol=symbol,
+                        stamp=stamp,
+                        adjusted=adjusted,
+                        market=market,
+                        percent_changes=percent_changes,
+                        ranking_series=ranking_series,
+                        leaf_evidence=leaf_evidence,
+                    )
+                    rows_by_date.setdefault(row["As Of"], []).append(row)
+            if defer_ranked_rows:
+                ranking_states[symbol] = {
+                    "market": market,
+                    "percent_changes": percent_changes,
+                    "ranking_series": ranking_series,
+                    "leaf_evidence": leaf_evidence,
                 }
-                # Current holdings are not historical facts. Do not attach them to
-                # past rows or imply that historical portfolio P&L was reconstructed.
-                row[HOLDING_QTY_COLUMN] = None
-                row[BUY_PRICE_COLUMN] = None
-                row[PNL_PCT_COLUMN] = None
-                row[PNL_AMT_COLUMN] = None
-                add_composite_rsi_ranking_values(
-                    row,
-                    self.setup,
-                    lambda period: ranking_series[period].get(stamp, np.nan),
-                )
-                for item in leaf_evidence:
-                    rule_matched = (
-                        bool(item["matched"].at[stamp])
-                        if "matched" in item and hasattr(item["matched"], "at")
-                        else True
-                    )
-                    if not rule_matched:
-                        continue
-                    left = float(item["left"].at[stamp])
-                    right = float(item["right"].at[stamp])
-                    previous_left = float(item["previous_left"].at[stamp])
-                    previous_right = float(item["previous_right"].at[stamp])
-                    evidence_parts.append(
-                        f"{item['rule']} [{format_number(left)} vs {format_number(right)}]"
-                    )
-                    for side, value in (("left", left), ("right", right)):
-                        operand = item[f"{side}_operand"]
-                        if operand.get("kind") != "field":
-                            continue
-                        row[operand_text(operand)] = finite_or_none(value)
-                        if operand["name"] == "52 Week High Distance %":
-                            offset = int(operand.get("offset", 0))
-                            close_operand = field_operand("Close", "D", offset)
-                            high_operand = matching_lookback_high_operand(operand)
-                            close_label = (
-                                "Close"
-                                if offset == 0
-                                else operand_text(close_operand)
-                            )
-                            row[close_label] = finite_or_none(
-                                market.aligned(close_operand).at[stamp]
-                            )
-                            row[operand_text(high_operand)] = finite_or_none(
-                                market.aligned(high_operand).at[stamp]
-                            )
-                    if item["operator"] in {"crosses above", "crosses below"}:
-                        for side, value in (
-                            ("left", previous_left),
-                            ("right", previous_right),
-                        ):
-                            operand = item[f"{side}_operand"]
-                            if operand.get("kind") == "field":
-                                row[f"Previous {operand_text(operand)}"] = (
-                                    finite_or_none(value)
-                                )
-                row["Evidence"] = " | ".join(evidence_parts)
-                rows_by_date.setdefault(row["As Of"], []).append(row)
             progress(
-                45
+                35
                 + int(
-                    symbol_index / max(1, len(symbols_with_data)) * 55
+                    symbol_index / max(1, len(symbols_with_data))
+                    * (42 if defer_ranked_rows else 53)
                 ),
-                f"Backtested {symbol_index}/{len(symbols_with_data)} symbols",
+                (
+                    f"Evaluating ranking candidates: {symbol_index:,}/{len(symbols_with_data):,} symbols"
+                    if defer_ranked_rows
+                    else f"Evaluating indicators: {symbol_index:,}/{len(symbols_with_data):,} symbols"
+                ),
             )
 
-        for day, day_rows in list(rows_by_date.items()):
+        if defer_ranked_rows:
+            progress(
+                77,
+                f"Selecting Top {ranking_top_n:,} matches across {len(ranking_candidates):,} signal dates",
+            )
+            selected_by_symbol: dict[str, list[pd.Timestamp]] = {}
+            candidate_days = list(ranking_candidates.items())
+            for day_index, (day, candidates) in enumerate(candidate_days, 1):
+                self._check_cancelled()
+                for candidate in rank_scan_rows(candidates, self.setup):
+                    selected_by_symbol.setdefault(
+                        str(candidate["Symbol"]), []
+                    ).append(pd.Timestamp(day))
+                if day_index == len(candidate_days) or day_index % 20 == 0:
+                    progress(
+                        77 + int(day_index / max(1, len(candidate_days)) * 3),
+                        f"Selecting ranked dates: {day_index:,}/{len(candidate_days):,}",
+                    )
+
+            selected_total = sum(len(dates) for dates in selected_by_symbol.values())
+            built_rows = 0
+            for symbol_index, symbol in enumerate(symbols_with_data, 1):
+                self._check_cancelled()
+                state = ranking_states[symbol]
+                for stamp in selected_by_symbol.get(symbol, []):
+                    row = self._history_result_row(
+                        cache=cache,
+                        symbol=symbol,
+                        stamp=stamp,
+                        adjusted=adjusted,
+                        market=state["market"],
+                        percent_changes=state["percent_changes"],
+                        ranking_series=state["ranking_series"],
+                        leaf_evidence=state["leaf_evidence"],
+                    )
+                    rows_by_date.setdefault(row["As Of"], []).append(row)
+                    built_rows += 1
+                if symbol_index == len(symbols_with_data) or symbol_index % 25 == 0:
+                    progress(
+                        80 + int(symbol_index / max(1, len(symbols_with_data)) * 8),
+                        f"Building evidence for ranked winners: {built_rows:,}/{selected_total:,} rows",
+                    )
+            ranking_states.clear()
+            ranking_candidates.clear()
+
+        matched_days = list(rows_by_date.items())
+        progress(88, f"Ranking matches across {len(matched_days):,} signal dates")
+        for day_index, (day, day_rows) in enumerate(matched_days, 1):
+            self._check_cancelled()
             rows_by_date[day] = rank_scan_rows(day_rows, self.setup)
+            if day_index == len(matched_days) or day_index % 20 == 0:
+                progress(
+                    88 + int(day_index / max(1, len(matched_days)) * 6),
+                    f"Ranking signal dates: {day_index:,}/{len(matched_days):,}",
+                )
 
         daily_summary: list[dict[str, Any]] = []
-        for day in sorted(all_dates):
+        sorted_dates = sorted(all_dates)
+        progress(94, f"Building daily summary for {len(sorted_dates):,} trading dates")
+        for day_index, day in enumerate(sorted_dates, 1):
+            self._check_cancelled()
             sector_counts: dict[str, int] = {}
             for row in rows_by_date.get(day, []):
                 sector = row.get("Sector") or "n/a"
@@ -8969,6 +9342,11 @@ class HistoryScannerWorker(RuleScannerWorker):
                     "sectors": sector_counts,
                 }
             )
+            if day_index == len(sorted_dates) or day_index % 25 == 0:
+                progress(
+                    94 + int(day_index / max(1, len(sorted_dates)) * 6),
+                    f"Building daily summary: {day_index:,}/{len(sorted_dates):,} dates",
+                )
         total_matches = sum(len(rows) for rows in rows_by_date.values())
         return HistoryReport(
             rows_by_date=rows_by_date,
@@ -12938,7 +13316,7 @@ class AlgoPaperOrderWorker(QThread):
 
     def run(self) -> None:
         self.failed.emit(
-            "Paper-trade execution is disabled in FINAL ChartInk V1."
+            "Paper-trade execution is disabled in FINAL ChartSage V1."
         )
         return
         # Inert compatibility implementation; deliberately unreachable.
@@ -13486,7 +13864,7 @@ class PaperPipelineWorker(QThread):
         if pnl_members:
             if len(exit_members) != 1 or exit_label:
                 raise ValueError(
-                    "Portfolio Profit % or Stop Loss % EXIT rules must be kept "
+                    "Portfolio Profit %, Loss %, or Stop Loss % EXIT rules must be kept "
                     "inside one standalone Step 3 EXIT template, not a FINAL RULE SET."
                 )
             member = pnl_members[0]
@@ -13945,7 +14323,7 @@ class StrategyGuideWindow(QMainWindow):
 class ScannerWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle(f"ChartInk Telegram Rule Scanner — data folder: {DATA_DIR}")
+        self.setWindowTitle(f"ChartSage Telegram Rule Scanner — data folder: {DATA_DIR}")
         self.resize(1450, 900)
         self.store = TemplateStore()
         self._store_error: str | None = None
@@ -14080,7 +14458,7 @@ class ScannerWindow(QMainWindow):
         root = QWidget()
         self.setCentralWidget(root)
         outer = QVBoxLayout(root)
-        title = QLabel("ChartInk-Style Rule Scanner")
+        title = QLabel("ChartSage Rule Scanner")
         title.setStyleSheet("font-size: 22px; font-weight: 700; color: #17365d")
         header_row = QHBoxLayout()
         header_row.addWidget(title)
@@ -18124,31 +18502,16 @@ class ScannerWindow(QMainWindow):
             )
             return
         if expression_has_pnl_rules(parsed):
-            zerodha_found = False
-            for i in range(self.universe_list.count()):
-                item = self.universe_list.item(i)
-                raw = item.data(Qt.ItemDataRole.UserRole) or item.text().rsplit(" (", 1)[0]
-                if str(raw).startswith("💼 ZERODHA") or str(raw).startswith("💼 Zerodha"):
-                    item.setCheckState(Qt.CheckState.Checked)
-                    zerodha_found = True
-                else:
-                    item.setCheckState(Qt.CheckState.Unchecked)
-            
-            if zerodha_found:
-                QMessageBox.information(
-                    self,
-                    "Zerodha Portfolio Watchlist Selected",
-                    "Profit % and Stop Loss % rules apply exclusively to portfolio holdings.\n\n"
-                    "We have automatically unchecked general market universes (like NIFTY 50) and selected your Zerodha Portfolio Watchlist as the target universe."
-                )
-            else:
-                QMessageBox.warning(
-                    self,
-                    "Portfolio Watchlist Required",
-                    "Profit % and Stop Loss % rules require portfolio holdings.\n\n"
-                    "Please select your Zerodha Portfolio Watchlist (e.g. '💼 ZERODHA John Doe') as your target universe."
-                )
-                return
+            QMessageBox.information(
+                self,
+                "Position-dependent EXIT rule",
+                "This holding-dependent Profit/Loss rule can be saved without "
+                "a Zerodha portfolio for use as a standalone Step 3 EXIT rule "
+                "in FINAL ChartSage Paper Backtest.\n\n"
+                "A normal current scan still requires one real portfolio and "
+                "cost basis. Paper Backtest instead evaluates it against its "
+                "simulated holdings and weighted-average acquisition cost.",
+            )
         dialog = RuleDialog(parsed, self)
         dialog.setWindowTitle("Confirm or edit parsed rule")
         if dialog.exec():
@@ -18245,15 +18608,30 @@ class ScannerWindow(QMainWindow):
                 u for u in selected_unis
                 if not (str(u).startswith("💼 ZERODHA") or str(u).startswith("💼 Zerodha"))
             ]
-            if not has_zerodha_uni or non_zerodha_unis:
+            live_portfolio_scope = has_zerodha_uni and not non_zerodha_unis
+            if is_algo_template_setup(
+                self.active_template_name or "", setup
+            ) and not live_portfolio_scope:
                 if not silent:
                     QMessageBox.warning(
                         self,
                         "Portfolio Watchlist Required",
-                        f"Profit % and Stop Loss % rules require portfolio holdings exclusively before {action_desc}.\n\n"
-                        "Please uncheck general market universes (like NIFTY 50) and select ONLY your Zerodha Portfolio Watchlist (e.g. '💼 ZERODHA John Doe') as your target universe."
+                        f"A live/ALGO Profit or Loss rule requires portfolio "
+                        f"holdings exclusively before {action_desc}.\n\n"
+                        "Select only one account-specific Zerodha Portfolio "
+                        "Watchlist. To use this rule without Zerodha, save it "
+                        "as a normal template and select it as a standalone "
+                        "Step 3 EXIT in FINAL ChartSage Paper Backtest.",
                     )
                 return False
+            setup["position_rule_scope"] = (
+                "PORTFOLIO_AND_PAPER"
+                if live_portfolio_scope
+                else "PAPER_BACKTEST_ONLY"
+            )
+            setup["strategy_guide_role"] = "EXIT"
+        else:
+            setup.pop("position_rule_scope", None)
 
         # Account Mismatch Guard: Prevent saving an ALGO template belonging to one account to another account
         if self.active_template_name:
@@ -18760,6 +19138,20 @@ class ScannerWindow(QMainWindow):
             validate_ranking_setup(setup)
         except ValueError as exc:
             QMessageBox.warning(self, "Invalid scan setup", str(exc))
+            return False
+        if (
+            expression_has_pnl_rules(setup.get("expression"))
+            and str(setup.get("position_rule_scope", "")).upper()
+            == "PAPER_BACKTEST_ONLY"
+        ):
+            QMessageBox.information(
+                self,
+                "Paper Backtest EXIT rule",
+                "This position-dependent rule is intentionally not a broad "
+                "market scan. Select it as a standalone Step 3 EXIT rule in "
+                "FINAL ChartSage and run Paper Backtest, where simulated "
+                "holdings provide the required acquisition cost.",
+            )
             return False
         if not setup["universes"] and not setup["custom_symbols"]:
             QMessageBox.warning(self, "No universe", "Choose at least one universe or enter custom symbols.")
@@ -21408,7 +21800,7 @@ class ScannerWindow(QMainWindow):
 
 
 class FinalChartInkRecipeStore:
-    """Private, atomic persistence for FINAL ChartInk workflow recipes."""
+    """Private, atomic persistence for FINAL ChartSage workflow strategies."""
 
     def __init__(self, path: Path = FINAL_RECIPE_FILE):
         self.path = Path(path)
@@ -21419,9 +21811,9 @@ class FinalChartInkRecipeStore:
         try:
             payload = json.loads(self.path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError) as exc:
-            raise StateStoreError(f"FINAL ChartInk strategy file is invalid: {exc}") from exc
+            raise StateStoreError(f"FINAL ChartSage strategy file is invalid: {exc}") from exc
         if not isinstance(payload, dict) or not isinstance(payload.get("recipes", {}), dict):
-            raise StateStoreError("FINAL ChartInk strategy collection is invalid.")
+            raise StateStoreError("FINAL ChartSage strategy collection is invalid.")
         payload.setdefault("version", 1)
         payload.setdefault("active", "")
         payload.setdefault("recipes", {})
@@ -21431,21 +21823,182 @@ class FinalChartInkRecipeStore:
         atomic_write_json(self.path, payload)
 
 
+AUTO_WATCHLIST_NAME_MAX = 180
+
+
+def _auto_watchlist_token(value: Any, limit: int = 22) -> str:
+    """Return a readable, stable watchlist-name token for one selection."""
+    clean = str(value or "").upper()
+    clean = re.sub(r"\[(?:RULE|FINAL SET)\]", " ", clean)
+    replacements = (
+        ("CROSSES ABOVE", "XUP"),
+        ("CROSSES BELOW", "XDN"),
+        ("UPTRENDING STOCKS", "UPTREND"),
+        ("DOWNTRENDING STOCKS", "DOWNTREND"),
+        ("ALL AVAILABLE HISTORY SINCE 2014", "HISTORY2014"),
+        ("NIFTY ", "NIFTY"),
+        ("DAILY ", "D-"),
+        ("WEEKLY ", "W-"),
+        ("MONTHLY ", "M-"),
+    )
+    for old, new in replacements:
+        clean = clean.replace(old, new)
+    clean = re.sub(r"[^A-Z0-9]+", "-", clean).strip("-") or "NONE"
+    if len(clean) <= limit:
+        return clean
+    digest = hashlib.sha256(clean.encode("utf-8")).hexdigest()[:4].upper()
+    return f"{clean[: max(1, limit - 5)].rstrip('-')}-{digest}"
+
+
+def _auto_watchlist_group(
+    values: Iterable[Any],
+    empty: str = "NONE",
+    *,
+    limit: int = 28,
+    token_limit: int = 20,
+) -> str:
+    """Compact a selection list while retaining count and collision identity."""
+    cleaned = list(dict.fromkeys(
+        str(value).strip() for value in values if str(value).strip()
+    ))
+    if not cleaned:
+        return empty
+    tokens = [_auto_watchlist_token(value, token_limit) for value in cleaned]
+    joined = "-AND-".join(tokens)
+    if len(joined) <= limit:
+        return joined
+    digest = hashlib.sha256(
+        json.dumps(cleaned, ensure_ascii=False, sort_keys=True).encode("utf-8")
+    ).hexdigest()[:5].upper()
+    ending = f"-P{len(tokens) - 1}-{digest}"
+    prefix_length = max(3, limit - len(ending))
+    return f"{tokens[0][:prefix_length].rstrip('-')}{ending}"
+
+
+def build_finalchartink_auto_watchlist_names(
+    raw_config: dict[str, Any],
+    templates: dict[str, dict[str, Any]],
+) -> dict[str, str]:
+    """Build four deterministic, selection-aware generated watchlist names."""
+    config = normalize_finalchartink_recipe(raw_config)
+    feeders = sorted(config["feeder_templates"], key=str.upper)
+    scope = config["feeder_scope"]
+    saved_sources: list[str] = []
+    for template_name in feeders:
+        setup = templates.get(template_name, {})
+        saved_sources.extend(
+            str(value).strip() for value in setup.get("universes", [])
+            if str(value).strip()
+        )
+        if str(setup.get("custom_symbols", "") or "").strip():
+            saved_sources.append(f"{template_name} custom symbols")
+    saved_sources = sorted(dict.fromkeys(saved_sources), key=str.upper)
+    if not feeders:
+        step2a_mode = "INACTIVE"
+        effective_step2a: list[str] = []
+    elif scope == "OVERRIDE":
+        step2a_mode = "OVERRIDE"
+        effective_step2a = sorted(config["feeder_sources"], key=str.upper)
+    elif scope == "COMBINE":
+        step2a_mode = "COMBINE"
+        effective_step2a = sorted(dict.fromkeys(
+            saved_sources + list(config["feeder_sources"])
+        ), key=str.upper)
+    else:
+        step2a_mode = "SAVED"
+        effective_step2a = saved_sources
+
+    direct_sources = sorted(config["final_additional_sources"], key=str.upper)
+    include_step1 = bool(feeders and config["include_multirule"])
+    step2b_route = (
+        "S1-PLUS-DIRECT"
+        if include_step1 and direct_sources
+        else "S1-ONLY"
+        if include_step1
+        else "DIRECT-ONLY"
+        if direct_sources
+        else "NONE"
+    )
+    canonical = {
+        "strategy": config["recipe_name"],
+        "step1": feeders,
+        "step2a_mode": step2a_mode,
+        "step2a_sources": effective_step2a,
+        "include_step1": include_step1,
+        "step2b_sources": direct_sources,
+        "step3_buy": sorted(config["buy_finalsets"], key=str.upper),
+        "step3_exit": sorted(config["exit_finalsets"], key=str.upper),
+    }
+    flow_id = hashlib.sha256(
+        json.dumps(
+            canonical, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+        ).encode("utf-8")
+    ).hexdigest()[:6].upper()
+    def build_base(compact: bool = False) -> str:
+        group_limit = 18 if compact else 28
+        group_token_limit = 14 if compact else 20
+        components = [
+            "CS",
+            f"ST-{_auto_watchlist_token(config['recipe_name'], 8 if compact else 22)}",
+            f"S1-{_auto_watchlist_group(feeders, limit=group_limit, token_limit=group_token_limit)}",
+            f"S2A-{step2a_mode}-{_auto_watchlist_group(effective_step2a, limit=group_limit, token_limit=group_token_limit)}",
+            f"S2B-{step2b_route}-{_auto_watchlist_group(direct_sources, limit=group_limit, token_limit=group_token_limit)}",
+            f"S3B-{_auto_watchlist_group(sorted(config['buy_finalsets'], key=str.upper), limit=group_limit, token_limit=group_token_limit)}",
+            f"S3E-{_auto_watchlist_group(sorted(config['exit_finalsets'], key=str.upper), limit=group_limit, token_limit=group_token_limit)}",
+            f"F{flow_id}",
+        ]
+        return "_".join(components)
+
+    base = build_base()
+    longest_suffix = "_02-FINAL-INPUT"
+    if len(base) + len(longest_suffix) > AUTO_WATCHLIST_NAME_MAX:
+        base = build_base(compact=True)
+    return {
+        "multirule_watchlist": f"{base}_01-S1-MATCHES",
+        "final_input_watchlist": f"{base}_02-FINAL-INPUT",
+        "buy_results_watchlist": f"{base}_03-BUY",
+        "exit_results_watchlist": f"{base}_04-EXIT",
+        "watchlist_flow_id": flow_id,
+    }
+
+
+def finalchartink_output_watchlist_names(
+    raw_config: dict[str, Any],
+) -> dict[str, str]:
+    """Return stored generated-list names with legacy BUY/EXIT fallbacks."""
+    config = normalize_finalchartink_recipe(raw_config)
+    recipe_name = config["recipe_name"]
+    return {
+        "multirule": config["multirule_watchlist"],
+        "final_input": config["final_input_watchlist"],
+        "buy": config["buy_results_watchlist"] or f"{recipe_name} BUY RESULTS",
+        "exit": config["exit_results_watchlist"] or f"{recipe_name} EXIT RESULTS",
+    }
+
+
 def finalchartink_defaults() -> dict[str, Any]:
     return {
         "recipe_name": "MY MULTIRULE GUIDE",
         "feeder_templates": [],
         "multirule_watchlist": "MultiruleWatchlist",
+        "manual_multirule_watchlist": "MultiruleWatchlist",
+        "manual_final_input_watchlist": "FINALCHARTSAGE INPUT",
+        "auto_watchlist_naming": True,
+        "buy_results_watchlist": "",
+        "exit_results_watchlist": "",
+        "watchlist_flow_id": "",
         "include_multirule": True,
         "feeder_sources": [],
         "final_additional_sources": [],
         # Compatibility alias used by recipes saved before Step 2A and 2B
         # were separated. It is normalized to final_additional_sources.
         "additional_sources": [],
-        "final_input_watchlist": "FINALCHARTINK INPUT",
+        "final_input_watchlist": "FINALCHARTSAGE INPUT",
         "feeder_scope": "SAVED",
         "buy_finalset": "",
+        "buy_finalsets": [],
         "exit_finalset": "",
+        "exit_finalsets": [],
         "technical_adjusted": True,
         "include_current": True,
         "as_of_mode": "latest",
@@ -21480,10 +22033,40 @@ def normalize_finalchartink_recipe(raw: Any) -> dict[str, Any]:
         ))
     for key in (
         "recipe_name", "multirule_watchlist", "final_input_watchlist",
+        "manual_multirule_watchlist", "manual_final_input_watchlist",
+        "buy_results_watchlist", "exit_results_watchlist", "watchlist_flow_id",
         "buy_finalset", "exit_finalset", "start_time", "end_time",
         "as_of_date",
     ):
         config[key] = str(config.get(key, "") or "").strip()
+    for plural_key, singular_key in (
+        ("buy_finalsets", "buy_finalset"),
+        ("exit_finalsets", "exit_finalset"),
+    ):
+        selected_values = config.get(plural_key, []) or []
+        if not selected_values and config[singular_key]:
+            selected_values = [config[singular_key]]
+        config[plural_key] = list(dict.fromkeys(
+            str(value).strip() for value in selected_values
+            if str(value).strip()
+        ))
+        # The first item remains available as a compatibility alias for old
+        # callers and strategies that only understand the singular key.
+        config[singular_key] = (
+            config[plural_key][0] if config[plural_key] else ""
+        )
+    if "manual_multirule_watchlist" not in supplied:
+        config["manual_multirule_watchlist"] = (
+            config["multirule_watchlist"] or "MultiruleWatchlist"
+        )
+    if "manual_final_input_watchlist" not in supplied:
+        config["manual_final_input_watchlist"] = (
+            config["final_input_watchlist"] or "FINALCHARTSAGE INPUT"
+        )
+    # Saved strategies created before auto-naming existed keep their exact
+    # established output names until the user explicitly enables the new mode.
+    if supplied and "auto_watchlist_naming" not in supplied:
+        config["auto_watchlist_naming"] = False
     config["as_of_mode"] = str(
         config.get("as_of_mode", "latest") or "latest"
     ).strip().lower()
@@ -21516,7 +22099,7 @@ def normalize_finalchartink_recipe(raw: Any) -> dict[str, Any]:
     for key in (
         "include_multirule", "technical_adjusted", "include_current",
         "trading_days_only", "publish_to_chartsage",
-        "manual_timestamp_snapshots",
+        "manual_timestamp_snapshots", "auto_watchlist_naming",
     ):
         config[key] = bool(config.get(key, finalchartink_defaults()[key]))
     # Old recipes had one switch that meant "send report and workbook". When
@@ -21685,10 +22268,11 @@ def build_finalchartink_cycle_preview(
                 description += " + saved custom symbols"
             lines.append(f"  • {name}: {description}")
 
-    multirule_name = normalized["multirule_watchlist"]
-    final_name = normalized["final_input_watchlist"]
-    buy_name = f"{normalized['recipe_name']} BUY RESULTS"
-    exit_name = f"{normalized['recipe_name']} EXIT RESULTS"
+    output_names = finalchartink_output_watchlist_names(normalized)
+    multirule_name = output_names["multirule"]
+    final_name = output_names["final_input"]
+    buy_name = output_names["buy"]
+    exit_name = output_names["exit"]
     final_sources = list(normalized["final_additional_sources"])
     lines.extend([
         "",
@@ -21710,8 +22294,10 @@ def build_finalchartink_cycle_preview(
         + (", ".join(final_sources) if final_sources else "no additional sources"),
         "",
         "STEP 3 — FINAL GUIDANCE RULES",
-        f"  BUY rule/set: {normalized['buy_finalset'] or 'No BUY rule'}",
-        f"  SELL/EXIT rule/set: {normalized['exit_finalset'] or 'None selected'}",
+        "  BUY rules/sets (ANY): "
+        + (", ".join(normalized["buy_finalsets"]) or "No BUY rule"),
+        "  SELL/EXIT rules/sets (ANY): "
+        + (", ".join(normalized["exit_finalsets"]) or "None selected"),
         "",
         (
             "PRIVATE WATCHLISTS: Not changed during historical testing"
@@ -21780,17 +22366,19 @@ def validate_finalchartink_cycle_config(
         return "These Step 1 feeder templates no longer exist: " + ", ".join(
             missing_feeders
         )
-    buy_set = normalized["buy_finalset"]
-    exit_set = normalized["exit_finalset"]
-    if not buy_set and not exit_set:
+    buy_sets = normalized["buy_finalsets"]
+    exit_sets = normalized["exit_finalsets"]
+    if not buy_sets and not exit_sets:
         return (
             "Select at least one Step 3 rule: a final BUY rule, a final "
             "SELL/EXIT rule, or both."
         )
-    if buy_set and buy_set not in templates:
-        return f"The selected final BUY rule no longer exists: {buy_set}"
-    if exit_set and exit_set not in templates:
-        return f"The selected final SELL/EXIT rule no longer exists: {exit_set}"
+    missing_buy = [name for name in buy_sets if name not in templates]
+    if missing_buy:
+        return "These selected final BUY rules no longer exist: " + ", ".join(missing_buy)
+    missing_exit = [name for name in exit_sets if name not in templates]
+    if missing_exit:
+        return "These selected final SELL/EXIT rules no longer exist: " + ", ".join(missing_exit)
     if (
         feeders
         and normalized["feeder_scope"] == "OVERRIDE"
@@ -21815,12 +22403,24 @@ def validate_finalchartink_cycle_config(
     for key, label in (
         ("multirule_watchlist", "generated multi-rule watchlist"),
         ("final_input_watchlist", "final input watchlist"),
+        ("buy_results_watchlist", "BUY results watchlist"),
+        ("exit_results_watchlist", "EXIT results watchlist"),
     ):
-        name = normalized[key]
+        name = (
+            normalized[key]
+            or finalchartink_output_watchlist_names(normalized)[
+                "buy" if key == "buy_results_watchlist" else "exit"
+            ]
+        ) if key in {"buy_results_watchlist", "exit_results_watchlist"} else normalized[key]
         if not name or not re.fullmatch(r"[A-Za-z0-9\s_-]+", name):
             return (
                 f"Enter a valid {label} name using only letters, numbers, "
                 "spaces, hyphens or underscores."
+            )
+        if len(name) > AUTO_WATCHLIST_NAME_MAX:
+            return (
+                f"The {label} name is longer than "
+                f"{AUTO_WATCHLIST_NAME_MAX} characters."
             )
     return ""
 
@@ -21977,13 +22577,13 @@ _FINALCHARTINK_PUBLISH_LOCK = threading.Lock()
 
 def finalchartink_recipe_watchlist_names(config: dict[str, Any]) -> list[str]:
     """Private watchlists generated by one FINALCHARTink recipe cycle."""
-    normalized = normalize_finalchartink_recipe(config)
+    names = finalchartink_output_watchlist_names(config)
     return list(dict.fromkeys(
         name for name in (
-            normalized["multirule_watchlist"],
-            normalized["final_input_watchlist"],
-            f"{normalized['recipe_name']} BUY RESULTS",
-            f"{normalized['recipe_name']} EXIT RESULTS",
+            names["multirule"],
+            names["final_input"],
+            names["buy"],
+            names["exit"],
         )
         if str(name).strip()
     ))
@@ -22001,11 +22601,12 @@ def build_finalchartink_timestamped_watchlists(
     """Create collision-safe, chronologically sortable manual-run snapshots."""
     normalized = normalize_finalchartink_recipe(config)
     stamp = (generated_at or get_ist_now()).strftime("%Y%m%d_%H%M%S")
+    names = finalchartink_output_watchlist_names(normalized)
     definitions = [
-        ("Step 1 multi-rule output", normalized["multirule_watchlist"], multirule_symbols),
-        ("Combined final input", normalized["final_input_watchlist"], final_symbols),
-        ("Step 3 BUY results", f"{normalized['recipe_name']} BUY RESULTS", buy_symbols),
-        ("Step 3 EXIT results", f"{normalized['recipe_name']} EXIT RESULTS", exit_symbols),
+        ("Step 1 multi-rule output", names["multirule"], multirule_symbols),
+        ("Combined final input", names["final_input"], final_symbols),
+        ("Step 3 BUY results", names["buy"], buy_symbols),
+        ("Step 3 EXIT results", names["exit"], exit_symbols),
     ]
     reserved = {str(name) for name in existing_names}
     snapshots: dict[str, list[str]] = {}
@@ -22038,8 +22639,10 @@ def finalchartink_chartsage_watchlist_name(private_name: str) -> str:
     clean = re.sub(r"\s+", " ", clean).strip()
     if not clean:
         raise ValueError("A generated watchlist has no usable name to publish.")
-    if clean.upper().startswith("FINALCHARTINK "):
+    if clean.upper().startswith(("FINALCHARTINK ", "FINALCHARTSAGE ")):
         return clean
+    if clean.upper().startswith("CS_"):
+        return f"FINALCHARTSAGE {clean}"
     return f"FINALCHARTINK {clean}"
 
 
@@ -22196,7 +22799,7 @@ def build_finalchartink_telegram_messages(payload: dict[str, Any]) -> list[str]:
     exits = [row for row in rows if str(row.get("Signal", "")).startswith("EXIT")]
     reviews = [row for row in rows if str(row.get("Signal", "")).startswith("REVIEW")]
     lines = [
-        "FINAL ChartInk V1 — Automated BUY / EXIT Guidance",
+        "FINAL ChartSage V1 — Automated BUY / EXIT Guidance",
         f"Strategy: {config['recipe_name']}",
         f"Generated: {get_ist_now():%Y-%m-%d %H:%M:%S} IST",
         f"Feeder templates: {len(config['feeder_templates'])}",
@@ -22236,8 +22839,10 @@ def build_finalchartink_telegram_messages(payload: dict[str, Any]) -> list[str]:
             "Step 2B behaviour: selected universe/watchlist stocks bypass all "
             "Step 1 rules and Step 1 saved universes and go directly to Step 3."
         ),
-        f"Step 3 final BUY rule/set: {config['buy_finalset'] or 'None selected'}",
-        f"Step 3 final EXIT rule/set: {config['exit_finalset'] or 'None selected'}",
+        "Step 3 final BUY rules/sets (ANY): "
+        + (", ".join(config["buy_finalsets"]) or "None selected"),
+        "Step 3 final EXIT rules/sets (ANY): "
+        + (", ".join(config["exit_finalsets"]) or "None selected"),
     ])
     for item in payload.get("selected_rule_rows", []) or []:
         stage = str(item.get("Stage", ""))
@@ -22254,8 +22859,8 @@ def build_finalchartink_telegram_messages(payload: dict[str, Any]) -> list[str]:
         output_verb + ":",
         f"- Step 1 multi-rule output: {config['multirule_watchlist']}",
         f"- Combined final input: {config['final_input_watchlist']}",
-        f"- Step 3 BUY results: {config['recipe_name']} BUY RESULTS",
-        f"- Step 3 EXIT results: {config['recipe_name']} EXIT RESULTS",
+        f"- Step 3 BUY results: {finalchartink_output_watchlist_names(config)['buy']}",
+        f"- Step 3 EXIT results: {finalchartink_output_watchlist_names(config)['exit']}",
     ])
     timestamped = list(payload.get("timestamped_watchlists", []) or [])
     if timestamped:
@@ -22285,10 +22890,15 @@ def build_finalchartink_telegram_messages(payload: dict[str, Any]) -> list[str]:
             symbol = str(row.get("Symbol", "")).strip()
             close = finite_or_none(row.get("Close"))
             evidence = str(row.get("Evidence", "") or "").strip()
+            matched_items = str(
+                row.get("Matched Step 3 Items", "") or ""
+            ).strip()
             text = f"{index}. {symbol}"
             if close is not None:
                 text += f" | Close {format_number(close)}"
             lines.append(text)
+            if matched_items:
+                lines.append(f"   Matched Step 3 item(s): {matched_items}")
             if evidence:
                 lines.append(f"   Evidence: {evidence}")
 
@@ -22297,7 +22907,7 @@ def build_finalchartink_telegram_messages(payload: dict[str, Any]) -> list[str]:
     add_section("BUY + EXIT review", reviews)
     return chunk_telegram_lines(
         lines,
-        continuation_header=f"FINAL ChartInk V1 — {config['recipe_name']} (continued)",
+        continuation_header=f"FINAL ChartSage V1 — {config['recipe_name']} (continued)",
     )
 
 
@@ -22532,8 +23142,18 @@ def build_finalchartink_selected_rule_rows(
         ("Step 1 — Checked Feeder", name)
         for name in normalized["feeder_templates"]
     ]
-    selections.append(("Step 3 — Final BUY", normalized["buy_finalset"]))
-    selections.append(("Step 3 — Final SELL/EXIT", normalized["exit_finalset"]))
+    selections.extend(
+        ("Step 3 — Final BUY (outer ANY/OR)", name)
+        for name in normalized["buy_finalsets"]
+    )
+    selections.extend(
+        ("Step 3 — Final SELL/EXIT (outer ANY/OR)", name)
+        for name in normalized["exit_finalsets"]
+    )
+    if not normalized["buy_finalsets"]:
+        selections.append(("Step 3 — Final BUY (outer ANY/OR)", ""))
+    if not normalized["exit_finalsets"]:
+        selections.append(("Step 3 — Final SELL/EXIT (outer ANY/OR)", ""))
     rows: list[dict[str, Any]] = []
     for stage, name in selections:
         setup = templates.get(name, {}) if name else {}
@@ -22600,13 +23220,6 @@ def add_finalchartink_strategy_explanation_sheet(
         for item in rule_rows
         if "Step 1" in str(item.get("Stage", ""))
     }
-    step3_details = {
-        "BUY" if "BUY" in str(item.get("Stage", ""))
-        and "SELL" not in str(item.get("Stage", "")) else "EXIT": item
-        for item in rule_rows
-        if "Step 3" in str(item.get("Stage", ""))
-    }
-
     add("ACTUAL RUN", "Strategy name", normalized["recipe_name"])
     output_status = "Created/updated by this run" if outputs_created else (
         "Logical output name only; historical and paper runs do not write watchlists"
@@ -22614,8 +23227,8 @@ def add_finalchartink_strategy_explanation_sheet(
     output_watchlists = [
         ("Step 1 generated multi-rule watchlist", normalized["multirule_watchlist"]),
         ("Combined Final Input watchlist", normalized["final_input_watchlist"]),
-        ("Step 3 BUY Results watchlist", f"{normalized['recipe_name']} BUY RESULTS"),
-        ("Step 3 EXIT Results watchlist", f"{normalized['recipe_name']} EXIT RESULTS"),
+        ("Step 3 BUY Results watchlist", finalchartink_output_watchlist_names(normalized)["buy"]),
+        ("Step 3 EXIT Results watchlist", finalchartink_output_watchlist_names(normalized)["exit"]),
     ]
     for topic, name in output_watchlists:
         add("ACTUAL RUN - OUTPUT WATCHLISTS", topic, f"{name} | {output_status}")
@@ -22703,18 +23316,30 @@ def add_finalchartink_strategy_explanation_sheet(
         ) if has_step1 else "Inactive - no Step 1 rule template is selected",
     )
 
-    for side, key in (("BUY", "buy_finalset"), ("EXIT", "exit_finalset")):
-        name = normalized[key] or "None selected"
-        add("ACTUAL RUN - STEP 3", f"Final {side} rule/set", name)
-        detail = step3_details.get(side, {})
-        members = str(detail.get("Member Templates", "") or "").strip()
-        combination = str(detail.get("Combination", "") or "").strip()
-        if members:
-            add(
-                "ACTUAL RUN - STEP 3",
-                f"{side} member rule templates",
-                members + (f" | Combination: {combination}" if combination else ""),
+    for side, key in (("BUY", "buy_finalsets"), ("EXIT", "exit_finalsets")):
+        selected = normalized[key]
+        add(
+            "ACTUAL RUN - STEP 3",
+            f"Final {side} outer combination",
+            "ANY checked item may match (OR)" if selected else "None selected",
+        )
+        for name in selected:
+            detail = next(
+                (
+                    item for item in rule_rows
+                    if str(item.get("Template", "")) == name
+                    and "Step 3" in str(item.get("Stage", ""))
+                ),
+                {},
             )
+            members = str(detail.get("Member Templates", "") or "").strip()
+            combination = str(detail.get("Combination", "") or "").strip()
+            description = name
+            if members:
+                description += f" | Members: {members}"
+            if combination:
+                description += f" | Internal combination: {combination}"
+            add("ACTUAL RUN - STEP 3", f"Selected {side} item", description)
 
     add(
         "CORE LOGIC",
@@ -22746,8 +23371,10 @@ def add_finalchartink_strategy_explanation_sheet(
     add(
         "STEP 3",
         "Purpose",
-        "The selected final BUY and EXIT rules evaluate the de-duplicated Final Input. "
-        "A missing BUY or EXIT selection produces no signals for that respective side.",
+        "The checked final BUY items are combined as ANY/OR, and the checked EXIT "
+        "items are combined separately as ANY/OR. Each selected FINAL SET retains "
+        "its own internal AND, OR or K-of-N logic. A side with no checked item "
+        "produces no signal for that side.",
     )
     add(
         "STEP 3",
@@ -22840,6 +23467,28 @@ def add_finalchartink_history_audit_sheet(
         f"{report.start_date} to {report.end_date}",
         finalchartink_history_period_label(history_months),
     )
+    effective_end = str(
+        config.get("history_effective_end", report.end_date) or report.end_date
+    )
+    requested_end = str(
+        config.get("history_requested_end", effective_end) or effective_end
+    )
+    price_policy = str(
+        config.get("history_price_date_policy", "selected historical session")
+        or "selected historical session"
+    )
+    add(
+        "RUN",
+        "Effective backtest price date",
+        effective_end,
+        (
+            f"{price_policy}. Requested latest session: {requested_end}. "
+            "The newest verified official Bhavcopy session was used to avoid "
+            "silently mixing provisional prices into completed history."
+            if bool(config.get("history_official_anchor_applied", False))
+            else price_policy
+        ),
+    )
     dated_indices = [
         str(value) for value in config.get("historical_membership_indices", [])
         if str(value).strip()
@@ -22930,26 +23579,29 @@ def add_finalchartink_history_audit_sheet(
         ),
     )
 
-    for side, key in (("BUY", "buy_finalset"), ("SELL/EXIT", "exit_finalset")):
-        name = normalized[key]
-        selected_setup = templates.get(name, {}) if name else {}
-        saved_rule_universes = [
-            str(value).strip()
-            for value in selected_setup.get("universes", [])
-            if str(value).strip()
-        ]
-        applied_source = f"Applied to dated contents of {normalized['final_input_watchlist']}"
-        if saved_rule_universes:
-            applied_source += (
-                "; template's saved universe(s) not used at Step 3: "
-                + ", ".join(saved_rule_universes)
+    for side, key in (("BUY", "buy_finalsets"), ("SELL/EXIT", "exit_finalsets")):
+        selected_names = normalized[key]
+        if not selected_names:
+            add("STEP 3", f"Final {side} rules / sets", "None selected", "Disabled")
+        for name in selected_names:
+            selected_setup = templates.get(name, {})
+            saved_rule_universes = [
+                str(value).strip()
+                for value in selected_setup.get("universes", [])
+                if str(value).strip()
+            ]
+            applied_source = f"Applied to dated contents of {normalized['final_input_watchlist']}"
+            if saved_rule_universes:
+                applied_source += (
+                    "; template's saved universe(s) not used at Step 3: "
+                    + ", ".join(saved_rule_universes)
+                )
+            add(
+                "STEP 3",
+                f"Final {side} item (outer ANY/OR): {name}",
+                applied_source,
+                _finalchartink_export_rule_logic(name, templates),
             )
-        add(
-            "STEP 3",
-            f"Final {side} rule / set: {name or 'None selected'}",
-            applied_source,
-            _finalchartink_export_rule_logic(name, templates),
-        )
 
     add(
         "OUTPUT",
@@ -23002,7 +23654,7 @@ def export_finalchartink_history_workbook(
         report,
         setup,
         extra_match_headers=[
-            "Signal", "Confirmation Count", "Matched Members",
+            "Signal", "Confirmation Count", "Matched Step 3 Items", "Matched Members",
             "Feeder Matches", "Evidence",
         ],
         workbook_enricher=lambda workbook: add_finalchartink_history_audit_sheet(
@@ -23050,7 +23702,8 @@ def export_finalchartink_workbook(path: Path | str, payload: dict[str, Any]) -> 
     rows = list(payload.get("guidance_rows", []) or [])
     preferred_headers = [
         "Symbol", "Signal", "Universe", "As Of", "Open", "High", "Low", "Close",
-        PERCENT_CHANGE_COLUMN, "Confirmation Count", "Matched Members", "Evidence",
+        PERCENT_CHANGE_COLUMN, "Confirmation Count", "Matched Step 3 Items",
+        "Matched Members", "Evidence",
         DATA_SOURCE_COLUMN, PRICE_BASIS_COLUMN, DATA_TIME_COLUMN, DATA_AGE_COLUMN,
         "In Zerodha", "Zerodha Accounts",
     ]
@@ -23110,7 +23763,9 @@ def export_finalchartink_workbook(path: Path | str, payload: dict[str, Any]) -> 
                     cell.font = Font(bold=True)
                     break
     _style_finalchartink_sheet(
-        guidance, wrap_headers={"Matched Members", "Evidence", "Zerodha Accounts"}
+        guidance, wrap_headers={
+            "Matched Step 3 Items", "Matched Members", "Evidence", "Zerodha Accounts"
+        }
     )
     # Freeze the header row and the Symbol column while users scroll in either
     # direction through wide guidance results.
@@ -23135,20 +23790,18 @@ def export_finalchartink_workbook(path: Path | str, payload: dict[str, Any]) -> 
             }
             for name in config["feeder_templates"]
         ]
-        rule_rows.extend(
-            [
-                {
-                    "Stage": "Step 3 — Final BUY",
-                    "Template": config["buy_finalset"] or "<None selected>",
-                    "Complete Rule Logic": "<Template details unavailable>",
-                },
-                {
-                    "Stage": "Step 3 — Final SELL/EXIT",
-                    "Template": config["exit_finalset"] or "<None selected>",
-                    "Complete Rule Logic": "<Template details unavailable>",
-                },
-            ]
-        )
+        for side, names in (
+            ("BUY", config["buy_finalsets"]),
+            ("SELL/EXIT", config["exit_finalsets"]),
+        ):
+            for name in names or ["<None selected>"]:
+                rule_rows.append(
+                    {
+                        "Stage": f"Step 3 — Final {side} (outer ANY/OR)",
+                        "Template": name,
+                        "Complete Rule Logic": "<Template details unavailable>",
+                    }
+                )
     for item in rule_rows:
         selected_rules.append(
             [_finalchartink_excel_value(item.get(header, "")) for header in rule_headers]
@@ -23165,7 +23818,7 @@ def export_finalchartink_workbook(path: Path | str, payload: dict[str, Any]) -> 
         payload.get("timestamped_watchlists", []) or []
     )
     summary_rows = [
-        ("Application", "FINAL ChartInk V1 — Guidance Only"),
+        ("Application", "FINAL ChartSage V1 — Guidance Only"),
         ("Strategy", config["recipe_name"]),
         (
             "Price date",
@@ -23178,8 +23831,8 @@ def export_finalchartink_workbook(path: Path | str, payload: dict[str, Any]) -> 
         ("Multi-rule symbols", int(payload.get("multirule_count", 0) or 0)),
         ("Final input watchlist", config["final_input_watchlist"]),
         ("Final input symbols", int(payload.get("final_source_count", 0) or 0)),
-        ("BUY Results watchlist", f"{config['recipe_name']} BUY RESULTS"),
-        ("EXIT Results watchlist", f"{config['recipe_name']} EXIT RESULTS"),
+        ("BUY Results watchlist", finalchartink_output_watchlist_names(config)["buy"]),
+        ("EXIT Results watchlist", finalchartink_output_watchlist_names(config)["exit"]),
         (
             "Timestamped snapshots enabled for manual runs",
             "Yes" if config["manual_timestamp_snapshots"] else "No",
@@ -23199,8 +23852,14 @@ def export_finalchartink_workbook(path: Path | str, payload: dict[str, Any]) -> 
                 "COMBINE": "Combine Step 1 saved universes with Step 2A sources",
             }[config["feeder_scope"]],
         ),
-        ("BUY final rule/set", config["buy_finalset"] or "None selected"),
-        ("EXIT final rule/set", config["exit_finalset"] or "None selected"),
+        (
+            "BUY final rules/sets (ANY checked item)",
+            ", ".join(config["buy_finalsets"]) or "None selected",
+        ),
+        (
+            "EXIT final rules/sets (ANY checked item)",
+            ", ".join(config["exit_finalsets"]) or "None selected",
+        ),
         ("Price basis", "Technical Adjusted" if config["technical_adjusted"] else "Official Raw"),
         (
             "Step 2A feeder scan sources",
@@ -23382,7 +24041,7 @@ def write_finalchartink_latest_workbook(payload: dict[str, Any]) -> Path:
         return export_finalchartink_workbook(FINAL_XLSX_FILE, payload)
     except PermissionError:
         fallback = DATA_DIR / (
-            f"FINALCHARTinkV1_Final_Results_{get_ist_now():%Y%m%d_%H%M%S}.xlsx"
+            f"FINALChartSageV1_Final_Results_{get_ist_now():%Y%m%d_%H%M%S}.xlsx"
         )
         return export_finalchartink_workbook(fallback, payload)
 
@@ -23393,7 +24052,7 @@ def write_finalchartink_cycle_workbook(payload: dict[str, Any]) -> Path:
     if config["as_of_mode"] == "latest":
         return write_finalchartink_latest_workbook(payload)
     destination = DATA_DIR / (
-        f"FINALCHARTinkV1_Historical_{config['as_of_date']}.xlsx"
+        f"FINALChartSageV1_Historical_{config['as_of_date']}.xlsx"
     )
     return export_finalchartink_workbook(destination, payload)
 
@@ -23412,8 +24071,14 @@ class FinalChartInkCycleWorker(QThread):
         create_timestamped_snapshots: bool = False,
     ):
         super().__init__()
-        self.config = normalize_finalchartink_recipe(config)
         self.templates = copy.deepcopy(templates)
+        self.config = normalize_finalchartink_recipe(config)
+        if self.config["auto_watchlist_naming"]:
+            self.config.update(
+                build_finalchartink_auto_watchlist_names(
+                    self.config, self.templates
+                )
+            )
         self.catalog = copy.deepcopy(catalog)
         self.create_timestamped_snapshots = bool(create_timestamped_snapshots)
         self._cancel = threading.Event()
@@ -23459,11 +24124,158 @@ class FinalChartInkCycleWorker(QThread):
         try:
             self.succeeded.emit(self._run_cycle())
         except ScanCancelled:
-            self.failed.emit("The FINAL ChartInk cycle was cancelled.")
+            self.failed.emit("The FINAL ChartSage cycle was cancelled.")
         except Exception:
             self.failed.emit(traceback.format_exc())
         finally:
             self._active_scanner = None
+
+    def _run_step3_quick_or(
+        self,
+        final_symbols: list[str],
+        buy_selections: list[str],
+        exit_selections: list[str],
+    ) -> dict[str, Any]:
+        """Evaluate each selected item intact, then OR the branch results."""
+        selections = [("BUY", name) for name in buy_selections]
+        selections.extend(("EXIT", name) for name in exit_selections)
+        branch_total = max(1, len(selections))
+        buy_by_symbol: dict[str, dict[str, Any]] = {}
+        exit_by_symbol: dict[str, dict[str, Any]] = {}
+
+        def merge_match(
+            target: dict[str, dict[str, Any]],
+            source: dict[str, Any],
+            selected_name: str,
+        ) -> None:
+            symbol = str(source.get("Symbol", "")).strip().upper()
+            if not symbol:
+                return
+            if symbol not in target:
+                target[symbol] = dict(source)
+                target[symbol]["Matched Step 3 Items"] = selected_name
+                evidence = str(source.get("Evidence", "") or "").strip()
+                target[symbol]["_Step3 Evidence Parts"] = (
+                    [f"{selected_name}: {evidence}"] if evidence else []
+                )
+                return
+            row = target[symbol]
+            for field in ("Matched Members", "Matched Step 3 Items"):
+                values: list[str] = []
+                for raw in (row.get(field, ""), selected_name if field == "Matched Step 3 Items" else source.get(field, "")):
+                    values.extend(
+                        part.strip() for part in str(raw or "").split(",")
+                        if part.strip()
+                    )
+                row[field] = ", ".join(dict.fromkeys(values))
+            row["Confirmation Count"] = len([
+                value for value in str(row.get("Matched Members", "")).split(",")
+                if value.strip()
+            ]) or 1
+            evidence = str(source.get("Evidence", "") or "").strip()
+            if evidence:
+                part = f"{selected_name}: {evidence}"
+                evidence_parts = row.setdefault("_Step3 Evidence Parts", [])
+                if part not in evidence_parts:
+                    evidence_parts.append(part)
+
+        for branch_index, (side, selected_name) in enumerate(selections, 1):
+            self._check()
+            setup = self.templates[selected_name]
+            is_finalset = is_final_template_setup(selected_name, setup)
+            members = (
+                [
+                    str(name).strip()
+                    for name in setup.get("finalset_members", [])
+                    if str(name).strip()
+                ]
+                if is_finalset else [selected_name]
+            )
+            if not members:
+                raise ValueError(
+                    f"{side} FINAL RULE SET '{selected_name}' contains no member rules."
+                )
+            pipeline = PaperPipelineWorker(
+                account="",
+                member_names=members if side == "BUY" else [],
+                source_symbols=final_symbols,
+                finalset_name=selected_name if side == "BUY" and is_finalset else "",
+                exit_names=[selected_name] if side == "EXIT" and not is_finalset else [],
+                exit_finalset_name=selected_name if side == "EXIT" and is_finalset else "",
+                auto_watchlist=False,
+                track_model=False,
+                technical_adjusted=bool(self.config["technical_adjusted"]),
+                include_current=bool(self.config["include_current"]),
+                as_of_mode=self.config["as_of_mode"],
+                as_of_date=self.config["as_of_date"],
+                templates=self.templates,
+                cache_path=PRICE_CACHE_DB,
+                shared_frame_cache=self._shared_frame_cache,
+                shared_series_cache=self._shared_series_cache,
+            )
+            start = 52 + int((branch_index - 1) * 43 / branch_total)
+            end = 52 + int(branch_index * 43 / branch_total)
+            pipeline.progress.connect(
+                lambda percent, text, begin=start, finish=end, label=selected_name: self._emit(
+                    begin + int((finish - begin) * max(0, min(100, percent)) / 100),
+                    f"Step 3 — {label}: {text}",
+                )
+            )
+            branch_payload = pipeline._run_pipeline()
+            for row in branch_payload.get("guidance_rows", []):
+                signal = str(row.get("Signal", ""))
+                if side == "BUY" and signal == "BUY":
+                    merge_match(buy_by_symbol, row, selected_name)
+                elif side == "EXIT" and signal.startswith("EXIT"):
+                    merge_match(exit_by_symbol, row, selected_name)
+
+        guidance_rows: list[dict[str, Any]] = []
+        for symbol in sorted(set(buy_by_symbol) | set(exit_by_symbol)):
+            buy_row = buy_by_symbol.get(symbol)
+            exit_row = exit_by_symbol.get(symbol)
+            row = dict(buy_row or exit_row or {})
+            matched_members: list[str] = []
+            matched_items: list[str] = []
+            evidence_parts: list[str] = []
+            for source in (buy_row, exit_row):
+                if not source:
+                    continue
+                matched_members.extend(
+                    part.strip() for part in str(source.get("Matched Members", "")).split(",")
+                    if part.strip()
+                )
+                matched_items.extend(
+                    part.strip() for part in str(source.get("Matched Step 3 Items", "")).split(",")
+                    if part.strip()
+                )
+                evidence_parts.extend(source.get("_Step3 Evidence Parts", []))
+            row["Matched Members"] = ", ".join(dict.fromkeys(matched_members))
+            row["Matched Step 3 Items"] = ", ".join(dict.fromkeys(matched_items))
+            row["Confirmation Count"] = len(set(matched_members)) or 1
+            row.pop("_Step3 Evidence Parts", None)
+            if evidence_parts:
+                row["Evidence"] = " || ".join(dict.fromkeys(evidence_parts))
+            row["Signal"] = (
+                "REVIEW (BUY + EXIT)" if buy_row and exit_row
+                else "BUY" if buy_row else "EXIT / WEAKNESS"
+            )
+            guidance_rows.append(row)
+        guidance_rows.sort(
+            key=lambda row: (
+                0 if str(row.get("Signal", "")) == "BUY" else 1,
+                -int(row.get("Confirmation Count", 0) or 0),
+                str(row.get("Symbol", "")),
+            )
+        )
+        shortlist = list(buy_by_symbol.values())
+        exit_rows = list(exit_by_symbol.values())
+        return {
+            "guidance_rows": guidance_rows,
+            "shortlist": shortlist,
+            "exit_signals": exit_rows,
+            "buy_signal_count": len(shortlist),
+            "exit_signal_count": len(exit_rows),
+        }
 
     def _run_cycle(self) -> dict[str, Any]:
         seed_finalchartink_price_cache(self._emit)
@@ -23474,15 +24286,15 @@ class FinalChartInkCycleWorker(QThread):
                 "Select at least one Step 1 feeder template or one Step 2B "
                 "direct final-input source."
             )
-        buy_set = config["buy_finalset"]
-        exit_set = config["exit_finalset"]
-        if not buy_set and not exit_set:
+        buy_sets = list(config["buy_finalsets"])
+        exit_sets = list(config["exit_finalsets"])
+        if not buy_sets and not exit_sets:
             raise ValueError(
                 "Select at least one final BUY rule or final SELL/EXIT rule."
             )
-        if buy_set and buy_set not in self.templates:
+        if any(name not in self.templates for name in buy_sets):
             raise ValueError("Select a valid final BUY rule or BUY FINAL RULE SET.")
-        if exit_set and exit_set not in self.templates:
+        if any(name not in self.templates for name in exit_sets):
             raise ValueError("Select a valid final EXIT rule/FINAL RULE SET or choose None.")
         for key in ("multirule_watchlist", "final_input_watchlist"):
             name = config[key]
@@ -23652,7 +24464,7 @@ class FinalChartInkCycleWorker(QThread):
                 synthetic = copy.deepcopy(specs[0]["setup"])
                 synthetic.update(
                     {
-                        "template_name": "FINALCHARTink shared feeder batch",
+                        "template_name": "FINAL ChartSage shared feeder batch",
                         "is_final_template": True,
                         "finalset_members": labels,
                         "finalset_op": "OR",
@@ -23743,7 +24555,13 @@ class FinalChartInkCycleWorker(QThread):
         )
         self._emit(50, f"Final input contains {len(final_symbols):,} de-duplicated symbol(s)")
 
-        if final_symbols:
+        if final_symbols and (len(buy_sets) > 1 or len(exit_sets) > 1):
+            payload = self._run_step3_quick_or(
+                final_symbols, buy_sets, exit_sets
+            )
+        elif final_symbols:
+            buy_set = buy_sets[0] if buy_sets else ""
+            exit_set = exit_sets[0] if exit_sets else ""
             buy_is_finalset = bool(
                 buy_set and is_final_template_setup(buy_set, self.templates[buy_set])
             )
@@ -23790,6 +24608,18 @@ class FinalChartInkCycleWorker(QThread):
                 "buy_signal_count": 0, "exit_signal_count": 0,
             }
 
+        if len(buy_sets) <= 1 and len(exit_sets) <= 1:
+            for row in payload.get("guidance_rows", []):
+                signal = str(row.get("Signal", ""))
+                matched_items: list[str] = []
+                if (signal == "BUY" or signal.startswith("REVIEW")) and buy_sets:
+                    matched_items.extend(buy_sets)
+                if signal.startswith(("EXIT", "REVIEW")) and exit_sets:
+                    matched_items.extend(exit_sets)
+                row["Matched Step 3 Items"] = ", ".join(
+                    dict.fromkeys(matched_items)
+                )
+
         self._check()
         buy_symbols = sorted({
             str(row.get("Symbol", "")).strip().upper()
@@ -23807,11 +24637,12 @@ class FinalChartInkCycleWorker(QThread):
         if not historical:
             private_watchlists = finalchartink_watchlist_payload(WATCHLISTS_FILE)
             previously_existing = set(private_watchlists)
+            output_names = finalchartink_output_watchlist_names(config)
             generated_watchlists = {
-                config["multirule_watchlist"]: sorted(multirule_symbols),
-                config["final_input_watchlist"]: sorted(final_symbols),
-                f"{config['recipe_name']} BUY RESULTS": buy_symbols,
-                f"{config['recipe_name']} EXIT RESULTS": exit_symbols,
+                output_names["multirule"]: sorted(multirule_symbols),
+                output_names["final_input"]: sorted(final_symbols),
+                output_names["buy"]: buy_symbols,
+                output_names["exit"]: exit_symbols,
             }
             if self.create_timestamped_snapshots:
                 snapshots, timestamped_watchlists = (
@@ -23888,8 +24719,14 @@ class FinalChartInkHistoryWorker(QThread):
         months: int,
     ):
         super().__init__()
-        self.config = normalize_finalchartink_recipe(config)
         self.templates = copy.deepcopy(templates)
+        self.config = normalize_finalchartink_recipe(config)
+        if self.config["auto_watchlist_naming"]:
+            self.config.update(
+                build_finalchartink_auto_watchlist_names(
+                    self.config, self.templates
+                )
+            )
         self.catalog = copy.deepcopy(catalog)
         self.months = int(months)
         self._cancel = threading.Event()
@@ -23905,16 +24742,75 @@ class FinalChartInkHistoryWorker(QThread):
         # A user may choose a weekend/holiday as the report end. Membership
         # and market data are session-dated, so anchor the period to the most
         # recent NSE session instead of demanding non-trading-day coverage.
-        effective_end = NSE_CALENDAR.previous_session(as_of.date())
+        requested_end = NSE_CALENDAR.previous_session(as_of.date())
+        effective_end = requested_end
+        price_policy = "selected historical session"
+        if self.config["as_of_mode"] == "latest":
+            official_end = latest_official_bhavcopy_session(requested_end)
+            if official_end is not None:
+                effective_end = min(requested_end, official_end)
+                price_policy = "latest verified official Bhavcopy session"
+            else:
+                price_policy = "latest session with provider fallback"
+        self.config["history_requested_end"] = requested_end.isoformat()
+        self.config["history_effective_end"] = effective_end.isoformat()
+        self.config["history_price_date_policy"] = price_policy
+        self.config["history_official_anchor_applied"] = bool(
+            self.config["as_of_mode"] == "latest"
+            and effective_end < requested_end
+        )
         self.history_end = effective_end.isoformat()
         self.history_start = (
             pd.Timestamp(effective_end) - pd.DateOffset(months=self.months)
         ).date().isoformat()
+        self._history_shared_frames: dict[tuple[Any, ...], pd.DataFrame] = {}
+        self._history_shared_start = self._shared_history_download_start()
         self._fixed_sources: dict[
             str, tuple[set[str], dict[str, dict[str, str]]]
         ] = {}
         self._dated_members_cache: dict[tuple[tuple[str, ...], str, str], set[str]] = {}
         self._sector_maps: tuple[dict[str, str], dict[str, str], dict[str, str]] | None = None
+
+    def _shared_history_download_start(self) -> pd.Timestamp:
+        """Earliest warm-up boundary required by any active technical rule."""
+        expressions: list[tuple[dict[str, Any], dict[str, Any]]] = []
+        for name in self.config.get("feeder_templates", []):
+            setup = self.templates.get(str(name))
+            if isinstance(setup, dict):
+                expressions.append((setup, setup.get("expression", {})))
+        for key in ("buy_finalsets", "exit_finalsets"):
+            for selected in self.config.get(key, []):
+                if selected not in self.templates:
+                    continue
+                members, _required = self._rule_members(selected, self.templates)
+                for name in members:
+                    setup = self.templates.get(name)
+                    if not isinstance(setup, dict):
+                        continue
+                    expression = setup.get("expression", {})
+                    if expression_has_pnl_rules(expression):
+                        try:
+                            _position, technical = split_position_or_exit_expression(
+                                expression
+                            )
+                        except ValueError:
+                            # Validation later reports unsupported mixed logic.
+                            continue
+                        if technical is None:
+                            continue
+                        expression = technical
+                    expressions.append((setup, expression))
+        maximum_lookback = 0
+        for setup, expression in expressions:
+            maximum_lookback = max(
+                maximum_lookback,
+                int(required_calendar_days(expression)),
+                ranking_required_calendar_days(setup),
+            )
+        return (
+            pd.Timestamp(self.history_start)
+            - pd.DateOffset(days=maximum_lookback)
+        ).normalize()
 
     def cancel(self) -> None:
         self._cancel.set()
@@ -24073,8 +24969,12 @@ class FinalChartInkHistoryWorker(QThread):
             setup["expression"] = copy.deepcopy(expression_override)
         setup.update({
             "template_name": name,
-            "as_of_mode": self.config["as_of_mode"],
-            "as_of_date": self.config["as_of_date"],
+            # A completed-history scan always evaluates the exact effective
+            # session chosen above. For Latest mode this prevents one not-yet-
+            # published terminal Bhavcopy from forcing full-history provider
+            # downloads for every symbol.
+            "as_of_mode": "historical",
+            "as_of_date": self.history_end,
             "history_months": self.months,
             "adjusted": bool(self.config["technical_adjusted"]),
             "include_current": False,
@@ -24088,6 +24988,8 @@ class FinalChartInkHistoryWorker(QThread):
             symbols=symbols,
             symbol_details=details,
             cache_path=PRICE_CACHE_DB,
+            shared_history_frames=self._history_shared_frames,
+            shared_history_start=self._history_shared_start,
         )
         self._active = worker
         report = worker.scan(
@@ -24133,6 +25035,7 @@ class FinalChartInkHistoryWorker(QThread):
         days: Iterable[str],
         source_specs: Iterable[tuple[Iterable[str], str]],
         possible_symbols: Iterable[str],
+        progress: Callable[[int, str], None] | None = None,
     ) -> dict[str, dict[str, Any]]:
         """Calculate one daily universe high in a single cache-only pass.
 
@@ -24148,12 +25051,20 @@ class FinalChartInkHistoryWorker(QThread):
         if not clean_days or not specs:
             return {}
 
+        progress = progress or (lambda _percent, _text: None)
         eligible_by_day: dict[str, set[str]] = {}
-        for day in clean_days:
+        progress(0, f"Resolving eligible members for {len(clean_days):,} trading dates")
+        for day_index, day in enumerate(clean_days, 1):
+            self._check()
             eligible: set[str] = set()
             for names, custom in specs:
                 eligible.update(self._members_on(names, day, custom))
             eligible_by_day[day] = eligible
+            if day_index == len(clean_days) or day_index % 25 == 0:
+                progress(
+                    int(day_index / max(1, len(clean_days)) * 35),
+                    f"Resolving daily membership: {day_index:,}/{len(clean_days):,} dates",
+                )
 
         first = pd.Timestamp(clean_days[0])
         last = pd.Timestamp(clean_days[-1])
@@ -24163,9 +25074,25 @@ class FinalChartInkHistoryWorker(QThread):
         result: dict[str, dict[str, Any]] = {}
         priced_counts: dict[str, int] = {day: 0 for day in clean_days}
         day_set = set(clean_days)
-        for symbol in dict.fromkeys(str(value) for value in possible_symbols):
+        unique_symbols = list(dict.fromkeys(str(value) for value in possible_symbols))
+        shared_reuses = 0
+        for symbol_index, symbol in enumerate(unique_symbols, 1):
             self._check()
-            frame = cache.load(symbol, first, anchor, adjusted)
+            pool_key = (
+                str(Path(PRICE_CACHE_DB).absolute()).casefold(),
+                str(symbol).strip().upper(),
+                pd.Timestamp(self.history_end).date().isoformat(),
+                adjusted,
+                get_session_price_mode(),
+            )
+            prepared = self._history_shared_frames.get(pool_key)
+            if prepared is not None and not prepared.empty:
+                frame = prepared.loc[
+                    (prepared.index >= first) & (prepared.index <= anchor)
+                ].copy()
+                shared_reuses += 1
+            else:
+                frame = cache.load(symbol, first, anchor, adjusted)
             if frame.empty or "Close" not in frame:
                 continue
             frame = frame.loc[(frame.index >= first) & (frame.index <= last)]
@@ -24182,6 +25109,12 @@ class FinalChartInkHistoryWorker(QThread):
                 priced_counts[day] += 1
                 if price > float(result.get(day, {}).get("price", 0.0)):
                     result[day] = {"price": price, "symbol": symbol}
+            if symbol_index == len(unique_symbols) or symbol_index % 25 == 0:
+                progress(
+                    35 + int(symbol_index / max(1, len(unique_symbols)) * 65),
+                    f"Reading reference prices: {symbol_index:,}/{len(unique_symbols):,} symbols"
+                    + (f" | shared reuse {shared_reuses:,}" if shared_reuses else ""),
+                )
 
         for day, item in result.items():
             item["eligible_symbols"] = len(eligible_by_day[day])
@@ -24197,6 +25130,7 @@ class FinalChartInkHistoryWorker(QThread):
         if error:
             raise ValueError(error)
 
+        self.progress.emit(1, "Preparing historical strategy and validating selections")
         historical_indices: set[str] = set()
         feeder_names = list(self.config["feeder_templates"])
         if feeder_names and self.config["feeder_scope"] in {"OVERRIDE", "COMBINE"}:
@@ -24214,6 +25148,10 @@ class FinalChartInkHistoryWorker(QThread):
             name for name in self.config["final_additional_sources"]
             if name in HISTORICAL_NIFTY_INDICES
         )
+        self.progress.emit(
+            2,
+            f"Checking point-in-time membership for {len(historical_indices):,} NIFTY indices",
+        )
         self.membership_store.require_coverage(
             historical_indices, self.history_start, self.history_end
         )
@@ -24221,6 +25159,7 @@ class FinalChartInkHistoryWorker(QThread):
         self.config["historical_membership_start"] = self.history_start
         self.config["historical_membership_end"] = self.history_end
 
+        self.progress.emit(3, "Resolving Step 2A feeder sources")
         feeder_sources, feeder_details = ([], {})
         if (
             feeder_names
@@ -24230,6 +25169,7 @@ class FinalChartInkHistoryWorker(QThread):
             feeder_sources, feeder_details = self._resolve_period_sources(
                 self.config["feeder_sources"]
             )
+        self.progress.emit(4, "Resolving Step 2B direct final-input sources")
         direct_symbols, direct_details = ([], {})
         if self.config["final_additional_sources"]:
             direct_symbols, direct_details = self._resolve_period_sources(
@@ -24245,11 +25185,24 @@ class FinalChartInkHistoryWorker(QThread):
                 (list(self.config["final_additional_sources"]), "")
             )
         reports: list[HistoryReport] = []
+        branch_specs: dict[str, list[tuple[str, list[str], int]]] = {
+            "BUY": [], "EXIT": []
+        }
+        for side, key in (("BUY", "buy_finalsets"), ("EXIT", "exit_finalsets")):
+            for selected in self.config[key]:
+                members, required = self._rule_members(selected, self.templates)
+                branch_specs[side].append((selected, members, required))
         task_total = max(
             1,
             len(feeder_names)
-            + len(self._rule_members(self.config["buy_finalset"], self.templates)[0])
-            + len(self._rule_members(self.config["exit_finalset"], self.templates)[0]),
+            + sum(
+                len(dict.fromkeys(
+                    member
+                    for _selected, members, _required in branch_specs[side]
+                    for member in members
+                ))
+                for side in ("BUY", "EXIT")
+            ),
         )
         task_index = 0
         for name in feeder_names:
@@ -24280,30 +25233,43 @@ class FinalChartInkHistoryWorker(QThread):
                 paper_source_specs.append((list(allowed_names), allowed_custom))
             possible_symbols.extend(symbols)
             symbol_details.update(details)
-            start = int(task_index * 90 / task_total)
+            start = 5 + int(task_index * 80 / task_total)
             task_index += 1
-            report = self._scan(name, symbols, details, start, int(task_index * 90 / task_total))
+            report = self._scan(
+                name,
+                symbols,
+                details,
+                start,
+                5 + int(task_index * 80 / task_total),
+            )
             reports.append(report)
-            for day, rows in report.rows_by_date.items():
+            feeder_days = list(report.rows_by_date.items())
+            for day_index, (day, rows) in enumerate(feeder_days, 1):
+                self._check()
                 eligible = self._members_on(allowed_names, day, allowed_custom)
                 day_map = feeder_matches.setdefault(day, {})
                 for row in rows:
                     symbol = str(row["Symbol"])
                     if symbol in eligible:
                         day_map.setdefault(symbol, set()).add(name)
+                if day_index == len(feeder_days) or day_index % 25 == 0:
+                    self.progress.emit(
+                        5 + int(task_index * 80 / task_total),
+                        f"{name}: applying dated membership {day_index:,}/{len(feeder_days):,} signal dates",
+                    )
 
         possible_symbols = list(dict.fromkeys(possible_symbols))
         rule_matches: dict[str, dict[str, dict[str, dict[str, Any]]]] = {
             "BUY": {}, "EXIT": {}
         }
-        thresholds: dict[str, int] = {}
         paper_position_exit_rule: dict[str, Any] | None = None
         position_technical_overrides: dict[str, dict[str, Any]] = {}
-        for side, selected in (
-            ("BUY", self.config["buy_finalset"]),
-            ("EXIT", self.config["exit_finalset"]),
-        ):
-            members, thresholds[side] = self._rule_members(selected, self.templates)
+        for side in ("BUY", "EXIT"):
+            members = list(dict.fromkeys(
+                member
+                for _selected, branch_members, _required in branch_specs[side]
+                for member in branch_members
+            ))
             position_members = [
                 name for name in members
                 if expression_has_pnl_rules(
@@ -24311,11 +25277,17 @@ class FinalChartInkHistoryWorker(QThread):
                 )
             ] if side == "EXIT" else []
             if position_members:
-                if len(members) != 1:
+                invalid_branches = [
+                    selected
+                    for selected, branch_members, _required in branch_specs[side]
+                    if any(member in position_members for member in branch_members)
+                    and (len(branch_members) != 1 or selected != branch_members[0])
+                ]
+                if len(position_members) > 1 or invalid_branches:
                     raise ValueError(
-                        "Paper Backtest currently requires a portfolio Profit % "
-                        "or Stop Loss % Step 3 EXIT rule to be selected as a "
-                        "standalone rule, not as a member of a FINAL RULE SET."
+                        "Paper Backtest currently requires a portfolio Profit %, "
+                        "Loss %, or Stop Loss % Step 3 EXIT rule to be one standalone "
+                        "checked item, not a member of a FINAL RULE SET."
                     )
                 position_name = position_members[0]
                 position_expression, technical_expression = (
@@ -24341,9 +25313,9 @@ class FinalChartInkHistoryWorker(QThread):
                     # This rule needs the simulator's dated average holding
                     # cost. It is evaluated chronologically during Paper replay.
                     continue
-                start = int(task_index * 90 / task_total)
+                start = 5 + int(task_index * 80 / task_total)
                 task_index += 1
-                phase_end = int(task_index * 90 / task_total)
+                phase_end = 5 + int(task_index * 80 / task_total)
                 expression_override = position_technical_overrides.get(name)
                 if expression_override is None:
                     report = self._scan(
@@ -24363,24 +25335,44 @@ class FinalChartInkHistoryWorker(QThread):
                         )
                         entry["members"].append(name)
 
+        self.progress.emit(85, "Collecting all trading dates from completed rule scans")
         all_dates = sorted({
             str(item["date"])
             for report in reports for item in report.daily_summary
         })
         paper_reference_prices_by_date = self._paper_reference_prices(
-            all_dates, paper_source_specs, possible_symbols
+            all_dates,
+            paper_source_specs,
+            possible_symbols,
+            progress=lambda percent, text: self.progress.emit(
+                86 + int(max(0, min(100, percent)) * 5 / 100),
+                f"Preparing Paper Backtest reference data: {text}",
+            ),
         )
+
+        def passing_branches(side: str, matched_members: Iterable[str]) -> list[str]:
+            matched = set(matched_members)
+            return [
+                selected
+                for selected, members, required in branch_specs[side]
+                if len(matched.intersection(members)) >= required
+            ]
+
         paper_exit_rows_by_date: dict[str, list[dict[str, Any]]] = {}
-        exit_threshold = thresholds.get("EXIT", 1)
-        for day, symbol_matches in rule_matches["EXIT"].items():
+        exit_days = list(rule_matches["EXIT"].items())
+        self.progress.emit(91, f"Preparing EXIT history for {len(exit_days):,} signal dates")
+        for exit_day_index, (day, symbol_matches) in enumerate(exit_days, 1):
+            self._check()
             exit_rows: list[dict[str, Any]] = []
             for symbol, match in sorted(symbol_matches.items()):
                 members = list(dict.fromkeys(match["members"]))
-                if len(members) < exit_threshold:
+                passed_items = passing_branches("EXIT", members)
+                if not passed_items:
                     continue
                 row = dict(match["row"])
                 row["Signal"] = "EXIT / WEAKNESS"
                 row["Matched Members"] = ", ".join(members)
+                row["Matched Step 3 Items"] = ", ".join(passed_items)
                 row["Confirmation Count"] = len(members)
                 row["Feeder Matches"] = (
                     "Paper holding scope — independent of Step 1 eligibility"
@@ -24389,8 +25381,14 @@ class FinalChartInkHistoryWorker(QThread):
                 exit_rows.append(row)
             if exit_rows:
                 paper_exit_rows_by_date[day] = exit_rows
+            if exit_day_index == len(exit_days) or exit_day_index % 25 == 0:
+                self.progress.emit(
+                    91 + int(exit_day_index / max(1, len(exit_days)) * 2),
+                    f"Preparing EXIT history: {exit_day_index:,}/{len(exit_days):,} dates",
+                )
         rows_by_date: dict[str, list[dict[str, Any]]] = {}
-        for day in all_dates:
+        self.progress.emit(93, f"Combining final BUY/EXIT results for {len(all_dates):,} dates")
+        for day_index, day in enumerate(all_dates, 1):
             self._check()
             candidates = self._members_on(
                 self.config["final_additional_sources"], day
@@ -24401,8 +25399,14 @@ class FinalChartInkHistoryWorker(QThread):
             for symbol in sorted(candidates):
                 buy = rule_matches["BUY"].get(day, {}).get(symbol)
                 exit_match = rule_matches["EXIT"].get(day, {}).get(symbol)
-                buy_ok = bool(buy) and len(buy["members"]) >= thresholds.get("BUY", 1)
-                exit_ok = bool(exit_match) and len(exit_match["members"]) >= thresholds.get("EXIT", 1)
+                buy_items = passing_branches(
+                    "BUY", buy["members"] if buy else []
+                )
+                exit_items = passing_branches(
+                    "EXIT", exit_match["members"] if exit_match else []
+                )
+                buy_ok = bool(buy_items)
+                exit_ok = bool(exit_items)
                 if not (buy_ok or exit_ok):
                     continue
                 base = dict((buy or exit_match)["row"])
@@ -24416,6 +25420,9 @@ class FinalChartInkHistoryWorker(QThread):
                 if exit_ok:
                     matched.extend(exit_match["members"])
                 base["Matched Members"] = ", ".join(dict.fromkeys(matched))
+                base["Matched Step 3 Items"] = ", ".join(
+                    dict.fromkeys(buy_items + exit_items)
+                )
                 base["Confirmation Count"] = len(set(matched))
                 feeder = feeder_matches.get(day, {}).get(symbol, set())
                 base["Feeder Matches"] = ", ".join(sorted(feeder)) or "Step 2B direct"
@@ -24423,15 +25430,27 @@ class FinalChartInkHistoryWorker(QThread):
                 day_rows.append(base)
             if day_rows:
                 rows_by_date[day] = day_rows
-            self.progress.emit(90 + int((all_dates.index(day) + 1) * 10 / max(1, len(all_dates))), f"Combining {day}")
+            if day_index == len(all_dates) or day_index % 10 == 0:
+                self.progress.emit(
+                    93 + int(day_index * 6 / max(1, len(all_dates))),
+                    f"Combining final results: {day_index:,}/{len(all_dates):,} dates ({day})",
+                )
 
+        self.progress.emit(99, "Building final backtest summary")
         daily_summary = []
-        for day in all_dates:
+        for day_index, day in enumerate(all_dates, 1):
+            self._check()
             sectors: dict[str, int] = {}
             for row in rows_by_date.get(day, []):
                 sector = str(row.get("Sector", "") or "n/a")
                 sectors[sector] = sectors.get(sector, 0) + 1
             daily_summary.append({"date": day, "total": len(rows_by_date.get(day, [])), "sectors": sectors})
+            if day_index == len(all_dates) or day_index % 50 == 0:
+                self.progress.emit(
+                    99,
+                    f"Building final summary: {day_index:,}/{len(all_dates):,} dates",
+                )
+        self.progress.emit(100, "Backtest calculations complete; displaying results")
         return HistoryReport(
             rows_by_date=rows_by_date,
             daily_summary=daily_summary,
@@ -24494,7 +25513,7 @@ class FinalRulePreviewWindow(QMainWindow):
 
     def __init__(self, parent: QWidget | None = None):
         super().__init__(parent, Qt.WindowType.Window)
-        self.setWindowTitle("FINAL ChartInk V1 — Selected Rule Logic")
+        self.setWindowTitle("FINAL ChartSage V1 — Selected Rule Logic")
         self.resize(1150, 760)
         self.templates: dict[str, dict[str, Any]] = {}
         self.tabs = QTabWidget()
@@ -24547,8 +25566,8 @@ class FinalRulePreviewWindow(QMainWindow):
         self,
         templates: dict[str, dict[str, Any]],
         feeder_names: Iterable[str],
-        buy_name: str,
-        exit_name: str,
+        buy_names: Iterable[str],
+        exit_names: Iterable[str],
     ) -> None:
         self.templates = copy.deepcopy(templates)
         self._populate_list(
@@ -24560,13 +25579,13 @@ class FinalRulePreviewWindow(QMainWindow):
         self._populate_list(
             self.buy_list,
             self.buy_text,
-            [buy_name] if buy_name else [],
+            list(buy_names),
             "No final BUY rule is selected.",
         )
         self._populate_list(
             self.exit_list,
             self.exit_text,
-            [exit_name] if exit_name else [],
+            list(exit_names),
             "No final EXIT rule is selected.",
         )
 
@@ -24726,12 +25745,12 @@ class FinalChartInkPrivateWatchlistDialog(QDialog):
         self.store = store
         self.watchlists = self.store.load()
         self.changed = False
-        self.setWindowTitle("Manage FINALCHARTinkV1 Private Watchlists")
+        self.setWindowTitle("Manage FINAL ChartSage Private Watchlists")
         self.resize(850, 520)
 
         layout = QVBoxLayout(self)
         warning = QLabel(
-            "These are private FINALCHARTinkV1 watchlists. Deleting or editing "
+            "These are private FINAL ChartSage watchlists. Deleting or editing "
             "one here does not alter a published ChartSage copy. Generated lists "
             "can be recreated by the next full cycle."
         )
@@ -24817,7 +25836,7 @@ class FinalChartInkPrivateWatchlistDialog(QDialog):
         if QMessageBox.question(
             self,
             "Delete private watchlist",
-            f"Delete the private FINALCHARTinkV1 watchlist '{name}'?\n\n"
+            f"Delete the private FINAL ChartSage watchlist '{name}'?\n\n"
             "A later full cycle may recreate generated watchlists.",
         ) != QMessageBox.StandardButton.Yes:
             return
@@ -24891,7 +25910,7 @@ class BenchmarkUpdateWorker(QThread):
 class FinalChartInkWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("FINAL ChartInk V1 — Multi-rule BUY / EXIT Guide")
+        self.setWindowTitle("FINAL ChartSage V1 — Multi-rule BUY / EXIT Guide")
         self.resize(1500, 920)
         self.recipe_store = FinalChartInkRecipeStore()
         self.templates: dict[str, dict[str, Any]] = {}
@@ -24950,6 +25969,13 @@ class FinalChartInkWindow(QMainWindow):
         self.new_recipe_btn = QPushButton("New Strategy")
         self.new_recipe_btn.clicked.connect(self._new_recipe)
         recipe_row.addWidget(self.new_recipe_btn)
+        self.duplicate_recipe_btn = QPushButton("Duplicate Strategy")
+        self.duplicate_recipe_btn.setToolTip(
+            "Copy the selected saved strategy into a new unsaved strategy. "
+            "The original remains unchanged."
+        )
+        self.duplicate_recipe_btn.clicked.connect(self._duplicate_recipe)
+        recipe_row.addWidget(self.duplicate_recipe_btn)
         self.save_recipe_btn = QPushButton("Save Strategy")
         self.save_recipe_btn.clicked.connect(self._save_recipe)
         recipe_row.addWidget(self.save_recipe_btn)
@@ -24965,10 +25991,26 @@ class FinalChartInkWindow(QMainWindow):
         form = QFormLayout()
         self.recipe_name_edit = QLineEdit()
         form.addRow("Strategy name:", self.recipe_name_edit)
+        self.auto_watchlist_naming_cb = QCheckBox(
+            "Automatically name generated watchlists from Steps 1, 2A, 2B and 3"
+        )
+        self.auto_watchlist_naming_cb.setChecked(True)
+        self.auto_watchlist_naming_cb.setToolTip(
+            "Creates deterministic, self-describing names for the Step 1 matches, "
+            "combined final input, BUY results and EXIT results. Turn this off to "
+            "enter the first two names manually and use the strategy name for BUY/EXIT."
+        )
+        form.addRow("Watchlist naming:", self.auto_watchlist_naming_cb)
         self.multirule_name_edit = QLineEdit("MultiruleWatchlist")
         form.addRow("Generated multi-rule watchlist:", self.multirule_name_edit)
-        self.final_source_name_edit = QLineEdit("FINALCHARTINK INPUT")
+        self.final_source_name_edit = QLineEdit("FINALCHARTSAGE INPUT")
         form.addRow("Final input watchlist:", self.final_source_name_edit)
+        self.buy_results_name_edit = QLineEdit()
+        self.buy_results_name_edit.setReadOnly(True)
+        form.addRow("BUY results watchlist:", self.buy_results_name_edit)
+        self.exit_results_name_edit = QLineEdit()
+        self.exit_results_name_edit.setReadOnly(True)
+        form.addRow("EXIT results watchlist:", self.exit_results_name_edit)
         left.addLayout(form)
 
         feeders_box = QGroupBox(
@@ -25009,7 +26051,7 @@ class FinalChartInkWindow(QMainWindow):
         source_actions.addStretch(1)
         self.refresh_sources_btn = QPushButton("↻ Refresh Sources")
         self.refresh_sources_btn.setToolTip(
-            "Reload ChartSage and FINALCHARTinkV1 watchlists without changing "
+            "Reload ChartSage and FINAL ChartSage watchlists without changing "
             "the current checked selections."
         )
         self.refresh_sources_btn.clicked.connect(
@@ -25017,7 +26059,7 @@ class FinalChartInkWindow(QMainWindow):
         )
         source_actions.addWidget(self.refresh_sources_btn)
         self.manage_private_watchlists_btn = QPushButton(
-            "Manage Private FINALCHARTink Lists…"
+            "Manage Private FINAL ChartSage Lists…"
         )
         self.manage_private_watchlists_btn.clicked.connect(
             self._open_private_watchlist_manager
@@ -25124,16 +26166,20 @@ class FinalChartInkWindow(QMainWindow):
 
         rules_box = QGroupBox("Step 3 — Final BUY and SELL/EXIT rules")
         rules_form = QFormLayout(rules_box)
-        self.buy_set_combo = QComboBox()
+        self.buy_set_combo = CheckableComboBox(empty_text="No BUY rule selected")
         self.buy_set_combo.setToolTip(
-            "Choose No BUY rule for an EXIT-only strategy. At least one BUY or "
-            "SELL/EXIT rule must still be selected."
+            "Check one or more BUY rules/sets. A stock matches when ANY checked "
+            "item matches; each FINAL SET keeps its own internal logic."
         )
-        self.exit_set_combo = QComboBox()
-        self.buy_set_combo.currentIndexChanged.connect(self._sync_rule_preview)
-        self.exit_set_combo.currentIndexChanged.connect(self._sync_rule_preview)
-        rules_form.addRow("Final BUY rule / FINAL SET:", self.buy_set_combo)
-        rules_form.addRow("Final SELL/EXIT rule / FINAL SET:", self.exit_set_combo)
+        self.exit_set_combo = CheckableComboBox(empty_text="No EXIT rule selected")
+        self.exit_set_combo.setToolTip(
+            "Check one or more EXIT rules/sets. A stock matches when ANY checked "
+            "item matches; each FINAL SET keeps its own internal logic."
+        )
+        self.buy_set_combo.selectionChanged.connect(self._sync_rule_preview)
+        self.exit_set_combo.selectionChanged.connect(self._sync_rule_preview)
+        rules_form.addRow("Final BUY rules / sets — match ANY checked item:", self.buy_set_combo)
+        rules_form.addRow("Final EXIT rules / sets — match ANY checked item:", self.exit_set_combo)
         preview_rules_row = QHBoxLayout()
         self.preview_buy_btn = QPushButton("View BUY Logic…")
         self.preview_buy_btn.clicked.connect(lambda: self._open_rule_preview(1))
@@ -25333,7 +26379,12 @@ class FinalChartInkWindow(QMainWindow):
         self.history_progress = QProgressBar()
         self.history_progress.setFormat("History not run.")
         history_layout.addWidget(self.history_progress)
+        self.history_activity = QLabel("Waiting to run historical scan.")
+        self.history_activity.setWordWrap(True)
+        self.history_activity.setStyleSheet("color:#17365d; font-size:11px;")
+        history_layout.addWidget(self.history_activity)
         self.history_counts = QLabel("No history scan run.")
+        self.history_counts.setWordWrap(True)
         history_layout.addWidget(self.history_counts)
         self.history_chart = HistoryChartWidget()
         self.history_chart.dateSelected.connect(self._show_history_date)
@@ -25366,6 +26417,39 @@ class FinalChartInkWindow(QMainWindow):
         # remains freely draggable after startup.
         root.setStretchFactor(0, 1)
         root.setStretchFactor(1, 1)
+        self._manual_watchlist_names = {
+            "multirule": self.multirule_name_edit.text(),
+            "final_input": self.final_source_name_edit.text(),
+        }
+        self._applying_strategy_config = False
+        self.auto_watchlist_naming_cb.toggled.connect(
+            self._auto_watchlist_naming_toggled
+        )
+        self.recipe_name_edit.textChanged.connect(
+            self._update_auto_watchlist_names
+        )
+        self.feeder_list.itemChanged.connect(
+            self._update_auto_watchlist_names
+        )
+        self.source_list.itemChanged.connect(
+            self._update_auto_watchlist_names
+        )
+        self.final_source_list.itemChanged.connect(
+            self._update_auto_watchlist_names
+        )
+        self.feeder_scope_combo.currentIndexChanged.connect(
+            self._update_auto_watchlist_names
+        )
+        self.include_multirule_cb.toggled.connect(
+            self._update_auto_watchlist_names
+        )
+        self.buy_set_combo.selectionChanged.connect(
+            self._update_auto_watchlist_names
+        )
+        self.exit_set_combo.selectionChanged.connect(
+            self._update_auto_watchlist_names
+        )
+        self._auto_watchlist_naming_toggled(True)
 
     def _build_paper_tab(self) -> None:
         page = QWidget()
@@ -25385,7 +26469,7 @@ class FinalChartInkWindow(QMainWindow):
             "matching NIFTY TRI comparison uses the validated local official benchmark cache; update it with the "
             "button below. Missing prices suppress totals. "
             "Paper EXIT scope: every simulated holding, independent of Step 1 eligibility. "
-            "A standalone Step 3 Profit % or Stop Loss % rule is evaluated daily against "
+            "A standalone Step 3 Profit %, Loss %, or Stop Loss % rule is evaluated daily against "
             "the simulated holding's weighted-average acquisition cost."
         )
         note.setWordWrap(True)
@@ -25871,6 +26955,75 @@ class FinalChartInkWindow(QMainWindow):
                 else Qt.CheckState.Unchecked
             )
 
+    def _auto_watchlist_naming_toggled(self, enabled: bool) -> None:
+        """Switch between generated previews and the legacy manual naming mode."""
+        applying = bool(getattr(self, "_applying_strategy_config", False))
+        if enabled and not applying:
+            self._manual_watchlist_names = {
+                "multirule": self.multirule_name_edit.text().strip()
+                or "MultiruleWatchlist",
+                "final_input": self.final_source_name_edit.text().strip()
+                or "FINALCHARTSAGE INPUT",
+            }
+        self.multirule_name_edit.setReadOnly(bool(enabled))
+        self.final_source_name_edit.setReadOnly(bool(enabled))
+        auto_style = "background:#eef5fb; color:#17365d;" if enabled else ""
+        self.multirule_name_edit.setStyleSheet(auto_style)
+        self.final_source_name_edit.setStyleSheet(auto_style)
+        if not enabled:
+            manual = getattr(self, "_manual_watchlist_names", {})
+            self.multirule_name_edit.setText(
+                str(manual.get("multirule", "MultiruleWatchlist"))
+            )
+            self.final_source_name_edit.setText(
+                str(manual.get("final_input", "FINALCHARTSAGE INPUT"))
+            )
+        self._update_auto_watchlist_names()
+
+    def _update_auto_watchlist_names(self, *_args: Any) -> None:
+        """Refresh all four output-name previews from the current step choices."""
+        if not hasattr(self, "buy_results_name_edit"):
+            return
+        recipe_name = self.recipe_name_edit.text().strip() or "UNNAMED STRATEGY"
+        if not self.auto_watchlist_naming_cb.isChecked():
+            self.buy_results_name_edit.setText(f"{recipe_name} BUY RESULTS")
+            self.exit_results_name_edit.setText(f"{recipe_name} EXIT RESULTS")
+            return
+        raw = {
+            "recipe_name": recipe_name,
+            "feeder_templates": self._checked(self.feeder_list),
+            "feeder_sources": self._checked(self.source_list),
+            "final_additional_sources": self._checked(self.final_source_list),
+            "feeder_scope": self.feeder_scope_combo.currentData() or "SAVED",
+            "include_multirule": self.include_multirule_cb.isChecked(),
+            "buy_finalsets": self.buy_set_combo.checkedData(),
+            "exit_finalsets": self.exit_set_combo.checkedData(),
+        }
+        names = build_finalchartink_auto_watchlist_names(raw, self.templates)
+        self.multirule_name_edit.setText(names["multirule_watchlist"])
+        self.final_source_name_edit.setText(names["final_input_watchlist"])
+        self.buy_results_name_edit.setText(names["buy_results_watchlist"])
+        self.exit_results_name_edit.setText(names["exit_results_watchlist"])
+        exact = (
+            f"Flow ID: {names['watchlist_flow_id']}\n"
+            f"Step 1: {', '.join(raw['feeder_templates']) or 'None'}\n"
+            f"Step 2A mode: {raw['feeder_scope']}\n"
+            f"Step 2A selections: {', '.join(raw['feeder_sources']) or 'None'}\n"
+            f"Step 2B effectively includes Step 1: "
+            f"{'Yes' if raw['feeder_templates'] and raw['include_multirule'] else 'No'}\n"
+            f"Step 2B direct sources: "
+            f"{', '.join(raw['final_additional_sources']) or 'None'}\n"
+            f"Step 3 BUY (ANY): {', '.join(raw['buy_finalsets']) or 'None'}\n"
+            f"Step 3 EXIT (ANY): {', '.join(raw['exit_finalsets']) or 'None'}"
+        )
+        for widget in (
+            self.multirule_name_edit,
+            self.final_source_name_edit,
+            self.buy_results_name_edit,
+            self.exit_results_name_edit,
+        ):
+            widget.setToolTip(exact)
+
     def _load_recipes(self) -> None:
         try:
             state = self.recipe_store.load()
@@ -25898,9 +27051,11 @@ class FinalChartInkWindow(QMainWindow):
         self.rule_preview_window.activateWindow()
 
     def _sync_rule_preview(self, *_args: Any) -> None:
-        warning = finalchartink_exit_scope_warning(
-            str(self.exit_set_combo.currentData() or ""), self.templates
-        )
+        warnings = [
+            finalchartink_exit_scope_warning(name, self.templates)
+            for name in self.exit_set_combo.checkedData()
+        ]
+        warning = "\n".join(dict.fromkeys(text for text in warnings if text))
         self.exit_scope_warning.setText(warning)
         self.exit_scope_warning.setVisible(bool(warning))
         if self.rule_preview_window is None:
@@ -25908,8 +27063,8 @@ class FinalChartInkWindow(QMainWindow):
         self.rule_preview_window.set_context(
             self.templates,
             self._checked(self.feeder_list),
-            str(self.buy_set_combo.currentData() or ""),
-            str(self.exit_set_combo.currentData() or ""),
+            self.buy_set_combo.checkedData(),
+            self.exit_set_combo.checkedData(),
         )
 
     def _update_step2_source_controls(self, *_args: Any) -> None:
@@ -25978,7 +27133,7 @@ class FinalChartInkWindow(QMainWindow):
             )
             self.status_label.setText(
                 f"Sources refreshed: {chartsage_count} ChartSage/Zerodha "
-                f"watchlist(s), {private_count} private FINALCHARTinkV1 "
+                f"watchlist(s), {private_count} private FINAL ChartSage "
                 "watchlist(s), plus built-in universes."
             )
 
@@ -26085,25 +27240,23 @@ class FinalChartInkWindow(QMainWindow):
             item.setCheckState(Qt.CheckState.Checked if name in old_feeders else Qt.CheckState.Unchecked)
             self.feeder_list.addItem(item)
         self._refresh_source_catalog()
-        buy_current = self.buy_set_combo.currentData()
-        exit_current = self.exit_set_combo.currentData()
+        buy_current = self.buy_set_combo.checkedData()
+        exit_current = self.exit_set_combo.checkedData()
         self.buy_set_combo.clear()
-        self.buy_set_combo.addItem("— No BUY rule —", "")
         self.exit_set_combo.clear()
-        self.exit_set_combo.addItem("— No EXIT rule —", "")
         for name, setup in sorted(self.templates.items(), key=lambda pair: pair[0].upper()):
             if is_final_template_setup(name, setup):
                 side = str(setup.get("finalset_side", "BUY") or "BUY").upper()
                 label = f"[FINAL SET] {name}"
                 if side != "EXIT":
-                    self.buy_set_combo.addItem(label, name)
+                    self.buy_set_combo.addCheckItem(label, name)
                 if side != "BUY":
-                    self.exit_set_combo.addItem(label, name)
+                    self.exit_set_combo.addCheckItem(label, name)
             else:
-                self.buy_set_combo.addItem(f"[RULE] {name}", name)
-                self.exit_set_combo.addItem(f"[RULE] {name}", name)
-        self.buy_set_combo.setCurrentIndex(max(0, self.buy_set_combo.findData(buy_current)))
-        self.exit_set_combo.setCurrentIndex(max(0, self.exit_set_combo.findData(exit_current)))
+                self.buy_set_combo.addCheckItem(f"[RULE] {name}", name)
+                self.exit_set_combo.addCheckItem(f"[RULE] {name}", name)
+        self.buy_set_combo.setCheckedData(buy_current)
+        self.exit_set_combo.setCheckedData(exit_current)
         self._recipe_selected()
         self._sync_rule_preview()
 
@@ -26124,7 +27277,66 @@ class FinalChartInkWindow(QMainWindow):
     def _update_delete_recipe_button(self) -> None:
         name = str(self.recipe_combo.currentData() or "")
         recipes = self.recipe_state.get("recipes", {})
-        self.delete_recipe_btn.setEnabled(bool(name and name in recipes))
+        is_saved = bool(name and name in recipes)
+        self.delete_recipe_btn.setEnabled(is_saved)
+        self.duplicate_recipe_btn.setEnabled(is_saved)
+
+    def _duplicate_recipe(self) -> None:
+        """Load an independent, unsaved copy of the active saved strategy."""
+        source_name = str(self.recipe_combo.currentData() or "").strip()
+        recipes = self.recipe_state.get("recipes", {})
+        if not source_name or source_name not in recipes:
+            QMessageBox.information(
+                self,
+                "Select a saved strategy",
+                "Select the saved strategy you want to duplicate.",
+            )
+            return
+
+        base_name = f"{source_name} — Copy"
+        new_name = base_name
+        copy_number = 2
+        while new_name in recipes:
+            new_name = f"{base_name} {copy_number}"
+            copy_number += 1
+
+        duplicate = normalize_finalchartink_recipe(
+            copy.deepcopy(recipes[source_name])
+        )
+        duplicate["recipe_name"] = new_name
+        if duplicate["auto_watchlist_naming"]:
+            duplicate.update(
+                build_finalchartink_auto_watchlist_names(
+                    duplicate, self.templates
+                )
+            )
+        else:
+            safe_base = re.sub(r"[^A-Za-z0-9 _-]+", " ", new_name)
+            safe_base = re.sub(r"\s+", " ", safe_base).strip() or "Strategy Copy"
+
+            def copied_watchlist_name(suffix: str) -> str:
+                maximum_base = max(1, AUTO_WATCHLIST_NAME_MAX - len(suffix) - 1)
+                return f"{safe_base[:maximum_base].rstrip()} {suffix}"
+
+            duplicate.update({
+                "manual_multirule_watchlist": copied_watchlist_name("MULTIRULE"),
+                "manual_final_input_watchlist": copied_watchlist_name("FINAL INPUT"),
+                "multirule_watchlist": copied_watchlist_name("MULTIRULE"),
+                "final_input_watchlist": copied_watchlist_name("FINAL INPUT"),
+                "buy_results_watchlist": copied_watchlist_name("BUY RESULTS"),
+                "exit_results_watchlist": copied_watchlist_name("EXIT RESULTS"),
+                "watchlist_flow_id": "",
+            })
+
+        self.recipe_combo.setCurrentIndex(0)
+        self._apply_config(duplicate)
+        self._update_delete_recipe_button()
+        self.recipe_name_edit.selectAll()
+        self.recipe_name_edit.setFocus()
+        self.status_label.setText(
+            f"Created unsaved copy of '{source_name}'. Rename or modify it, "
+            "then click Save Strategy."
+        )
 
     def _delete_recipe(self) -> None:
         name = str(self.recipe_combo.currentData() or "").strip()
@@ -26187,9 +27399,31 @@ class FinalChartInkWindow(QMainWindow):
 
     def _apply_config(self, raw: dict[str, Any]) -> None:
         config = normalize_finalchartink_recipe(raw)
+        self._applying_strategy_config = True
+        self._manual_watchlist_names = {
+            "multirule": config["manual_multirule_watchlist"]
+            or config["multirule_watchlist"]
+            or "MultiruleWatchlist",
+            "final_input": config["manual_final_input_watchlist"]
+            or config["final_input_watchlist"]
+            or "FINALCHARTSAGE INPUT",
+        }
         self.recipe_name_edit.setText(config["recipe_name"])
         self.multirule_name_edit.setText(config["multirule_watchlist"])
         self.final_source_name_edit.setText(config["final_input_watchlist"])
+        self.buy_results_name_edit.setText(
+            config["buy_results_watchlist"]
+            or f"{config['recipe_name']} BUY RESULTS"
+        )
+        self.exit_results_name_edit.setText(
+            config["exit_results_watchlist"]
+            or f"{config['recipe_name']} EXIT RESULTS"
+        )
+        self.auto_watchlist_naming_cb.blockSignals(True)
+        self.auto_watchlist_naming_cb.setChecked(
+            config["auto_watchlist_naming"]
+        )
+        self.auto_watchlist_naming_cb.blockSignals(False)
         self.include_multirule_cb.setChecked(config["include_multirule"])
         self._set_checked(self.feeder_list, config["feeder_templates"])
         self._set_checked(self.source_list, config["feeder_sources"])
@@ -26198,8 +27432,8 @@ class FinalChartInkWindow(QMainWindow):
         )
         self.feeder_scope_combo.setCurrentIndex(max(0, self.feeder_scope_combo.findData(config["feeder_scope"])))
         self._update_step2_source_controls()
-        self.buy_set_combo.setCurrentIndex(max(0, self.buy_set_combo.findData(config["buy_finalset"])))
-        self.exit_set_combo.setCurrentIndex(max(0, self.exit_set_combo.findData(config["exit_finalset"])))
+        self.buy_set_combo.setCheckedData(config["buy_finalsets"])
+        self.exit_set_combo.setCheckedData(config["exit_finalsets"])
         self.adjusted_cb.setChecked(config["technical_adjusted"])
         self.current_cb.setChecked(config["include_current"])
         historical = config["as_of_mode"] == "historical"
@@ -26222,19 +27456,36 @@ class FinalChartInkWindow(QMainWindow):
         self.start_time.setTime(QTime.fromString(config["start_time"], "HH:mm"))
         self.end_time.setTime(QTime.fromString(config["end_time"], "HH:mm"))
         self.trading_days_cb.setChecked(config["trading_days_only"])
+        self._auto_watchlist_naming_toggled(
+            config["auto_watchlist_naming"]
+        )
+        self._applying_strategy_config = False
 
     def _config_from_ui(self) -> dict[str, Any]:
-        return normalize_finalchartink_recipe({
+        auto_naming = self.auto_watchlist_naming_cb.isChecked()
+        manual = getattr(self, "_manual_watchlist_names", {})
+        raw = {
             "recipe_name": self.recipe_name_edit.text(),
             "feeder_templates": self._checked(self.feeder_list),
             "multirule_watchlist": self.multirule_name_edit.text(),
+            "manual_multirule_watchlist": (
+                manual.get("multirule", "MultiruleWatchlist")
+                if auto_naming else self.multirule_name_edit.text()
+            ),
+            "manual_final_input_watchlist": (
+                manual.get("final_input", "FINALCHARTSAGE INPUT")
+                if auto_naming else self.final_source_name_edit.text()
+            ),
+            "auto_watchlist_naming": auto_naming,
+            "buy_results_watchlist": self.buy_results_name_edit.text(),
+            "exit_results_watchlist": self.exit_results_name_edit.text(),
             "include_multirule": self.include_multirule_cb.isChecked(),
             "feeder_sources": self._checked(self.source_list),
             "final_additional_sources": self._checked(self.final_source_list),
             "final_input_watchlist": self.final_source_name_edit.text(),
             "feeder_scope": self.feeder_scope_combo.currentData(),
-            "buy_finalset": self.buy_set_combo.currentData(),
-            "exit_finalset": self.exit_set_combo.currentData(),
+            "buy_finalsets": self.buy_set_combo.checkedData(),
+            "exit_finalsets": self.exit_set_combo.checkedData(),
             "technical_adjusted": self.adjusted_cb.isChecked(),
             "include_current": self.current_cb.isChecked(),
             "as_of_mode": (
@@ -26261,7 +27512,15 @@ class FinalChartInkWindow(QMainWindow):
                     or self.telegram_xlsx_cb.isChecked()
                 )
             ),
-        })
+        }
+        config = normalize_finalchartink_recipe(raw)
+        if auto_naming:
+            config.update(
+                build_finalchartink_auto_watchlist_names(
+                    config, self.templates
+                )
+            )
+        return normalize_finalchartink_recipe(config)
 
     def _publish_current_to_chartsage(self) -> None:
         config = self._config_from_ui()
@@ -26287,7 +27546,7 @@ class FinalChartInkWindow(QMainWindow):
         prompt = (
             "Publish/update these ChartSage watchlists?\n\n"
             + "\n".join(f"• {name}" for name in published_names)
-            + "\n\nPublishing again refreshes these copies from FINALCHARTinkV1. "
+            + "\n\nPublishing again refreshes these copies from FINAL ChartSage. "
             "Leave automatic publishing off if you later edit or delete them in ChartSage."
         )
         if QMessageBox.question(
@@ -26318,6 +27577,17 @@ class FinalChartInkWindow(QMainWindow):
         if not name:
             QMessageBox.warning(self, "Strategy name required", "Enter a strategy name.")
             return False
+        selected_name = str(self.recipe_combo.currentData() or "").strip()
+        if name in self.recipe_state.get("recipes", {}) and name != selected_name:
+            if QMessageBox.question(
+                self,
+                "Replace existing strategy?",
+                f"A saved strategy named '{name}' already exists.\n\n"
+                "Replace it with the settings currently shown?",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.Cancel,
+                QMessageBox.StandardButton.Cancel,
+            ) != QMessageBox.StandardButton.Yes:
+                return False
         self.recipe_state["recipes"][name] = config
         self.recipe_state["active"] = name
         try:
@@ -26620,7 +27890,7 @@ class FinalChartInkWindow(QMainWindow):
         self.progress.setFormat("Cycle failed")
         self.status_label.setText(clean.splitlines()[-1] if clean.splitlines() else clean)
         if not self.automation_active:
-            QMessageBox.warning(self, "FINAL ChartInk cycle failed", clean[-1800:])
+            QMessageBox.warning(self, "FINAL ChartSage cycle failed", clean[-1800:])
 
     def _cycle_finished(self) -> None:
         self._cycle_elapsed_timer.stop()
@@ -26663,13 +27933,32 @@ class FinalChartInkWindow(QMainWindow):
         self.run_btn.setEnabled(False)
         self.start_btn.setEnabled(False)
         self.history_progress.setValue(0)
-        self.history_progress.setFormat("Preparing historical strategy…")
+        self.history_progress.setFormat("0% — Preparing historical strategy…")
+        self.history_activity.setText(
+            "Current activity: preparing historical strategy and resolving its sources."
+        )
         self.history_worker = FinalChartInkHistoryWorker(
             config,
             self.templates,
             self.catalog,
             int(self.history_period.currentData()),
         )
+        effective_end = self.history_worker.config.get(
+            "history_effective_end", self.history_worker.history_end
+        )
+        requested_end = self.history_worker.config.get(
+            "history_requested_end", effective_end
+        )
+        if self.history_worker.config.get("history_official_anchor_applied"):
+            date_message = (
+                f"Latest official backtest date: {effective_end}. "
+                f"The requested latest session {requested_end} does not yet "
+                "have a verified Bhavcopy."
+            )
+        else:
+            date_message = f"Backtest price date: {effective_end}."
+        self.history_counts.setText(date_message)
+        self.history_progress.setFormat(date_message)
         self.history_worker.progress.connect(self._history_progress_changed)
         self.history_worker.succeeded.connect(self._history_succeeded)
         self.history_worker.failed.connect(self._history_failed)
@@ -26685,7 +27974,10 @@ class FinalChartInkWindow(QMainWindow):
 
     def _history_progress_changed(self, percent: int, text: str) -> None:
         self.history_progress.setValue(percent)
-        self.history_progress.setFormat(str(text))
+        clean_text = str(text)
+        self.history_progress.setFormat(f"%p% — {clean_text}")
+        self.history_progress.setToolTip(clean_text)
+        self.history_activity.setText(f"Current activity: {clean_text}")
 
     def _history_succeeded(self, report: HistoryReport) -> None:
         self.last_history_report = report
@@ -26705,9 +27997,13 @@ class FinalChartInkWindow(QMainWindow):
         self._sync_paper_dates_to_history(report)
         self.history_chart.set_summary(report.daily_summary)
         self.history_progress.setValue(100)
-        self.history_progress.setFormat("History complete")
+        self.history_progress.setFormat("100% — History complete")
+        self.history_activity.setText(
+            "Current activity: complete. The chart and dated results are ready."
+        )
         self.history_counts.setText(
-            f"{report.start_date} to {report.end_date} | universe {report.total_symbols:,} | "
+            f"Backtest price range {report.start_date} to {report.end_date} | "
+            f"universe {report.total_symbols:,} | "
             f"signal occurrences {report.total_matches:,} | dates with signals "
             f"{report.dates_with_matches:,} | cache hits {report.cache_hits:,} | "
             f"downloaded {report.downloaded_symbols:,} | "
@@ -26772,6 +28068,7 @@ class FinalChartInkWindow(QMainWindow):
 
     def _history_failed(self, details: str) -> None:
         self.history_progress.setFormat("History failed")
+        self.history_activity.setText("Current activity: history scan failed.")
         raw = str(details)
         if "HistoricalMembershipCoverageError" in raw:
             coverage = re.search(
@@ -26812,10 +28109,11 @@ class FinalChartInkWindow(QMainWindow):
                 self, "Historical membership update required", "\n".join(lines)
             )
             return
-        QMessageBox.critical(self, "FINAL ChartInk history failed", raw[-2500:])
+        QMessageBox.critical(self, "FINAL ChartSage history failed", raw[-2500:])
 
     def _history_cancelled(self) -> None:
         self.history_progress.setFormat("History cancelled")
+        self.history_activity.setText("Current activity: history scan cancelled.")
         self.history_counts.setText(
             "History cancelled; previous completed history results were retained."
         )
@@ -26844,10 +28142,10 @@ class FinalChartInkWindow(QMainWindow):
             else f"{history_months}m"
         )
         default_name = APP_DIR / (
-            f"FINALCHARTinkV1_history_{period_slug}_{datetime.now():%Y%m%d_%H%M%S}.xlsx"
+            f"FINALChartSageV1_history_{period_slug}_{datetime.now():%Y%m%d_%H%M%S}.xlsx"
         )
         path, _ = QFileDialog.getSaveFileName(
-            self, "Export FINAL ChartInk history", str(default_name),
+            self, "Export FINAL ChartSage history", str(default_name),
             "Excel Workbook (*.xlsx)",
         )
         if not path:
@@ -26910,7 +28208,7 @@ class FinalChartInkWindow(QMainWindow):
                 str(row.get("Signal", "")).startswith("EXIT") for row in rows
             )
             caption = (
-                f"FINAL ChartInk V1 — Guidance Only\n"
+                f"FINAL ChartSage V1 — Guidance Only\n"
                 f"Strategy: {config['recipe_name']}\n"
                 f"BUY: {buy_count} | EXIT/Weakness: {exit_count}\n"
                 f"Generated: {get_ist_now():%Y-%m-%d %H:%M:%S} IST"
@@ -27056,8 +28354,8 @@ def main() -> int:
             return 3
         smoke_app.quit()
         return 0
-    print(f"[FINAL ChartInk V1] Private data folder: {DATA_DIR}")
-    print(f"[FINAL ChartInk V1] Shared read-only folder: {SHARED_DATA_DIR}")
+    print(f"[FINAL ChartSage V1] Private data folder: {DATA_DIR}")
+    print(f"[FINAL ChartSage V1] Shared read-only folder: {SHARED_DATA_DIR}")
     app = QApplication.instance() or QApplication(sys.argv)
     app.setStyle("Fusion")
     if not choose_startup_price_mode():

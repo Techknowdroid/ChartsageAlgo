@@ -1,4 +1,4 @@
-"""ChartInk-Style, rule-first stock scanner.
+"""ChartSage rule-first stock scanner.
 
 The scanner engine, cache and template store deliberately have no dependency on
 the widgets below them.  This makes a scan reproducible from one JSON setup and
@@ -479,7 +479,7 @@ AVAILABLE_HISTORY_START_DATE = date(2014, 1, 1)
 LOOKBACK_HIGH_UNITS = ("Days", "Weeks", "Months", "Years", ALL_AVAILABLE_HISTORY_UNIT)
 LOOKBACK_HIGH_BARS_PER_UNIT = {"Days": 1, "Weeks": 5, "Months": 21, "Years": 252}
 MAX_LOOKBACK_HIGH_BARS = 252 * 30
-PNL_FIELDS = ("Profit %", "Stop Loss %")
+PNL_FIELDS = ("Profit %", "Loss %", "Stop Loss %")
 FIELDS = (
     "Open",
     "High",
@@ -678,9 +678,12 @@ FILTER_EXAMPLE_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "Portfolio & ALGO Profit / Stop Loss",
+        "Paper holdings and portfolio Take Profit / Stop Loss",
         (
             "Profit % >= 7%",
+            "Loss % >= 5%",
+            "Profit % <= -5%",
+            "Stop Loss % <= -5%",
             "Stop Loss % <= 5%",
         ),
     ),
@@ -1214,7 +1217,9 @@ def normalize_general_universes(
     Falls back to NIFTY 500 when stripping leaves the universe list empty.
     Returns ``(setup, changed, removed_universes)``. ALGO setups are untouched.
     """
-    if is_algo_template_setup(name, setup):
+    if is_algo_template_setup(name, setup) or expression_has_pnl_rules(
+        setup.get("expression")
+    ):
         return setup, False, []
     unis = list(setup.get("universes", []))
     removed = [u for u in unis if is_holdings_universe(u)]
@@ -1882,11 +1887,11 @@ def merge_visible_result_order(
 
 
 def expression_has_pnl_rules(node: dict[str, Any] | None) -> bool:
-    """Checks whether an AST expression contains Profit % or Stop Loss % rules."""
+    """Checks whether an AST expression contains holding-dependent P&L rules."""
     if not isinstance(node, dict):
         return False
     node_type = node.get("type") or node.get("kind")
-    pnl_names = {"Profit %", "Stop Loss %", "P&L %", "P&L Amount"}
+    pnl_names = {"Profit %", "Loss %", "Stop Loss %", "P&L %", "P&L Amount"}
     if node_type == "rule":
         left = node.get("left", {})
         right = node.get("right", {})
@@ -2046,7 +2051,7 @@ class RuleParser:
     FIELD_RE = re.compile(
         r"^(?:(daily|weekly|monthly|d|w|m)\s+)?"
         r"(52\s*week\s*high(?:\s*distance\s*%)?|macd\s+(?:line|signal|histogram)|"
-        r"profit\s*%|stop\s*loss\s*%|p&l\s*%|pnl\s*%|p&l\s*amount|pnl\s*amount|profit|stop\s*loss|p&l|pnl|"
+        r"profit\s*%|loss\s*%|stop\s*loss\s*%|p&l\s*%|pnl\s*%|p&l\s*amount|pnl\s*amount|profit|loss|stop\s*loss|p&l|pnl|"
         r"open|high|low|close|volume|rsi|sma|ema|adx|obv|supertrend)"
         r"(?:"
         r"\s*\(\s*(?:(?:daily|weekly|monthly\s+)?close\s*,\s*)?(\d+)(?:\s*,\s*(\d+(?:\.\d+)?))?(?:\s*,\s*(\d+))?\s*\)"
@@ -2268,7 +2273,9 @@ class RuleParser:
             )
         elif "profit" in lower_name:
             canonical = "Profit %"
-        elif "stop" in lower_name or "loss" in lower_name:
+        elif lower_name in {"loss", "loss %"}:
+            canonical = "Loss %"
+        elif "stop" in lower_name:
             canonical = "Stop Loss %"
         elif "p&l" in lower_name or "pnl" in lower_name:
             canonical = "P&L Amount" if "amount" in lower_name else "P&L %"
@@ -7081,7 +7088,14 @@ class MarketData:
                 )
             buy_price = float(holding.get("buy_price", 0)) if holding else 0.0
             if buy_price > 0:
-                result = (frame["Close"] - buy_price).div(buy_price).mul(100.0)
+                profit_percent = (
+                    (frame["Close"] - buy_price).div(buy_price).mul(100.0)
+                )
+                result = (
+                    profit_percent.mul(-1.0).clip(lower=0.0)
+                    if name == "Loss %"
+                    else profit_percent
+                )
             else:
                 result = pd.Series(np.nan, index=frame.index)
         else:
@@ -13710,7 +13724,7 @@ class StrategyGuideWindow(QMainWindow):
 class ScannerWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle(f"ChartInk Telegram Rule Scanner — data folder: {DATA_DIR}")
+        self.setWindowTitle(f"ChartSage Telegram Rule Scanner — data folder: {DATA_DIR}")
         self.resize(1450, 900)
         self.store = TemplateStore()
         self._store_error: str | None = None
@@ -13845,7 +13859,7 @@ class ScannerWindow(QMainWindow):
         root = QWidget()
         self.setCentralWidget(root)
         outer = QVBoxLayout(root)
-        title = QLabel("ChartInk-Style Rule Scanner")
+        title = QLabel("ChartSage Rule Scanner")
         title.setStyleSheet("font-size: 22px; font-weight: 700; color: #17365d")
         header_row = QHBoxLayout()
         header_row.addWidget(title)
@@ -17899,31 +17913,16 @@ class ScannerWindow(QMainWindow):
             )
             return
         if expression_has_pnl_rules(parsed):
-            zerodha_found = False
-            for i in range(self.universe_list.count()):
-                item = self.universe_list.item(i)
-                raw = item.data(Qt.ItemDataRole.UserRole) or item.text().rsplit(" (", 1)[0]
-                if str(raw).startswith("💼 ZERODHA") or str(raw).startswith("💼 Zerodha"):
-                    item.setCheckState(Qt.CheckState.Checked)
-                    zerodha_found = True
-                else:
-                    item.setCheckState(Qt.CheckState.Unchecked)
-            
-            if zerodha_found:
-                QMessageBox.information(
-                    self,
-                    "Zerodha Portfolio Watchlist Selected",
-                    "Profit % and Stop Loss % rules apply exclusively to portfolio holdings.\n\n"
-                    "We have automatically unchecked general market universes (like NIFTY 50) and selected your Zerodha Portfolio Watchlist as the target universe."
-                )
-            else:
-                QMessageBox.warning(
-                    self,
-                    "Portfolio Watchlist Required",
-                    "Profit % and Stop Loss % rules require portfolio holdings.\n\n"
-                    "Please select your Zerodha Portfolio Watchlist (e.g. '💼 ZERODHA John Doe') as your target universe."
-                )
-                return
+            QMessageBox.information(
+                self,
+                "Position-dependent EXIT rule",
+                "This holding-dependent Profit/Loss rule can be saved without "
+                "a Zerodha portfolio for use as a standalone Step 3 EXIT rule "
+                "in FINAL ChartSage Paper Backtest.\n\n"
+                "A normal current scan still requires one real portfolio and "
+                "cost basis. Paper Backtest instead evaluates it against its "
+                "simulated holdings and weighted-average acquisition cost.",
+            )
         dialog = RuleDialog(parsed, self)
         dialog.setWindowTitle("Confirm or edit parsed rule")
         if dialog.exec():
@@ -18020,15 +18019,30 @@ class ScannerWindow(QMainWindow):
                 u for u in selected_unis
                 if not (str(u).startswith("💼 ZERODHA") or str(u).startswith("💼 Zerodha"))
             ]
-            if not has_zerodha_uni or non_zerodha_unis:
+            live_portfolio_scope = has_zerodha_uni and not non_zerodha_unis
+            if is_algo_template_setup(
+                self.active_template_name or "", setup
+            ) and not live_portfolio_scope:
                 if not silent:
                     QMessageBox.warning(
                         self,
                         "Portfolio Watchlist Required",
-                        f"Profit % and Stop Loss % rules require portfolio holdings exclusively before {action_desc}.\n\n"
-                        "Please uncheck general market universes (like NIFTY 50) and select ONLY your Zerodha Portfolio Watchlist (e.g. '💼 ZERODHA John Doe') as your target universe."
+                        f"A live/ALGO Profit or Loss rule requires portfolio "
+                        f"holdings exclusively before {action_desc}.\n\n"
+                        "Select only one account-specific Zerodha Portfolio "
+                        "Watchlist. To use this rule without Zerodha, save it "
+                        "as a normal template and select it as a standalone "
+                        "Step 3 EXIT in FINAL ChartSage Paper Backtest.",
                     )
                 return False
+            setup["position_rule_scope"] = (
+                "PORTFOLIO_AND_PAPER"
+                if live_portfolio_scope
+                else "PAPER_BACKTEST_ONLY"
+            )
+            setup["strategy_guide_role"] = "EXIT"
+        else:
+            setup.pop("position_rule_scope", None)
 
         # Account Mismatch Guard: Prevent saving an ALGO template belonging to one account to another account
         if self.active_template_name:
@@ -18535,6 +18549,20 @@ class ScannerWindow(QMainWindow):
             validate_ranking_setup(setup)
         except ValueError as exc:
             QMessageBox.warning(self, "Invalid scan setup", str(exc))
+            return False
+        if (
+            expression_has_pnl_rules(setup.get("expression"))
+            and str(setup.get("position_rule_scope", "")).upper()
+            == "PAPER_BACKTEST_ONLY"
+        ):
+            QMessageBox.information(
+                self,
+                "Paper Backtest EXIT rule",
+                "This position-dependent rule is intentionally not a broad "
+                "market scan. Select it as a standalone Step 3 EXIT rule in "
+                "FINAL ChartSage and run Paper Backtest, where simulated "
+                "holdings provide the required acquisition cost.",
+            )
             return False
         if not setup["universes"] and not setup["custom_symbols"]:
             QMessageBox.warning(self, "No universe", "Choose at least one universe or enter custom symbols.")

@@ -114,7 +114,7 @@ def suggest_commit_message(changes: list[tuple[str, str]]) -> str:
             "chartsagestockalerts.py", "stock_alert_engine.py",
             "launch_stock_alerts.py", "runchartsagestockalerts.cmd",
         }),
-        ("final strategy workflow", {"finalchartinkv1.py"}),
+        ("final strategy workflow", {"finalchartsagev1.py"}),
         ("scanner workflow", {"chartsagealgoopencode.py"}),
         ("market-data maintenance", {"chartsagebhavcopy.py"}),
         ("backtesting", {"runbacktest52.py"}),

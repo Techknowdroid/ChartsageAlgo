@@ -79,7 +79,7 @@ PRIVATE_FILENAMES = (
 RUNTIME_SOURCE_FILES = (
     "ChartSageAlgoOPENcode.py",
     "ChartSageStockAlerts.py",
-    "FINALCHARTinkV1.py",
+    "FINALChartSageV1.py",
     "ChartSageBhavcopy.py",
     "benchmark_history.py",
     "historical_index_membership.py",
@@ -285,7 +285,7 @@ Built: {datetime.now():%d %B %Y %H:%M}
 APPLICATIONS
   ChartSageAlgo.exe       Main scanner
   ChartSageStockAlerts.exe  Stock-specific technical alert monitor
-  FINALCHARTinkV1.exe     Final ChartInk strategy-guidance scanner
+  FINALChartSageV1.exe    Final ChartSage strategy-guidance scanner
   ChartSageBhavcopy.exe   Official NSE Bhavcopy feeder and maintenance GUI
 
 HOW TO INSTALL
@@ -309,7 +309,7 @@ PRIVATE SETTINGS
   Credential Manager on that PC and cannot be safely bundled.
 
 UPDATES AND BACKUPS
-  Starting ChartSageAlgo.exe or FINALCHARTinkV1.exe automatically checks the
+  Starting ChartSageAlgo.exe or FINALChartSageV1.exe automatically checks the
   three routine maintenance steps: missing Bhavcopy sessions, corporate
   actions, and historical NIFTY membership. Current steps are skipped. The
   standalone ChartSageBhavcopy.exe remains available for verification,
@@ -372,7 +372,7 @@ def validate_output(output_dir: Path) -> None:
     required = (
         "ChartSageAlgo.exe",
         "ChartSageStockAlerts.exe",
-        "FINALCHARTinkV1.exe",
+        "FINALChartSageV1.exe",
         "ChartSageBhavcopy.exe",
         "_internal",
         "bhavcopy_history.db",
@@ -507,7 +507,7 @@ def smoke_test_executables(output_dir: Path) -> None:
     for executable_name in (
         "ChartSageAlgo.exe",
         "ChartSageStockAlerts.exe",
-        "FINALCHARTinkV1.exe",
+        "FINALChartSageV1.exe",
         "ChartSageBhavcopy.exe",
     ):
         executable = output_dir / executable_name

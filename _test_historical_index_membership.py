@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import tempfile
 import unittest
+from datetime import date
 from pathlib import Path
 
 from historical_index_membership import (
@@ -75,10 +76,28 @@ class BundledHistoricalMembershipDataTests(unittest.TestCase):
         )
 
     def test_four_year_coverage_is_verified_for_every_supported_index(self) -> None:
+        coverage = [self.store.coverage(name) for name in SUPPORTED_INDICES]
+        self.assertTrue(all(item is not None for item in coverage))
+        self.assertTrue(all(bool(item["verified"]) for item in coverage if item))
+        common_start = max(
+            date.fromisoformat(str(item["start_date"]))
+            for item in coverage
+            if item
+        )
+        common_end = min(
+            date.fromisoformat(str(item["end_date"]))
+            for item in coverage
+            if item
+        )
+        self.assertGreaterEqual(
+            (common_end - common_start).days,
+            (4 * 365) - 7,
+            "The verified common window must retain approximately four years.",
+        )
         self.store.require_coverage(
             SUPPORTED_INDICES,
-            "2022-09-15",
-            "2026-09-09",
+            common_start,
+            common_end,
         )
 
     def test_jio_financial_temporary_membership_boundaries(self) -> None:

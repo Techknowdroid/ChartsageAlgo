@@ -56,7 +56,7 @@ class PositionSizer:
         )
 
 
-_POSITION_PNL_FIELDS = {'Profit %', 'Stop Loss %', 'P&L %'}
+_POSITION_PNL_FIELDS = {'Profit %', 'Loss %', 'Stop Loss %', 'P&L %'}
 _POSITION_OPERATORS = {'>', '>=', '<', '<=', '='}
 
 
@@ -100,8 +100,8 @@ def validate_position_exit_expression(node):
         or node.get('operator') not in _POSITION_OPERATORS
     ):
         raise ValueError(
-            'Paper Backtest position EXIT templates must compare Profit % or '
-            'Stop Loss % with a numeric value using >, >=, <, <=, or =.'
+            'Paper Backtest position EXIT templates must compare Profit %, '
+            'Loss %, or Stop Loss % with a numeric value using >, >=, <, <=, or =.'
         )
     try:
         threshold = float(values[0].get('value'))
@@ -135,14 +135,16 @@ def evaluate_position_exit_expression(node, profit_percent):
         return all(outcomes), evidence
 
     left, right = node['left'], node['right']
-    left_value = (
-        profit_percent if left.get('kind') == 'field'
-        else float(left.get('value'))
-    )
-    right_value = (
-        profit_percent if right.get('kind') == 'field'
-        else float(right.get('value'))
-    )
+
+    def operand_value(operand):
+        if operand.get('kind') != 'field':
+            return float(operand.get('value'))
+        if operand.get('name') == 'Loss %':
+            return max(0.0, -float(profit_percent))
+        return float(profit_percent)
+
+    left_value = operand_value(left)
+    right_value = operand_value(right)
     operator = node['operator']
     matched = {
         '>': left_value > right_value,
@@ -154,10 +156,11 @@ def evaluate_position_exit_expression(node, profit_percent):
     field_name = (
         left.get('name') if left.get('kind') == 'field' else right.get('name')
     )
+    field_value = left_value if left.get('kind') == 'field' else right_value
     threshold = right_value if left.get('kind') == 'field' else left_value
     return matched, [
         f'{field_name} {operator} {threshold:g}% '
-        f'[{profit_percent:.4f}% vs {threshold:g}%]'
+        f'[{field_value:.4f}% vs {threshold:g}%]'
     ]
 
 

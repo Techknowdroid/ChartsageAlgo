@@ -77,7 +77,7 @@ stock_alerts_exe = EXE(
 
 
 final_scanner = Analysis(
-    ["FINALCHARTinkV1.py"],
+    ["FINALChartSageV1.py"],
     pathex=[project_dir],
     binaries=[],
     datas=[],
@@ -100,7 +100,7 @@ final_scanner_exe = EXE(
     final_scanner.scripts,
     [],
     exclude_binaries=True,
-    name="FINALCHARTinkV1",
+    name="FINALChartSageV1",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

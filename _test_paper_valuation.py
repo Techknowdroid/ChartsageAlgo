@@ -1,8 +1,60 @@
 import unittest
-from paper_signal_replay import PositionSizer, replay, xirr
+from paper_signal_replay import (
+    PositionSizer,
+    evaluate_position_exit_expression,
+    replay,
+    validate_position_exit_expression,
+    xirr,
+)
 
 
 class ValuationTests(unittest.TestCase):
+    def test_positive_loss_percent_is_equivalent_to_negative_profit_percent(self):
+        loss_rule = {
+            'type': 'rule', 'enabled': True,
+            'left': {'kind': 'field', 'name': 'Loss %'},
+            'operator': '>=',
+            'right': {'kind': 'value', 'value': 5},
+        }
+        validate_position_exit_expression(loss_rule)
+        self.assertFalse(evaluate_position_exit_expression(loss_rule, 8)[0])
+        self.assertFalse(evaluate_position_exit_expression(loss_rule, -4.99)[0])
+        matched, evidence = evaluate_position_exit_expression(loss_rule, -5)
+        self.assertTrue(matched)
+        self.assertIn('Loss % >= 5%', evidence[0])
+        self.assertTrue(evaluate_position_exit_expression(loss_rule, -12)[0])
+
+    def test_loss_percent_rule_exits_paper_holding_at_positive_threshold(self):
+        loss_rule = {
+            'name': '[EXIT] Stop Loss 5%',
+            'expression': {
+                'type': 'group', 'enabled': True, 'op': 'AND',
+                'children': [{
+                    'type': 'rule', 'enabled': True,
+                    'left': {'kind': 'field', 'name': 'Loss %'},
+                    'operator': '>=',
+                    'right': {'kind': 'value', 'value': 5},
+                }],
+            },
+        }
+        result = replay(
+            {'2025-01-01': [dict(Symbol='ABC', Signal='BUY', Close=100)]},
+            '2025-01-01',
+            '2025-01-03',
+            reference_capital=100,
+            position_exit_rule=loss_rule,
+            daily_prices={'ABC': {
+                '2025-01-01': 100,
+                '2025-01-02': 96,
+                '2025-01-03': 95,
+            }},
+        )
+        transactions = result['Transactions']
+        self.assertEqual([row['Action'] for row in transactions], ['BUY', 'SELL'])
+        self.assertEqual(transactions[-1]['Date'], '2025-01-03')
+        self.assertAlmostEqual(transactions[-1]['ProfitPercentAtExit'], -5.0)
+        self.assertFalse(result['OpenHoldings'])
+
     def test_annual_return(self):
         self.assertAlmostEqual(xirr([('2025-01-01', 100)], '2026-01-01', 110), 10)
         self.assertAlmostEqual(xirr([('2025-01-01', 100)], '2026-01-01', 80), -20)
