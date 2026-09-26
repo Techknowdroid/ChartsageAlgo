@@ -9690,6 +9690,198 @@ class ExportWatchlistsDialog(QDialog):
         return result
 
 
+class ExpandedUniverseSelectorDialog(QDialog):
+    """Large universe/watchlist selector with live two-way main-window sync."""
+
+    def __init__(self, main_window: Any):
+        super().__init__(main_window)
+        self.main_window = main_window
+        self._syncing = False
+        self.setWindowTitle("ChartSage — Expanded Universe Selector")
+        self.resize(900, 700)
+        self.setMinimumSize(650, 450)
+        self.setSizeGripEnabled(True)
+
+        layout = QVBoxLayout(self)
+        header = QHBoxLayout()
+        title = QLabel("Expanded Universe and Watchlist Selector")
+        title.setStyleSheet("font-size: 18px; font-weight: 700; color: #17365d")
+        subtitle = QLabel("Live two-way sync with Main Scanner Window")
+        subtitle.setStyleSheet("color: #666; font-size: 12px; margin-left: 10px;")
+        return_btn = QPushButton("Return to Main Window")
+        return_btn.setStyleSheet("font-weight: 600; padding: 5px 12px;")
+        return_btn.clicked.connect(self.accept)
+        header.addWidget(title)
+        header.addWidget(subtitle)
+        header.addStretch(1)
+        header.addWidget(return_btn)
+        layout.addLayout(header)
+
+        search_row = QHBoxLayout()
+        self.search_edit = QLineEdit()
+        self.search_edit.setPlaceholderText(
+            "Filter universes and watchlists by name…"
+        )
+        self.search_edit.textChanged.connect(self._filter_items)
+        select_visible_btn = QPushButton("Select visible")
+        select_visible_btn.clicked.connect(lambda: self._set_visible(True))
+        clear_visible_btn = QPushButton("Clear visible")
+        clear_visible_btn.clicked.connect(lambda: self._set_visible(False))
+        search_row.addWidget(self.search_edit, 1)
+        search_row.addWidget(select_visible_btn)
+        search_row.addWidget(clear_visible_btn)
+        layout.addLayout(search_row)
+
+        self.universe_list = QListWidget()
+        self.universe_list.setAlternatingRowColors(True)
+        self.universe_list.setMouseTracking(True)
+        self.universe_list.itemChanged.connect(self._expanded_item_changed)
+        layout.addWidget(self.universe_list, 1)
+
+        custom_box = QGroupBox("Optional individual symbols")
+        custom_layout = QVBoxLayout(custom_box)
+        self.custom_symbols = QLineEdit()
+        self.custom_symbols.setPlaceholderText(
+            "Symbols separated by commas/spaces, e.g. RELIANCE TCS"
+        )
+        self.custom_symbols.textChanged.connect(self._expanded_custom_changed)
+        custom_layout.addWidget(self.custom_symbols)
+        layout.addWidget(custom_box)
+
+        footer = QHBoxLayout()
+        self.selection_status = QLabel()
+        self.selection_status.setStyleSheet("color:#555; font-size:11px;")
+        manage_btn = QPushButton("Manage Watchlists…")
+        manage_btn.clicked.connect(self._manage_watchlists)
+        close_btn = QPushButton("Done")
+        close_btn.clicked.connect(self.accept)
+        footer.addWidget(self.selection_status, 1)
+        footer.addWidget(manage_btn)
+        footer.addWidget(close_btn)
+        layout.addLayout(footer)
+
+        self.main_window.universe_list.itemChanged.connect(
+            self._main_item_changed
+        )
+        self.main_window.custom_symbols.textChanged.connect(
+            self._main_custom_changed
+        )
+        self.sync_from_main()
+
+    @staticmethod
+    def _item_name(item: QListWidgetItem) -> str:
+        return str(
+            item.data(Qt.ItemDataRole.UserRole)
+            or item.text().rsplit(" (", 1)[0]
+        )
+
+    def sync_from_main(self) -> None:
+        """Rebuild the expanded list without changing main-window selections."""
+        self._syncing = True
+        try:
+            self.universe_list.blockSignals(True)
+            self.universe_list.clear()
+            for index in range(self.main_window.universe_list.count()):
+                source = self.main_window.universe_list.item(index)
+                item = QListWidgetItem(source.text())
+                item.setData(
+                    Qt.ItemDataRole.UserRole,
+                    source.data(Qt.ItemDataRole.UserRole),
+                )
+                item.setFlags(source.flags() | Qt.ItemFlag.ItemIsUserCheckable)
+                item.setCheckState(source.checkState())
+                item.setToolTip(source.toolTip())
+                self.universe_list.addItem(item)
+            self.universe_list.blockSignals(False)
+            self.custom_symbols.blockSignals(True)
+            self.custom_symbols.setText(self.main_window.custom_symbols.text())
+            self.custom_symbols.blockSignals(False)
+        finally:
+            self.universe_list.blockSignals(False)
+            self._syncing = False
+        self._filter_items(self.search_edit.text())
+        self._update_status()
+
+    def _matching_item(self, name: str) -> QListWidgetItem | None:
+        for index in range(self.universe_list.count()):
+            item = self.universe_list.item(index)
+            if self._item_name(item) == name:
+                return item
+        return None
+
+    def _matching_main_item(self, name: str) -> QListWidgetItem | None:
+        for index in range(self.main_window.universe_list.count()):
+            item = self.main_window.universe_list.item(index)
+            if self._item_name(item) == name:
+                return item
+        return None
+
+    def _expanded_item_changed(self, item: QListWidgetItem) -> None:
+        if self._syncing:
+            return
+        main_item = self._matching_main_item(self._item_name(item))
+        if main_item is not None and main_item.checkState() != item.checkState():
+            main_item.setCheckState(item.checkState())
+        self._update_status()
+
+    def _main_item_changed(self, item: QListWidgetItem) -> None:
+        if self._syncing:
+            return
+        expanded_item = self._matching_item(self._item_name(item))
+        if expanded_item is None:
+            self.sync_from_main()
+            return
+        if expanded_item.checkState() != item.checkState():
+            self._syncing = True
+            expanded_item.setCheckState(item.checkState())
+            self._syncing = False
+        expanded_item.setText(item.text())
+        self._update_status()
+
+    def _expanded_custom_changed(self, text: str) -> None:
+        if not self._syncing and self.main_window.custom_symbols.text() != text:
+            self.main_window.custom_symbols.setText(text)
+
+    def _main_custom_changed(self, text: str) -> None:
+        if not self._syncing and self.custom_symbols.text() != text:
+            self._syncing = True
+            self.custom_symbols.setText(text)
+            self._syncing = False
+
+    def _filter_items(self, text: str) -> None:
+        needle = str(text or "").strip().upper()
+        for index in range(self.universe_list.count()):
+            item = self.universe_list.item(index)
+            item.setHidden(bool(needle and needle not in item.text().upper()))
+        self._update_status()
+
+    def _set_visible(self, checked: bool) -> None:
+        state = Qt.CheckState.Checked if checked else Qt.CheckState.Unchecked
+        for index in range(self.universe_list.count()):
+            item = self.universe_list.item(index)
+            if not item.isHidden():
+                item.setCheckState(state)
+
+    def _update_status(self) -> None:
+        selected = sum(
+            self.universe_list.item(index).checkState() == Qt.CheckState.Checked
+            for index in range(self.universe_list.count())
+        )
+        visible = sum(
+            not self.universe_list.item(index).isHidden()
+            for index in range(self.universe_list.count())
+        )
+        self.selection_status.setText(
+            f"{selected:,} selected • {visible:,} visible • "
+            f"{self.universe_list.count():,} total"
+        )
+
+    def _manage_watchlists(self) -> None:
+        self.main_window._open_watchlist_manager()
+        self.main_window._sync_universe_list()
+        self.sync_from_main()
+
+
 class ExpandedExpressionDialog(QDialog):
     """Standalone popped-out resizable expression editor window for viewing and editing large rule sets."""
 
@@ -13887,6 +14079,20 @@ class ScannerWindow(QMainWindow):
         left_layout = QVBoxLayout(left)
         universe_box = QGroupBox("1. Universe (union, duplicates removed)")
         universe_layout = QVBoxLayout(universe_box)
+        universe_header = QHBoxLayout()
+        universe_note = QLabel("Choose one or more universes/watchlists")
+        universe_note.setStyleSheet("color: #666; font-size: 11px;")
+        self.popout_universe_btn = QPushButton("Pop out selector 🗖")
+        self.popout_universe_btn.setToolTip(
+            "Open a large resizable universe and watchlist selector with live two-way sync."
+        )
+        self.popout_universe_btn.setStyleSheet("font-weight: 600;")
+        self.popout_universe_btn.clicked.connect(
+            self._open_expanded_universe_selector
+        )
+        universe_header.addWidget(universe_note, 1)
+        universe_header.addWidget(self.popout_universe_btn)
+        universe_layout.addLayout(universe_header)
         self.universe_list = QListWidget()
         self.universe_list.setMaximumHeight(170)
         self._sync_universe_list()
@@ -16376,6 +16582,17 @@ class ScannerWindow(QMainWindow):
         self.expanded_editor_dialog.raise_()
         self.expanded_editor_dialog.activateWindow()
 
+    def _open_expanded_universe_selector(self) -> None:
+        if (
+            not hasattr(self, "expanded_universe_dialog")
+            or self.expanded_universe_dialog is None
+        ):
+            self.expanded_universe_dialog = ExpandedUniverseSelectorDialog(self)
+        self.expanded_universe_dialog.sync_from_main()
+        self.expanded_universe_dialog.show()
+        self.expanded_universe_dialog.raise_()
+        self.expanded_universe_dialog.activateWindow()
+
     def _open_watchlist_manager(self) -> None:
         try:
             dialog = WatchlistManagerDialog(self.watchlist_store, self)
@@ -16383,6 +16600,7 @@ class ScannerWindow(QMainWindow):
             QMessageBox.warning(self, "Watchlist file preserved", str(exc))
             return
         dialog.exec()
+        self._sync_universe_list()
 
     def _watchlist_created(self, name: str) -> None:
         UNIVERSES[name] = []
@@ -16422,6 +16640,9 @@ class ScannerWindow(QMainWindow):
             else:
                 item.setCheckState(Qt.CheckState.Unchecked)
             self.universe_list.addItem(item)
+        expanded = getattr(self, "expanded_universe_dialog", None)
+        if expanded is not None:
+            expanded.sync_from_main()
 
     def _watchlist_updated(self, name: str, symbols: list[str]) -> None:
         UNIVERSES[name] = symbols
@@ -16461,6 +16682,10 @@ class ScannerWindow(QMainWindow):
             else:
                 item.setCheckState(Qt.CheckState.Unchecked)
             self.universe_list.addItem(item)
+
+        expanded = getattr(self, "expanded_universe_dialog", None)
+        if expanded is not None:
+            expanded.sync_from_main()
 
     def _reset_telegram_baseline(self) -> None:
         if not self.active_template_name:

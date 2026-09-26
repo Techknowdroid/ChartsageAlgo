@@ -15,12 +15,24 @@ validated Tickertape batch prices with automatic per-symbol fallback. On
 startup they safely check missing Bhavcopy sessions, corporate actions and
 historical NIFTY membership.
 
+The ChartSage Rule Scanner universe section includes a large resizable pop-out
+selector with search, bulk select/clear controls, optional-symbol entry and
+watchlist management. Its selections remain live-synchronised with the compact
+main-window checklist in both directions.
+
 FINAL ChartSage automatically names its four generated watchlists from the
 selected Step 1, Step 2A, Step 2B and Step 3 flow. The deterministic names use
 role suffixes for Step 1 matches, final input, BUY and EXIT results, plus a
 short flow ID. Automatic naming is enabled by default and can be disabled per
 saved strategy to restore editable legacy names. Optional manual-run snapshots
 append a sortable date/time stamp.
+
+Step 2A and Step 2B each display sources in two adjustable sections:
+watchlists above and built-in universes below. Newly generated watchlists are
+shown first, newest run first and in that run's generation order; other
+watchlists and universes retain predictable alphabetical ordering. The search
+field on either side filters both of its sections without changing saved
+source names or scan behaviour.
 
 Step 3 supports one or more checked BUY rules/FINAL SETs and one or more
 checked EXIT rules/FINAL SETs. Checked items on each side use an outer ANY

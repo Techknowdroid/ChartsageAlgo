@@ -4,6 +4,7 @@ import sys
 import unittest
 from datetime import datetime
 from pathlib import Path
+from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(ROOT / "_packaging_runtime"))
@@ -195,6 +196,110 @@ class FinalWatchlistAutonamingTests(unittest.TestCase):
             self.assertTrue(
                 auto_config["final_input_watchlist"].endswith("_02-FINAL-INPUT")
             )
+        finally:
+            window.close()
+            app.processEvents()
+
+    def test_step2_sources_are_visually_split_and_generated_lists_are_newest_first(self):
+        catalog = {
+            "NIFTY PHARMA": ("UNIVERSE", object()),
+            "NIFTY 500": ("UNIVERSE", object()),
+            "Plain Personal List": ("CHARTSAGE WATCHLIST", ["AAA"]),
+            "Older Generated": ("FINALCHARTINK WATCHLIST", ["BBB"]),
+            "Latest Step 3 BUY": ("FINALCHARTINK WATCHLIST", ["CCC"]),
+            "Latest Step 1 Matches": ("FINALCHARTINK WATCHLIST", ["DDD"]),
+        }
+
+        def key(kind, name):
+            return module._watchlist_metadata_key(kind, name)
+
+        metadata = {
+            key("FINALCHARTINK WATCHLIST", "Older Generated"): {
+                "last_written_at": "2026-09-25T12:00:00+05:30",
+                "last_write_order": "0",
+            },
+            key("FINALCHARTINK WATCHLIST", "Latest Step 1 Matches"): {
+                "last_written_at": "2026-09-26T12:00:00+05:30",
+                "last_write_order": "0",
+            },
+            key("FINALCHARTINK WATCHLIST", "Latest Step 3 BUY"): {
+                "last_written_at": "2026-09-26T12:00:00+05:30",
+                "last_write_order": "2",
+            },
+        }
+        app = module.QApplication.instance() or module.QApplication([])
+        with (
+            patch.object(module, "finalchartink_source_catalog", return_value=catalog),
+            patch.object(
+                module,
+                "sync_finalchartink_watchlist_metadata",
+                return_value=metadata,
+            ),
+        ):
+            window = module.FinalChartInkWindow()
+        try:
+            self.assertEqual(
+                window.feeder_category_splitter.orientation(),
+                module.Qt.Orientation.Vertical,
+            )
+            self.assertEqual(
+                window.final_category_splitter.orientation(),
+                module.Qt.Orientation.Vertical,
+            )
+            expected_watchlists = [
+                "Latest Step 1 Matches",
+                "Latest Step 3 BUY",
+                "Older Generated",
+                "Plain Personal List",
+            ]
+            expected_universes = ["NIFTY 500", "NIFTY PHARMA"]
+            for widget in (
+                window.source_watchlist_list,
+                window.final_watchlist_list,
+            ):
+                self.assertEqual(
+                    [
+                        widget.item(index).data(module.Qt.ItemDataRole.UserRole)
+                        for index in range(widget.count())
+                    ],
+                    expected_watchlists,
+                )
+            for widget in (
+                window.source_universe_list,
+                window.final_universe_list,
+            ):
+                self.assertEqual(
+                    [
+                        widget.item(index).data(module.Qt.ItemDataRole.UserRole)
+                        for index in range(widget.count())
+                    ],
+                    expected_universes,
+                )
+
+            module.FinalChartInkWindow._set_checked_lists(
+                window.source_lists,
+                ["Latest Step 1 Matches", "NIFTY PHARMA"],
+            )
+            module.FinalChartInkWindow._set_checked_lists(
+                window.final_source_lists,
+                ["Latest Step 3 BUY", "NIFTY 500"],
+            )
+            self.assertEqual(
+                window._checked_lists(window.source_lists),
+                ["Latest Step 1 Matches", "NIFTY PHARMA"],
+            )
+            self.assertEqual(
+                window._checked_lists(window.final_source_lists),
+                ["Latest Step 3 BUY", "NIFTY 500"],
+            )
+
+            window.source_search.setText("NIFTY 500")
+            self.assertTrue(all(
+                window.source_watchlist_list.item(index).isHidden()
+                for index in range(window.source_watchlist_list.count())
+            ))
+            self.assertFalse(window.source_universe_list.item(0).isHidden())
+            self.assertTrue(window.source_universe_list.item(1).isHidden())
         finally:
             window.close()
             app.processEvents()

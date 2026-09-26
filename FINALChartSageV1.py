@@ -22508,7 +22508,7 @@ def record_finalchartink_watchlist_writes(
             entries = _load_watchlist_metadata(metadata_path)
         except (OSError, ValueError, json.JSONDecodeError):
             return
-        for name, symbols in watchlists.items():
+        for write_order, (name, symbols) in enumerate(watchlists.items()):
             clean_name = str(name)
             key = _watchlist_metadata_key(kind, clean_name)
             digest = _watchlist_symbol_digest(symbols)
@@ -22519,6 +22519,8 @@ def record_finalchartink_watchlist_writes(
                 "kind": str(kind),
                 "first_seen_at": entry.get("first_seen_at", now),
                 "content_hash": digest,
+                "last_written_at": now,
+                "last_write_order": str(write_order),
             })
             if clean_name not in old_names:
                 entry["created_at"] = now
@@ -22570,6 +22572,27 @@ def sync_finalchartink_watchlist_metadata(
             except OSError:
                 pass
         return entries
+
+
+def finalchartink_watchlist_sort_key(
+    name: str,
+    kind: str,
+    metadata: dict[str, dict[str, str]],
+) -> tuple[Any, ...]:
+    """Put generated lists newest-first, preserving each run's write order."""
+    entry = metadata.get(_watchlist_metadata_key(kind, name), {})
+    written_at = str(entry.get("last_written_at", "") or "").strip()
+    if written_at:
+        try:
+            written_rank = -datetime.fromisoformat(written_at).timestamp()
+        except (TypeError, ValueError, OverflowError):
+            written_rank = 0.0
+        try:
+            write_order = max(0, int(entry.get("last_write_order", 0) or 0))
+        except (TypeError, ValueError):
+            write_order = 0
+        return (0, written_rank, write_order, str(kind).upper(), str(name).upper())
+    return (1, 0.0, 0, str(kind).upper(), str(name).upper())
 
 
 _FINALCHARTINK_PUBLISH_LOCK = threading.Lock()
@@ -22914,12 +22937,12 @@ def build_finalchartink_telegram_messages(payload: dict[str, Any]) -> list[str]:
 def build_finalchartink_compact_telegram_messages(
     payload: dict[str, Any],
 ) -> list[str]:
-    """Build a names-only HTML summary sent after the detailed Telegram report."""
+    """Build a compact HTML summary with symbol, close and daily change."""
     config = normalize_finalchartink_recipe(payload.get("config", {}))
     rows = list(payload.get("guidance_rows", []) or [])
 
-    def symbols_with_prefix(*prefixes: str) -> list[str]:
-        selected: list[str] = []
+    def rows_with_prefix(*prefixes: str) -> list[dict[str, Any]]:
+        selected: list[dict[str, Any]] = []
         seen: set[str] = set()
         for row in rows:
             signal = str(row.get("Signal", "") or "").strip().upper()
@@ -22928,13 +22951,21 @@ def build_finalchartink_compact_telegram_messages(
             symbol = str(row.get("Symbol", "") or "").strip().upper()
             if symbol and symbol not in seen:
                 seen.add(symbol)
-                selected.append(symbol)
+                selected.append(row)
         return selected
 
-    reviews = symbols_with_prefix("REVIEW")
-    review_set = set(reviews)
-    buys = [symbol for symbol in symbols_with_prefix("BUY") if symbol not in review_set]
-    exits = [symbol for symbol in symbols_with_prefix("EXIT") if symbol not in review_set]
+    reviews = rows_with_prefix("REVIEW")
+    review_set = {
+        str(row.get("Symbol", "") or "").strip().upper() for row in reviews
+    }
+    buys = [
+        row for row in rows_with_prefix("BUY")
+        if str(row.get("Symbol", "") or "").strip().upper() not in review_set
+    ]
+    exits = [
+        row for row in rows_with_prefix("EXIT")
+        if str(row.get("Symbol", "") or "").strip().upper() not in review_set
+    ]
     generated = get_ist_now()
     safe_strategy = html.escape(config["recipe_name"][:500])
     lines = [
@@ -22944,13 +22975,23 @@ def build_finalchartink_compact_telegram_messages(
         "",
     ]
 
-    def add_section(indicator: str, heading: str, symbols: list[str]) -> None:
-        lines.append(f"{indicator} <b>{heading}</b> — {len(symbols)}")
-        if symbols:
-            lines.extend(
-                f"<b>{index}. {html.escape(symbol)}</b>"
-                for index, symbol in enumerate(symbols, 1)
-            )
+    def add_section(
+        indicator: str, heading: str, selected_rows: list[dict[str, Any]]
+    ) -> None:
+        lines.append(f"{indicator} <b>{heading}</b> — {len(selected_rows)}")
+        if selected_rows:
+            for index, row in enumerate(selected_rows, 1):
+                symbol = str(row.get("Symbol", "") or "").strip().upper()
+                close = finite_or_none(row.get("Close"))
+                change = finite_or_none(row.get(PERCENT_CHANGE_COLUMN))
+                close_text = (
+                    f"₹{format_number(close)}" if close is not None else "n/a"
+                )
+                change_text = f"{change:+.2f}%" if change is not None else "n/a"
+                lines.append(
+                    f"<b>{index}. {html.escape(symbol)}</b> — "
+                    f"Close: {close_text} | Change: {change_text}"
+                )
         else:
             lines.append("None")
         lines.append("")
@@ -26088,13 +26129,35 @@ class FinalChartInkWindow(QMainWindow):
         feeder_source_layout.addWidget(self.feeder_scope_combo)
         self.source_search = QLineEdit()
         self.source_search.setPlaceholderText("Filter feeder scan sources…")
-        self.source_search.textChanged.connect(lambda text: self._filter_list(self.source_list, text))
         feeder_source_layout.addWidget(self.source_search)
-        self.source_list = QListWidget()
-        self.source_list.setMinimumHeight(170)
-        self.source_list.setMouseTracking(True)
-        self.source_list.itemDoubleClicked.connect(self._show_source_details)
-        feeder_source_layout.addWidget(self.source_list)
+        self.source_watchlist_list = QListWidget()
+        self.source_universe_list = QListWidget()
+        self.source_lists = (
+            self.source_watchlist_list,
+            self.source_universe_list,
+        )
+        self.source_search.textChanged.connect(
+            lambda text: self._filter_lists(self.source_lists, text)
+        )
+        feeder_category_split = QSplitter(Qt.Orientation.Vertical)
+        self.feeder_category_splitter = feeder_category_split
+        feeder_category_split.setChildrenCollapsible(False)
+        feeder_watchlist_box = QGroupBox("Watchlists — newest generated first")
+        feeder_watchlist_layout = QVBoxLayout(feeder_watchlist_box)
+        feeder_watchlist_layout.setContentsMargins(5, 5, 5, 5)
+        feeder_watchlist_layout.addWidget(self.source_watchlist_list)
+        feeder_universe_box = QGroupBox("Universes — alphabetical")
+        feeder_universe_layout = QVBoxLayout(feeder_universe_box)
+        feeder_universe_layout.setContentsMargins(5, 5, 5, 5)
+        feeder_universe_layout.addWidget(self.source_universe_list)
+        feeder_category_split.addWidget(feeder_watchlist_box)
+        feeder_category_split.addWidget(feeder_universe_box)
+        feeder_category_split.setSizes([135, 85])
+        feeder_category_split.setMinimumHeight(220)
+        for source_widget in self.source_lists:
+            source_widget.setMouseTracking(True)
+            source_widget.itemDoubleClicked.connect(self._show_source_details)
+        feeder_source_layout.addWidget(feeder_category_split)
         feeder_hint = QLabel(
             "Step 2A selections control only where the feeder rules scan. They "
             "do not enter the final BUY/EXIT input unless also checked in Step 2B."
@@ -26117,17 +26180,35 @@ class FinalChartInkWindow(QMainWindow):
         self.final_source_search.setPlaceholderText(
             "Filter optional additional final-input sources…"
         )
-        self.final_source_search.textChanged.connect(
-            lambda text: self._filter_list(self.final_source_list, text)
-        )
         final_source_layout.addWidget(self.final_source_search)
-        self.final_source_list = QListWidget()
-        self.final_source_list.setMinimumHeight(170)
-        self.final_source_list.setMouseTracking(True)
-        self.final_source_list.itemDoubleClicked.connect(
-            self._show_source_details
+        self.final_watchlist_list = QListWidget()
+        self.final_universe_list = QListWidget()
+        self.final_source_lists = (
+            self.final_watchlist_list,
+            self.final_universe_list,
         )
-        final_source_layout.addWidget(self.final_source_list)
+        self.final_source_search.textChanged.connect(
+            lambda text: self._filter_lists(self.final_source_lists, text)
+        )
+        final_category_split = QSplitter(Qt.Orientation.Vertical)
+        self.final_category_splitter = final_category_split
+        final_category_split.setChildrenCollapsible(False)
+        final_watchlist_box = QGroupBox("Watchlists — newest generated first")
+        final_watchlist_layout = QVBoxLayout(final_watchlist_box)
+        final_watchlist_layout.setContentsMargins(5, 5, 5, 5)
+        final_watchlist_layout.addWidget(self.final_watchlist_list)
+        final_universe_box = QGroupBox("Universes — alphabetical")
+        final_universe_layout = QVBoxLayout(final_universe_box)
+        final_universe_layout.setContentsMargins(5, 5, 5, 5)
+        final_universe_layout.addWidget(self.final_universe_list)
+        final_category_split.addWidget(final_watchlist_box)
+        final_category_split.addWidget(final_universe_box)
+        final_category_split.setSizes([135, 85])
+        final_category_split.setMinimumHeight(220)
+        for source_widget in self.final_source_lists:
+            source_widget.setMouseTracking(True)
+            source_widget.itemDoubleClicked.connect(self._show_source_details)
+        final_source_layout.addWidget(final_category_split)
         final_formula = QLabel(
             "Important: Stocks from universes or sources selected in the "
             "Step 2B list go directly to Step 3 and are added to the Step 1 "
@@ -26431,12 +26512,8 @@ class FinalChartInkWindow(QMainWindow):
         self.feeder_list.itemChanged.connect(
             self._update_auto_watchlist_names
         )
-        self.source_list.itemChanged.connect(
-            self._update_auto_watchlist_names
-        )
-        self.final_source_list.itemChanged.connect(
-            self._update_auto_watchlist_names
-        )
+        for source_widget in (*self.source_lists, *self.final_source_lists):
+            source_widget.itemChanged.connect(self._update_auto_watchlist_names)
         self.feeder_scope_combo.currentIndexChanged.connect(
             self._update_auto_watchlist_names
         )
@@ -26886,6 +26963,13 @@ class FinalChartInkWindow(QMainWindow):
             item = widget.item(index)
             item.setHidden(bool(needle and needle not in item.text().upper()))
 
+    @classmethod
+    def _filter_lists(
+        cls, widgets: Iterable[QListWidget], text: str
+    ) -> None:
+        for widget in widgets:
+            cls._filter_list(widget, text)
+
     @staticmethod
     def _check_visible(widget: QListWidget, checked: bool) -> None:
         for index in range(widget.count()):
@@ -26900,6 +26984,14 @@ class FinalChartInkWindow(QMainWindow):
             for index in range(widget.count())
             if widget.item(index).checkState() == Qt.CheckState.Checked
         ]
+
+    @classmethod
+    def _checked_lists(cls, widgets: Iterable[QListWidget]) -> list[str]:
+        return list(dict.fromkeys(
+            name
+            for widget in widgets
+            for name in cls._checked(widget)
+        ))
 
     def _date_mode_changed(self, *_args: Any) -> None:
         historical = self.historical_radio.isChecked()
@@ -26955,6 +27047,14 @@ class FinalChartInkWindow(QMainWindow):
                 else Qt.CheckState.Unchecked
             )
 
+    @classmethod
+    def _set_checked_lists(
+        cls, widgets: Iterable[QListWidget], names: Iterable[str]
+    ) -> None:
+        wanted = list(names)
+        for widget in widgets:
+            cls._set_checked(widget, wanted)
+
     def _auto_watchlist_naming_toggled(self, enabled: bool) -> None:
         """Switch between generated previews and the legacy manual naming mode."""
         applying = bool(getattr(self, "_applying_strategy_config", False))
@@ -26992,8 +27092,10 @@ class FinalChartInkWindow(QMainWindow):
         raw = {
             "recipe_name": recipe_name,
             "feeder_templates": self._checked(self.feeder_list),
-            "feeder_sources": self._checked(self.source_list),
-            "final_additional_sources": self._checked(self.final_source_list),
+            "feeder_sources": self._checked_lists(self.source_lists),
+            "final_additional_sources": self._checked_lists(
+                self.final_source_lists
+            ),
             "feeder_scope": self.feeder_scope_combo.currentData() or "SAVED",
             "include_multirule": self.include_multirule_cb.isChecked(),
             "buy_finalsets": self.buy_set_combo.checkedData(),
@@ -27074,7 +27176,8 @@ class FinalChartInkWindow(QMainWindow):
         ) in {"OVERRIDE", "COMBINE"}
         self.feeder_source_box.setEnabled(has_step1)
         self.source_search.setEnabled(uses_step2a)
-        self.source_list.setEnabled(uses_step2a)
+        for source_widget in self.source_lists:
+            source_widget.setEnabled(uses_step2a)
         self.include_multirule_cb.setEnabled(has_step1)
         self.feeder_source_box.setToolTip(
             "" if has_step1 else (
@@ -27089,20 +27192,45 @@ class FinalChartInkWindow(QMainWindow):
 
     def _refresh_source_catalog(self, show_status: bool = False) -> None:
         """Reload both watchlist stores while preserving valid UI selections."""
-        old_feeder_sources = self._checked(self.source_list)
-        old_final_sources = self._checked(self.final_source_list)
+        old_feeder_sources = self._checked_lists(self.source_lists)
+        old_final_sources = self._checked_lists(self.final_source_lists)
         self.catalog = finalchartink_source_catalog()
         watchlist_metadata = sync_finalchartink_watchlist_metadata(self.catalog)
         self.source_watchlist_metadata = watchlist_metadata
-        self.source_list.clear()
-        self.final_source_list.clear()
-        for name, (kind, source) in sorted(
-            self.catalog.items(), key=lambda pair: (pair[1][0], pair[0].upper())
-        ):
+        for source_widget in (*self.source_lists, *self.final_source_lists):
+            source_widget.clear()
+        watchlist_sources = [
+            (name, kind, source)
+            for name, (kind, source) in self.catalog.items()
+            if kind != "UNIVERSE"
+        ]
+        watchlist_sources.sort(
+            key=lambda item: finalchartink_watchlist_sort_key(
+                item[0], item[1], watchlist_metadata
+            )
+        )
+        universe_sources = sorted(
+            (
+                (name, kind, source)
+                for name, (kind, source) in self.catalog.items()
+                if kind == "UNIVERSE"
+            ),
+            key=lambda item: item[0].upper(),
+        )
+        for name, kind, source in (*watchlist_sources, *universe_sources):
             count = f" ({len(source):,})" if isinstance(source, list) else ""
+            is_universe = kind == "UNIVERSE"
             for target, checked_names in (
-                (self.source_list, old_feeder_sources),
-                (self.final_source_list, old_final_sources),
+                (
+                    self.source_universe_list
+                    if is_universe else self.source_watchlist_list,
+                    old_feeder_sources,
+                ),
+                (
+                    self.final_universe_list
+                    if is_universe else self.final_watchlist_list,
+                    old_final_sources,
+                ),
             ):
                 item = QListWidgetItem(f"[{kind}] {name}{count}")
                 item.setData(Qt.ItemDataRole.UserRole, name)
@@ -27122,6 +27250,10 @@ class FinalChartInkWindow(QMainWindow):
                     if name in checked_names else Qt.CheckState.Unchecked
                 )
                 target.addItem(item)
+        self._filter_lists(self.source_lists, self.source_search.text())
+        self._filter_lists(
+            self.final_source_lists, self.final_source_search.text()
+        )
         if show_status and hasattr(self, "status_label"):
             chartsage_count = sum(
                 kind in {"CHARTSAGE WATCHLIST", "ZERODHA HOLDINGS"}
@@ -27426,9 +27558,9 @@ class FinalChartInkWindow(QMainWindow):
         self.auto_watchlist_naming_cb.blockSignals(False)
         self.include_multirule_cb.setChecked(config["include_multirule"])
         self._set_checked(self.feeder_list, config["feeder_templates"])
-        self._set_checked(self.source_list, config["feeder_sources"])
-        self._set_checked(
-            self.final_source_list, config["final_additional_sources"]
+        self._set_checked_lists(self.source_lists, config["feeder_sources"])
+        self._set_checked_lists(
+            self.final_source_lists, config["final_additional_sources"]
         )
         self.feeder_scope_combo.setCurrentIndex(max(0, self.feeder_scope_combo.findData(config["feeder_scope"])))
         self._update_step2_source_controls()
@@ -27480,8 +27612,10 @@ class FinalChartInkWindow(QMainWindow):
             "buy_results_watchlist": self.buy_results_name_edit.text(),
             "exit_results_watchlist": self.exit_results_name_edit.text(),
             "include_multirule": self.include_multirule_cb.isChecked(),
-            "feeder_sources": self._checked(self.source_list),
-            "final_additional_sources": self._checked(self.final_source_list),
+            "feeder_sources": self._checked_lists(self.source_lists),
+            "final_additional_sources": self._checked_lists(
+                self.final_source_lists
+            ),
             "final_input_watchlist": self.final_source_name_edit.text(),
             "feeder_scope": self.feeder_scope_combo.currentData(),
             "buy_finalsets": self.buy_set_combo.checkedData(),

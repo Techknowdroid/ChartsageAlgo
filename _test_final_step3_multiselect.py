@@ -459,6 +459,54 @@ class FinalStep3MultiSelectTests(unittest.TestCase):
         self.assertFalse(shared)
         self.assertEqual(frame.index.min(), pd.Timestamp("2025-01-05"))
 
+    def test_compact_telegram_lists_close_and_daily_change(self):
+        payload = {
+            "config": {"recipe_name": "Test & Strategy"},
+            "guidance_rows": [
+                {
+                    "Symbol": "INDGN",
+                    "Signal": "BUY",
+                    "Close": 591.75,
+                    module.PERCENT_CHANGE_COLUMN: 1.843,
+                },
+                {
+                    "Symbol": "M&M",
+                    "Signal": "EXIT / WEAKNESS",
+                    "Close": 2048.5,
+                    module.PERCENT_CHANGE_COLUMN: -0.426,
+                },
+                {
+                    "Symbol": "DUAL",
+                    "Signal": "REVIEW",
+                    "Close": None,
+                    module.PERCENT_CHANGE_COLUMN: None,
+                },
+                {
+                    "Symbol": "DUAL",
+                    "Signal": "BUY",
+                    "Close": 100.0,
+                    module.PERCENT_CHANGE_COLUMN: 5.0,
+                },
+            ],
+        }
+        generated = module.datetime(2026, 9, 26, 11, 33, 19)
+        with patch.object(module, "get_ist_now", return_value=generated):
+            messages = module.build_finalchartink_compact_telegram_messages(payload)
+        text = "\n".join(messages)
+
+        self.assertIn("Strategy: Test &amp; Strategy", text)
+        self.assertIn(
+            "<b>1. INDGN</b> — Close: ₹591.75 | Change: +1.84%", text
+        )
+        self.assertIn(
+            "<b>1. M&amp;M</b> — Close: ₹2,048.5 | Change: -0.43%", text
+        )
+        self.assertIn(
+            "<b>1. DUAL</b> — Close: n/a | Change: n/a", text
+        )
+        self.assertEqual(text.count("<b>1. DUAL</b>"), 1)
+        self.assertNotIn("<b>Close:", text)
+
 
 if __name__ == "__main__":
     unittest.main()
