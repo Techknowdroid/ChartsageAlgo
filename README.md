@@ -96,9 +96,16 @@ It intentionally excludes credentials, broker sessions, personal holdings,
 live SQLite databases, downloaded Bhavcopy archives, reports, backups and built
 distributions.
 
-Use `create_important_backup.py` for a complete restorable local backup. Use
-`build_portable_bundle.py` when an explicitly requested, validated portable
-Windows distribution is required.
+Use `create_important_backup.py` for a complete restorable local backup. Its
+verified recovery inventory includes user-created scanner templates and rule
+trees, ChartSage and FINAL ChartSage watchlists, FINAL strategies, custom rule
+examples, stock-alert rules/history, paper-trading state, application data,
+historical data, and the required packaging runtime. Copy the completed backup
+folder to an external drive or encrypted cloud location; a backup left only on
+the same SSD does not protect against that SSD failing. Windows Credential
+Manager secrets are intentionally not exported and must be configured again
+on a restored PC. Use `build_portable_bundle.py` when an explicitly requested,
+validated portable Windows distribution is required.
 
 ## Updating GitHub after future changes
 
@@ -115,9 +122,10 @@ retain their own explicit confirmation.
 
 It shows the changed and staged files, checks for common private-data mistakes,
 and requires confirmation before committing and pushing. It respects
-`.gitignore`. This is only a source-code update; run
-`create_important_backup.py` separately for a restorable backup containing the
-local databases and operational data.
+`.gitignore`. After commit confirmation, it must successfully create and verify
+a complete recovery backup before it is allowed to commit or push. GitHub
+still receives only safe source-controlled files; private/live operational data
+remains in the separate recovery backup, which must be copied off the SSD.
 
 ## Safety
 

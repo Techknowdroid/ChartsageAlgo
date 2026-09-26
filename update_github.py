@@ -8,11 +8,12 @@ This helper is intentionally conservative:
 * it displays the proposed file list and summary before committing;
 * it checks staged filenames and text for common credential mistakes; and
 * it proposes a concise conventional commit message from the staged files; and
-* it requires explicit confirmation before both commit and push.
+* it requires explicit confirmation before both commit and push; and
+* it requires a verified complete recovery backup before every commit.
 
-This is a source-control update, not a restorable operational-data backup.
-Continue to run ``create_important_backup.py`` for databases, archives,
-personal configuration, and other local data intentionally excluded from Git.
+Git remains source control rather than storage for private/live operational
+data.  The required pre-commit recovery backup is created separately by
+``create_important_backup.py`` and must still be copied off this PC.
 """
 
 from __future__ import annotations
@@ -73,6 +74,32 @@ def run_git(*arguments: str, capture: bool = True) -> str:
 def confirm(prompt: str) -> bool:
     """Return True only for an explicit yes response."""
     return input(f"{prompt} [y/N]: ").strip().casefold() in {"y", "yes"}
+
+
+def create_required_recovery_backup() -> None:
+    """Create the complete verified local recovery snapshot required to commit."""
+    backup_script = PROJECT_DIR / "create_important_backup.py"
+    if not backup_script.is_file():
+        raise GitUpdateError(
+            "create_important_backup.py is missing; refusing to commit without "
+            "a complete recovery backup."
+        )
+    print("\nCreating the required complete recovery backup...")
+    print(
+        "This includes user templates, rules, strategies, watchlists, alerts, "
+        "databases, and historical data."
+    )
+    result = subprocess.run(
+        [sys.executable, str(backup_script)],
+        cwd=PROJECT_DIR,
+        check=False,
+    )
+    if result.returncode:
+        raise GitUpdateError(
+            "The complete recovery backup failed; no commit or push was attempted."
+        )
+    print("Recovery backup completed and verified.")
+    print("IMPORTANT: copy the new backup folder off this SSD for crash protection.")
 
 
 def staged_paths() -> list[str]:
@@ -264,6 +291,7 @@ def main() -> int:
         print("Nothing was committed or pushed. The reviewed files remain staged.")
         return 0
 
+    create_required_recovery_backup()
     run_git("commit", "-m", message, capture=False)
     print("\nCommit created successfully.")
 
@@ -273,7 +301,8 @@ def main() -> int:
 
     run_git("push", "origin", branch, capture=False)
     print("\nGitHub update completed successfully.")
-    print("Reminder: GitHub is not the full data backup; also run create_important_backup.py.")
+    print("The source is on GitHub and a separate complete recovery backup was created.")
+    print("Copy that backup off this SSD; GitHub intentionally excludes private/live data.")
     return 0
 
 

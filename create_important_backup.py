@@ -27,6 +27,36 @@ IMPORTANT_DIRECTORIES = (
     "seed_data",
     "_packaging_runtime",
 )
+
+# These are the stores containing work that a user would otherwise have to
+# recreate manually after a disk failure.  Root-level files are already
+# selected automatically and FINALCHARTinkV1_data is selected above; keeping
+# this explicit catalogue makes their recovery coverage testable and visible.
+USER_CREATED_DATA_STORES = {
+    Path("scanner_templates.json"): "scanner templates and structured rule trees",
+    Path("watchlists.json"): "ChartSage user-created watchlists",
+    Path("custom_filter_examples.json"): "user-created filter examples",
+    Path("stock_alerts.db"): "stock-specific alerts, local rules, and alert history",
+    Path("paper_trades.db"): "paper-trading portfolios and transaction history",
+    Path("FINALCHARTinkV1_data/finalchartink_recipes.json"): (
+        "saved FINAL ChartSage strategies and their Step 1/2A/2B/3 selections"
+    ),
+    Path("FINALCHARTinkV1_data/finalchartink_watchlists.json"): (
+        "private, generated, BUY, EXIT, and timestamped FINAL ChartSage watchlists"
+    ),
+    Path("FINALCHARTinkV1_data/finalchartink_watchlist_metadata.json"): (
+        "watchlist creation and regeneration metadata"
+    ),
+    Path("FINALCHARTinkV1_data/chartsage_watchlists_before_finalchartink_publish.json"): (
+        "pre-publication ChartSage watchlist safety snapshot"
+    ),
+    Path("FINALCHARTinkV1_data/finalchartink_paper_trades.db"): (
+        "FINAL ChartSage paper-backtest portfolios and transactions"
+    ),
+    Path("FINALCHARTinkV1_data/finalchartink_run_history.db"): (
+        "FINAL ChartSage run history"
+    ),
+}
 EXCLUDED_ROOT_DIRECTORIES = {
     "backups",
     "build",
@@ -39,6 +69,15 @@ EXCLUDED_ROOT_DIRECTORIES = {
 
 
 def is_transient(path: Path, *, at_project_root: bool = False) -> bool:
+    try:
+        relative = path.relative_to(PROJECT_DIR)
+    except ValueError:
+        relative = None
+    if relative in USER_CREATED_DATA_STORES:
+        # A few active safety/state stores contain words such as "before" in
+        # their names.  Their explicit recovery-critical declaration wins over
+        # the generic old-copy filename filter below.
+        return False
     name = path.name.lower()
     if name.endswith((".pyc", ".db-wal", ".db-shm")):
         return True
@@ -85,6 +124,32 @@ def verify_backup_sources_readable() -> None:
             "Backup preflight found source files that cannot be read. "
             "No new backup folder was created.\n  " + details
         )
+
+
+def verify_user_created_data_coverage() -> list[tuple[Path, str]]:
+    """Verify that every existing user-created store is selected for backup."""
+    selected = {
+        source.relative_to(PROJECT_DIR)
+        for source in iter_backup_source_files()
+    }
+    covered: list[tuple[Path, str]] = []
+    missing: list[Path] = []
+    for relative, description in USER_CREATED_DATA_STORES.items():
+        source = PROJECT_DIR / relative
+        if not source.exists():
+            # Some stores are created only after the corresponding feature is
+            # first used.  Once present, they become mandatory automatically.
+            continue
+        if relative not in selected:
+            missing.append(relative)
+        else:
+            covered.append((relative, description))
+    if missing:
+        names = "\n  ".join(path.as_posix() for path in missing)
+        raise RuntimeError(
+            "Recovery-critical user data is not selected for backup:\n  " + names
+        )
+    return covered
 
 
 def sqlite_backup(source: Path, destination: Path) -> None:
@@ -140,6 +205,8 @@ def create_manifest(backup_dir: Path) -> tuple[int, int]:
 
 
 def main() -> int:
+    print("Verifying user-created templates, rules, strategies, and watchlists...", flush=True)
+    covered_user_stores = verify_user_created_data_coverage()
     print("Checking backup source permissions...", flush=True)
     verify_backup_sources_readable()
 
@@ -185,6 +252,24 @@ be included in this folder backup.
 """
     (backup_dir / "RESTORE_INSTRUCTIONS.txt").write_text(
         restore_text, encoding="utf-8"
+    )
+    recovery_catalogue = [
+        "ChartSage user-created data included in this backup",
+        f"Created: {datetime.now():%d %B %Y %H:%M:%S}",
+        "",
+    ]
+    recovery_catalogue.extend(
+        f"INCLUDED  {relative.as_posix()}  - {description}"
+        for relative, description in covered_user_stores
+    )
+    recovery_catalogue.extend((
+        "",
+        "Stores for features never used may not exist yet and are therefore not listed.",
+        "Windows Credential Manager secrets are not files and must be configured again",
+        "on the restored PC.",
+    ))
+    (backup_dir / "USER_CREATED_DATA_INCLUDED.txt").write_text(
+        "\n".join(recovery_catalogue) + "\n", encoding="utf-8"
     )
     print("Creating SHA-256 integrity manifest...", flush=True)
     file_count, total_size = create_manifest(backup_dir)
