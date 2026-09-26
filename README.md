@@ -111,6 +111,23 @@ required market history again before using scans that depend on it. Use
 `build_portable_bundle.py` when an explicitly requested, validated portable
 Windows distribution is required.
 
+For a full disaster-recovery and continued-development copy on a USB/external
+drive, run:
+
+```powershell
+python backup_complete_project_to_usb.py
+```
+
+Select a folder on a different drive and type `BACKUP` when prompted. This
+larger backup includes the complete working project, Git history, user data,
+all SQLite databases, Bhavcopy databases/archives/snapshots, build and packaging
+assets, distributions, and reports. It transactionally copies SQLite files,
+verifies SHA-256 checksums, and writes `BACKUP_COMPLETE.txt` only after
+verification succeeds. Redundant prior backup folders and transient caches,
+locks, and SQLite sidecars are intentionally omitted. System installations and
+Windows Credential Manager secrets cannot be copied; the restore instructions
+inside each backup explain what must be installed or configured on a new PC.
+
 ## Updating GitHub after future changes
 
 Run the automatic safety helper from PowerShell in this folder:

@@ -173,7 +173,7 @@ def suggest_commit_message(changes: list[tuple[str, str]]) -> str:
         for path in paths
     ):
         return "build: update portable packaging"
-    if any(Path(path).name.startswith("create_important_backup") for path in paths):
+    if any("backup" in Path(path).name for path in paths):
         return "chore: improve project backup tooling"
     return "chore: update ChartSage project files"
 
