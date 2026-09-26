@@ -1,14 +1,14 @@
-"""Safely review, commit, and push this project to its configured Git remote.
+"""Safely stage, commit, and push this project to its configured Git remote.
 
 This helper is intentionally conservative:
 
 * it operates from the folder containing this file;
 * it honours the repository's ``.gitignore`` rules;
 * it refuses to mix its work with files that are already staged;
-* it displays the proposed file list and summary before committing;
+* it displays the selected file list and summary;
 * it checks staged filenames and text for common credential mistakes; and
-* it proposes a concise conventional commit message from the staged files; and
-* it requires explicit confirmation before both commit and push; and
+* it generates a concise conventional commit message from the staged files;
+* it commits and pushes automatically after all safety checks pass; and
 * it requires a verified complete recovery backup before every commit.
 
 Git remains source control rather than storage for private/live operational
@@ -69,11 +69,6 @@ def run_git(*arguments: str, capture: bool = True) -> str:
         detail = (result.stderr or result.stdout).strip() if capture else ""
         raise GitUpdateError(detail or f"git {' '.join(arguments)} failed")
     return result.stdout if capture else ""
-
-
-def confirm(prompt: str) -> bool:
-    """Return True only for an explicit yes response."""
-    return input(f"{prompt} [y/N]: ").strip().casefold() in {"y", "yes"}
 
 
 def create_required_recovery_backup() -> None:
@@ -207,7 +202,10 @@ def check_staged_content(paths: list[str]) -> list[str]:
 
 def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Review, commit, and push safe project source changes."
+        description=(
+            "Automatically stage, safety-check, back up, commit, and push "
+            "safe project source changes."
+        )
     )
     parser.add_argument(
         "message",
@@ -249,11 +247,8 @@ def main() -> int:
         print("\nNothing has changed; GitHub is already up to date.")
         return 0
 
-    print("\nCurrent changes (ignored operational/private files are not shown):")
+    print("\nDetected changes (ignored operational/private files are not shown):")
     print(status.rstrip())
-    if not confirm("Stage these changes for review?"):
-        print("No files were staged.")
-        return 0
 
     run_git("add", "-A")
     paths = staged_paths()
@@ -261,10 +256,10 @@ def main() -> int:
         print("Nothing eligible was staged.")
         return 0
 
-    print("\nProposed commit files:")
+    print("\nFiles selected for the automatic commit:")
     for path in paths:
         print(f"  {path}")
-    print("\nProposed commit summary:")
+    print("\nCommit summary:")
     print(run_git("diff", "--cached", "--stat").rstrip())
 
     warnings = check_staged_content(paths)
@@ -280,25 +275,14 @@ def main() -> int:
 
     message = (args.message or "").strip()
     if not message:
-        suggested = suggest_commit_message(staged_changes())
-        print(f"\nSuggested commit message: {suggested}")
-        replacement = input(
-            "Press Enter to use it, or type a replacement: "
-        ).strip()
-        message = replacement or suggested
-
-    if not confirm(f'Commit these files as "{message}"?'):
-        print("Nothing was committed or pushed. The reviewed files remain staged.")
-        return 0
+        message = suggest_commit_message(staged_changes())
+    print(f"\nAutomatically selected commit message: {message}")
 
     create_required_recovery_backup()
     run_git("commit", "-m", message, capture=False)
     print("\nCommit created successfully.")
 
-    if not confirm(f"Push branch {branch} to origin now?"):
-        print("Commit retained locally. Run 'git push' later when ready.")
-        return 0
-
+    print(f"Pushing branch {branch} to origin...")
     run_git("push", "origin", branch, capture=False)
     print("\nGitHub update completed successfully.")
     print("The source is on GitHub and a separate complete recovery backup was created.")

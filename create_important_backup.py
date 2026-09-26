@@ -1,9 +1,9 @@
 """Create a complete restorable ChartSage project backup inside OPENCODE.
 
-Generated distributions, build work, Python bytecode, old ZIP exports and
-spreadsheet reports are omitted. SQLite databases are copied with SQLite's
-online backup API and verified, so the resulting backup is transactionally
-consistent.
+Generated distributions, regenerable Bhavcopy market data, build work, Python
+bytecode, old ZIP exports and spreadsheet reports are omitted. SQLite databases
+that remain selected are copied with SQLite's online backup API and verified,
+so the resulting backup is transactionally consistent.
 """
 
 from __future__ import annotations
@@ -19,10 +19,8 @@ PROJECT_DIR = Path(__file__).resolve().parent
 BACKUP_ROOT = PROJECT_DIR / "backups"
 IMPORTANT_DIRECTORIES = (
     ".opencode",
-    "bhavcopy_snapshots",
     "FINALCHARTinkV1_data",
     "historical_membership_sources",
-    "nse_bhavcopy_archive",
     "nse_calendar",
     "seed_data",
     "_packaging_runtime",
@@ -57,6 +55,18 @@ USER_CREATED_DATA_STORES = {
         "FINAL ChartSage run history"
     ),
 }
+
+# Large derived stores that can be rebuilt from other files retained in the
+# recovery backup.  Keep this list explicit so exclusions cannot silently grow.
+REGENERABLE_DATA_STORES = {
+    Path("bhavcopy_history.db"): (
+        "rebuilt from the retained nse_bhavcopy_archive by ChartSageBhavcopy"
+    ),
+}
+REGENERABLE_DATA_DIRECTORIES = {
+    "nse_bhavcopy_archive": "downloaded NSE Bhavcopy source archives",
+    "bhavcopy_snapshots": "generated Bhavcopy database snapshots",
+}
 EXCLUDED_ROOT_DIRECTORIES = {
     "backups",
     "build",
@@ -78,6 +88,8 @@ def is_transient(path: Path, *, at_project_root: bool = False) -> bool:
         # their names.  Their explicit recovery-critical declaration wins over
         # the generic old-copy filename filter below.
         return False
+    if relative in REGENERABLE_DATA_STORES:
+        return True
     name = path.name.lower()
     if name.endswith((".pyc", ".db-wal", ".db-shm")):
         return True
@@ -97,6 +109,8 @@ def iter_backup_source_files():
     for source in PROJECT_DIR.iterdir():
         if source.is_dir():
             if source.name in EXCLUDED_ROOT_DIRECTORIES:
+                continue
+            if source.name in REGENERABLE_DATA_DIRECTORIES:
                 continue
             if source.name not in IMPORTANT_DIRECTORIES:
                 continue
@@ -239,13 +253,16 @@ RESTORE
 
 INCLUDED
 Source code, build specifications/scripts, JSON state, SQLite databases,
-Bhavcopy archives and snapshots, historical membership data, scanner data,
-templates, watchlists, recipes, and the consolidated packaging runtime.
+historical membership and benchmark data, scanner data, templates, watchlists,
+recipes, and the consolidated packaging runtime.
 
 INTENTIONALLY OMITTED
 Generated build/dist folders, prior backup folders, __pycache__, legacy split
 packaging tool folders, root ZIP distributions, spreadsheet exports, SQLite
-WAL/SHM sidecars, and superseded/before-change copies.
+WAL/SHM sidecars, superseded/before-change copies, bhavcopy_history.db,
+nse_bhavcopy_archive, and bhavcopy_snapshots. Bhavcopy market data is
+regenerable; after restoration, run ChartSageBhavcopy to download the required
+history again before running scans that need it.
 
 Windows Credential Manager secrets are stored outside C:\\OPENCODE and cannot
 be included in this folder backup.

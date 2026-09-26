@@ -104,28 +104,30 @@ historical data, and the required packaging runtime. Copy the completed backup
 folder to an external drive or encrypted cloud location; a backup left only on
 the same SSD does not protect against that SSD failing. Windows Credential
 Manager secrets are intentionally not exported and must be configured again
-on a restored PC. Use `build_portable_bundle.py` when an explicitly requested,
-validated portable Windows distribution is required.
+on a restored PC. Regenerable Bhavcopy market data is intentionally omitted,
+including `bhavcopy_history.db`, `nse_bhavcopy_archive`, and
+`bhavcopy_snapshots`. After restoration, run ChartSageBhavcopy to download the
+required market history again before using scans that depend on it. Use
+`build_portable_bundle.py` when an explicitly requested, validated portable
+Windows distribution is required.
 
 ## Updating GitHub after future changes
 
-Run the interactive safety helper from PowerShell in this folder:
+Run the automatic safety helper from PowerShell in this folder:
 
 ```powershell
 python update_github.py
 ```
 
-The helper reviews the staged source changes, checks them for likely private
-data, and proposes an appropriate commit message. Press Enter to accept the
-suggestion; you can still type a replacement when desired. Commit and push each
-retain their own explicit confirmation.
-
-It shows the changed and staged files, checks for common private-data mistakes,
-and requires confirmation before committing and pushing. It respects
-`.gitignore`. After commit confirmation, it must successfully create and verify
-a complete recovery backup before it is allowed to commit or push. GitHub
-still receives only safe source-controlled files; private/live operational data
-remains in the separate recovery backup, which must be copied off the SSD.
+The helper detects and stages Git-eligible source changes, displays the selected
+files and summary, checks for likely private data, generates an appropriate
+conventional commit message, creates and verifies the complete recovery backup,
+then commits and pushes automatically. A custom commit message can still be
+supplied as its optional command-line argument. It stops without committing if
+there are pre-existing staged files, suspected credentials, or any backup or
+Git error. It respects `.gitignore`. GitHub still receives only safe
+source-controlled files; private/live operational data remains in the separate
+recovery backup, which must be copied off the SSD.
 
 ## Safety
 
