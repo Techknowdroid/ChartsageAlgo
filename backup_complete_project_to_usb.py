@@ -1,10 +1,13 @@
-"""Create a verified, restorable copy of the complete ChartSage project.
+"""Create a verified, incrementally updated copy of the ChartSage project.
 
 The destination must be on a different drive from this source folder. The
-backup includes source code, Git history, databases, downloaded market data,
-user-created data, build/runtime assets, distributions, reports, and project
-configuration. Only redundant prior backups and transient cache/lock files are
-omitted.
+default target is a directly usable ``ChartSage_COMPLETE_Project_CURRENT``
+mirror.  The first run copies the complete project; later runs verify and reuse
+unchanged files and copy only new or changed content.  A separate timestamped
+full snapshot remains available on request.  Backups include source code, Git
+history, databases, downloaded market data, user-created data, build/runtime
+assets, distributions, reports, and project configuration. Only redundant
+prior backups and transient cache/lock files are omitted.
 """
 
 from __future__ import annotations
@@ -17,6 +20,7 @@ import shutil
 import sqlite3
 import subprocess
 import sys
+import tempfile
 import time
 from contextlib import closing
 from dataclasses import dataclass
@@ -27,6 +31,10 @@ from typing import Callable
 
 PROJECT_DIR = Path(__file__).resolve().parent
 BACKUP_PREFIX = "ChartSage_COMPLETE_Project"
+SMART_BACKUP_NAME = f"{BACKUP_PREFIX}_CURRENT"
+BACKUP_MARKER_FILE = ".chartsage_complete_backup.json"
+BACKUP_STATE_FILE = "BACKUP_STATE.json"
+BACKUP_FORMAT_VERSION = 2
 EXCLUDED_TOP_LEVEL_DIRECTORIES = {"backups"}
 EXCLUDED_DIRECTORY_NAMES = {"__pycache__", ".pytest_cache", ".mypy_cache"}
 EXCLUDED_RELATIVE_FILES = {
@@ -201,6 +209,147 @@ def _sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _load_json_object(path: Path) -> dict:
+    if not path.is_file():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _load_manifest(path: Path) -> dict[str, str]:
+    records: dict[str, str] = {}
+    if not path.is_file():
+        return records
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return records
+    for line in lines:
+        digest, separator, relative = line.partition("  ")
+        if separator and len(digest) == 64 and relative:
+            records[relative] = digest.casefold()
+    return records
+
+
+def _source_fingerprint(path: Path) -> dict[str, int]:
+    """Return stable source metadata, including a SQLite WAL when present."""
+    stat = path.stat()
+    fingerprint = {"size": stat.st_size, "mtime_ns": stat.st_mtime_ns}
+    if path.suffix.lower() in SQLITE_SUFFIXES:
+        wal_path = Path(f"{path}-wal")
+        if wal_path.is_file():
+            wal_stat = wal_path.stat()
+            fingerprint.update({
+                "wal_size": wal_stat.st_size,
+                "wal_mtime_ns": wal_stat.st_mtime_ns,
+            })
+    return fingerprint
+
+
+def _write_json_atomically(path: Path, payload: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=".chartsage-metadata-", dir=path.parent
+    )
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            json.dump(payload, handle, indent=2)
+            handle.write("\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary_name, path)
+    finally:
+        temporary = Path(temporary_name)
+        if temporary.exists():
+            temporary.unlink()
+
+
+def _validate_managed_target(target: Path) -> None:
+    """Refuse to incrementally alter an unmarked or foreign directory."""
+    marker = _load_json_object(target / BACKUP_MARKER_FILE)
+    if (
+        marker.get("backup_type") != "chartsage_complete_project"
+        or int(marker.get("format_version", 0) or 0) != BACKUP_FORMAT_VERSION
+    ):
+        raise CompleteBackupError(
+            f"Refusing to update unrecognised backup directory: {target}. "
+            f"Expected a valid {BACKUP_MARKER_FILE} marker."
+        )
+
+
+def _write_backup_marker(target: Path) -> None:
+    marker = {
+        "backup_type": "chartsage_complete_project",
+        "format_version": BACKUP_FORMAT_VERSION,
+        "managed_incremental_mirror": target.name == SMART_BACKUP_NAME,
+    }
+    _write_json_atomically(target / BACKUP_MARKER_FILE, marker)
+
+
+def _safe_managed_path(target: Path, relative_text: str) -> Path:
+    relative = Path(str(relative_text))
+    if relative.is_absolute() or ".." in relative.parts:
+        raise CompleteBackupError(
+            f"Unsafe relative path in prior backup state: {relative_text!r}"
+        )
+    candidate = (target / relative).resolve()
+    try:
+        candidate.relative_to(target.resolve())
+    except ValueError as exc:
+        raise CompleteBackupError(
+            f"Prior backup state points outside its target: {relative_text!r}"
+        ) from exc
+    return candidate
+
+
+def _copy_file_atomically(source: Path, destination: Path) -> str:
+    """Copy one source through a same-volume temporary file and return its hash."""
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=".chartsage-copy-", dir=destination.parent
+    )
+    os.close(descriptor)
+    temporary = Path(temporary_name)
+    try:
+        if source.suffix.lower() in SQLITE_SUFFIXES:
+            _copy_sqlite_database(source, temporary)
+        else:
+            _copy_regular_file_consistently(source, temporary)
+            source_digest = _sha256(source)
+            copied_digest = _sha256(temporary)
+            if source_digest != copied_digest:
+                raise CompleteBackupError(
+                    f"Copied file checksum mismatch: {source}"
+                )
+        digest = _sha256(temporary)
+        os.replace(temporary, destination)
+        return digest
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+
+
+def _reuse_verified_file(
+    destination: Path,
+    prior_digest: str,
+    current_fingerprint: dict[str, int],
+    prior_fingerprint: object,
+) -> str | None:
+    """Return the verified digest when source metadata is unchanged."""
+    if (
+        not prior_digest
+        or not destination.is_file()
+        or not isinstance(prior_fingerprint, dict)
+        or current_fingerprint != prior_fingerprint
+    ):
+        return None
+    actual = _sha256(destination)
+    return actual if actual.casefold() == prior_digest.casefold() else None
+
+
 def format_bytes(value: int) -> str:
     amount = float(value)
     for unit in ("bytes", "KiB", "MiB", "GiB", "TiB"):
@@ -221,6 +370,13 @@ continued development in Visual Studio Code. It contains the Git repository,
 source code, user templates/rules/strategies/watchlists, SQLite databases,
 Bhavcopy data and archives, build/runtime assets, distributions, reports, and
 project configuration that existed when the backup was created.
+
+SMART UPDATES
+The default CURRENT backup is updated incrementally. Unchanged files are
+checksum-verified and reused; only new or changed files and consistent SQLite
+copies are written again. Files previously managed by this backup that were
+removed from the source project are also removed from CURRENT. BACKUP_COMPLETE
+is written only after the complete updated mirror passes verification.
 
 RESTORE ON ANOTHER PC
 1. You may open this backup folder directly from the writable external drive in
@@ -248,7 +404,11 @@ BACKUP_COMPLETE.txt is written only after all copied files pass verification.
     (target / "RESTORE_INSTRUCTIONS.txt").write_text(text, encoding="utf-8")
 
 
-def _create_and_verify_manifest(target: Path, progress: ProgressCallback) -> int:
+def _create_and_verify_manifest(
+    target: Path,
+    progress: ProgressCallback,
+    known_digests: dict[str, str] | None = None,
+) -> int:
     manifest_path = target / "BACKUP_MANIFEST.sha256"
     complete_path = target / "BACKUP_COMPLETE.txt"
     paths = [
@@ -257,11 +417,14 @@ def _create_and_verify_manifest(target: Path, progress: ProgressCallback) -> int
         if path.is_file() and path not in {manifest_path, complete_path}
     ]
     paths.sort(key=lambda item: item.relative_to(target).as_posix().casefold())
+    verified_digests = known_digests or {}
     records: list[tuple[str, str]] = []
     for index, path in enumerate(paths, 1):
         if index == 1 or index % 250 == 0 or index == len(paths):
             progress(f"Checksumming files: {index:,}/{len(paths):,}")
-        records.append((_sha256(path), path.relative_to(target).as_posix()))
+        relative = path.relative_to(target).as_posix()
+        digest = verified_digests.get(relative) or _sha256(path)
+        records.append((digest, relative))
     manifest_path.write_text(
         "".join(f"{digest}  {relative}\n" for digest, relative in records),
         encoding="utf-8",
@@ -270,6 +433,11 @@ def _create_and_verify_manifest(target: Path, progress: ProgressCallback) -> int
     for index, (expected, relative) in enumerate(records, 1):
         if index == 1 or index % 250 == 0 or index == len(records):
             progress(f"Verifying checksums: {index:,}/{len(records):,}")
+        # Source files were already checksummed either after their atomic copy
+        # or while proving that the prior target copy was still intact. Avoid
+        # reading multi-gigabyte unchanged files from the external drive twice.
+        if relative in verified_digests:
+            continue
         actual = _sha256(target / Path(relative))
         if actual != expected:
             raise CompleteBackupError(f"Checksum mismatch: {relative}")
@@ -302,8 +470,9 @@ def create_complete_backup(
     stamp: str | None = None,
     progress: ProgressCallback = print,
     inventory: SourceInventory | None = None,
+    new_snapshot: bool = False,
 ) -> Path:
-    """Create, verify, and return a complete external project backup folder."""
+    """Create or incrementally update a verified external project backup."""
     source_root = source_root.resolve()
     destination_parent = validate_destination(
         destination_parent,
@@ -313,43 +482,132 @@ def create_complete_backup(
     if inventory is None:
         progress("Building complete project inventory...")
         inventory = build_source_inventory(source_root)
-    required_headroom = max(64 * 1024 * 1024, inventory.total_bytes // 50)
+    if new_snapshot or stamp:
+        stamp = stamp or datetime.now().strftime("%Y%m%d_%H%M%S")
+        target = destination_parent / f"{BACKUP_PREFIX}_{stamp}"
+        if target.exists():
+            raise CompleteBackupError(
+                f"Refusing to overwrite existing snapshot: {target}"
+            )
+        target.mkdir(parents=True)
+        incremental_update = False
+    else:
+        target = destination_parent / SMART_BACKUP_NAME
+        incremental_update = target.exists()
+        if incremental_update:
+            _validate_managed_target(target)
+        else:
+            target.mkdir(parents=True)
+    if not incremental_update:
+        _write_backup_marker(target)
+
+    prior_state = _load_json_object(target / BACKUP_STATE_FILE)
+    prior_manifest = _load_manifest(target / "BACKUP_MANIFEST.sha256")
+    source_files = {relative.as_posix() for relative in inventory.files}
+    prior_metadata = prior_state.get("source_file_metadata", {})
+    if not isinstance(prior_metadata, dict):
+        prior_metadata = {}
+    source_metadata = {
+        relative.as_posix(): _source_fingerprint(source_root / relative)
+        for relative in inventory.files
+    }
+    estimated_copy_bytes = 0
+    for relative in inventory.files:
+        source = source_root / relative
+        destination = target / relative
+        relative_text = relative.as_posix()
+        if not (
+            destination.is_file()
+            and source_metadata[relative_text] == prior_metadata.get(relative_text)
+        ):
+            estimated_copy_bytes += source_metadata[relative_text]["size"]
+    required_headroom = max(64 * 1024 * 1024, estimated_copy_bytes // 50)
     free_bytes = shutil.disk_usage(destination_parent).free
-    if free_bytes < inventory.total_bytes + required_headroom:
+    if free_bytes < estimated_copy_bytes + required_headroom:
         raise CompleteBackupError(
-            "The selected drive does not have enough free space. "
-            f"Required approximately {inventory.total_bytes + required_headroom:,} "
+            "The selected drive does not have enough free space for changed files. "
+            f"Required approximately {estimated_copy_bytes + required_headroom:,} "
             f"bytes; available {free_bytes:,} bytes."
         )
 
-    stamp = stamp or datetime.now().strftime("%Y%m%d_%H%M%S")
-    target = destination_parent / f"{BACKUP_PREFIX}_{stamp}"
-    if target.exists():
-        raise CompleteBackupError(f"Refusing to overwrite existing backup: {target}")
-    target.mkdir(parents=True)
-
     started = datetime.now()
+    copied_files = 0
+    reused_files = 0
+    removed_files = 0
+    known_digests: dict[str, str] = {}
     try:
+        for status_name in ("BACKUP_COMPLETE.txt", "BACKUP_FAILED.txt"):
+            status_path = target / status_name
+            if status_path.exists():
+                status_path.unlink()
+
         for relative in inventory.directories:
             (target / relative).mkdir(parents=True, exist_ok=True)
 
         file_total = len(inventory.files)
         for index, relative in enumerate(inventory.files, 1):
             if index == 1 or index % 100 == 0 or index == file_total:
-                progress(f"Copying files: {index:,}/{file_total:,} - {relative}")
+                progress(f"Processing files: {index:,}/{file_total:,} - {relative}")
             source = source_root / relative
             destination = target / relative
-            if source.suffix.lower() in SQLITE_SUFFIXES:
-                _copy_sqlite_database(source, destination)
+            relative_text = relative.as_posix()
+            reusable_digest = _reuse_verified_file(
+                destination,
+                prior_manifest.get(relative_text, ""),
+                source_metadata[relative_text],
+                prior_metadata.get(relative_text),
+            )
+            if reusable_digest:
+                reused_files += 1
+                known_digests[relative_text] = reusable_digest
             else:
-                _copy_regular_file_consistently(source, destination)
+                known_digests[relative_text] = _copy_file_atomically(
+                    source, destination
+                )
+                copied_files += 1
+
+        if incremental_update:
+            prior_source_files = prior_state.get("source_files", [])
+            if not isinstance(prior_source_files, list):
+                prior_source_files = []
+            for relative_text in prior_source_files:
+                clean_relative = str(relative_text)
+                if clean_relative in source_files:
+                    continue
+                retired = _safe_managed_path(target, clean_relative)
+                if retired.is_file():
+                    retired.unlink()
+                    removed_files += 1
+
+            prior_directories = prior_state.get("source_directories", [])
+            if isinstance(prior_directories, list):
+                for relative_text in sorted(
+                    (str(value) for value in prior_directories),
+                    key=lambda value: (value.count("/"), value.casefold()),
+                    reverse=True,
+                ):
+                    retired_dir = _safe_managed_path(target, relative_text)
+                    if retired_dir.is_dir():
+                        try:
+                            retired_dir.rmdir()
+                        except OSError:
+                            pass
 
         _write_restore_instructions(target, source_root)
         summary = {
-            "backup_type": "complete_external_project",
+            "backup_type": (
+                "complete_external_project_incremental_mirror"
+                if not new_snapshot and stamp is None
+                else "complete_external_project_snapshot"
+            ),
+            "format_version": BACKUP_FORMAT_VERSION,
             "created_at": datetime.now().astimezone().isoformat(),
             "source": str(source_root),
             "destination": str(target),
+            "incremental_update": incremental_update,
+            "copied_or_refreshed_files": copied_files,
+            "reused_verified_files": reused_files,
+            "removed_retired_files": removed_files,
             "source_file_count": len(inventory.files),
             "source_directory_count": len(inventory.directories),
             "source_bytes_before_sqlite_compaction": inventory.total_bytes,
@@ -360,21 +618,40 @@ def create_complete_backup(
                 EXCLUDED_DIRECTORY_NAMES
             ),
         }
-        (target / "BACKUP_SUMMARY.json").write_text(
-            json.dumps(summary, indent=2) + "\n", encoding="utf-8"
+        _write_json_atomically(target / "BACKUP_SUMMARY.json", summary)
+        state = {
+            "format_version": BACKUP_FORMAT_VERSION,
+            "source_files": sorted(source_files, key=str.casefold),
+            "source_file_metadata": source_metadata,
+            "source_directories": [
+                relative.as_posix() for relative in inventory.directories
+            ],
+            "last_completed_at": datetime.now().astimezone().isoformat(),
+        }
+        _write_json_atomically(target / BACKUP_STATE_FILE, state)
+        manifest_files = _create_and_verify_manifest(
+            target, progress, known_digests
         )
-        manifest_files = _create_and_verify_manifest(target, progress)
         git_result = _verify_git_repository(target)
         elapsed = datetime.now() - started
         complete_text = (
             "COMPLETE AND VERIFIED\n"
             f"Completed: {datetime.now():%d %B %Y %H:%M:%S}\n"
             f"Manifest files: {manifest_files:,}\n"
+            f"Copied/refreshed files: {copied_files:,}\n"
+            f"Reused verified files: {reused_files:,}\n"
+            f"Removed retired files: {removed_files:,}\n"
             f"Git verification: {git_result}\n"
             f"Elapsed: {elapsed}\n"
         )
         (target / "BACKUP_COMPLETE.txt").write_text(
             complete_text, encoding="utf-8"
+        )
+        progress(
+            "Smart backup result: "
+            f"{copied_files:,} copied/refreshed, "
+            f"{reused_files:,} unchanged files reused, "
+            f"{removed_files:,} retired files removed."
         )
         progress(f"Complete verified backup ready: {target}")
         return target
@@ -430,6 +707,14 @@ def parse_arguments() -> argparse.Namespace:
         action="store_true",
         help="skip the final BACKUP confirmation prompt",
     )
+    parser.add_argument(
+        "--new-snapshot",
+        action="store_true",
+        help=(
+            "create a separate timestamped full snapshot instead of updating "
+            f"{SMART_BACKUP_NAME}"
+        ),
+    )
     return parser.parse_args()
 
 
@@ -446,6 +731,13 @@ def main() -> int:
     print(f"Destination: {destination}")
     print(f"Files:       {len(inventory.files):,}")
     print(f"Data size:   {format_bytes(inventory.total_bytes)}")
+    if arguments.new_snapshot:
+        print("Mode:        New independent timestamped full snapshot")
+    else:
+        print(
+            f"Mode:        Smart incremental mirror ({SMART_BACKUP_NAME}); "
+            "unchanged verified files are reused"
+        )
     print(
         "Close ChartSage applications before continuing so ordinary JSON and "
         "configuration files remain unchanged during the copy."
@@ -459,7 +751,11 @@ def main() -> int:
         if confirmation.strip().casefold() != "backup":
             print("Backup cancelled.")
             return 0
-    target = create_complete_backup(destination, inventory=inventory)
+    target = create_complete_backup(
+        destination,
+        inventory=inventory,
+        new_snapshot=arguments.new_snapshot,
+    )
     print(f"\nSUCCESS: {target}")
     print("Open RESTORE_INSTRUCTIONS.txt inside that folder for recovery steps.")
     return 0

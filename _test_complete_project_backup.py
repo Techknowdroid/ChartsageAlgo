@@ -89,6 +89,109 @@ class CompleteProjectBackupTests(unittest.TestCase):
             with self.assertRaises(complete_backup.CompleteBackupError):
                 complete_backup.validate_destination(destination, source)
 
+    def test_smart_backup_reuses_unchanged_and_updates_changed_files(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_name:
+            base = Path(temporary_name)
+            source = base / "project"
+            destination = base / "usb"
+            source.mkdir()
+            destination.mkdir()
+            self._make_project(source)
+            with mock.patch.object(
+                complete_backup, "_verify_git_repository", return_value="test passed"
+            ):
+                first = complete_backup.create_complete_backup(
+                    destination,
+                    source_root=source,
+                    require_different_drive=False,
+                    progress=lambda _message: None,
+                )
+                first_summary = json.loads(
+                    (first / "BACKUP_SUMMARY.json").read_text(encoding="utf-8")
+                )
+                # Destination timestamp precision differs across NTFS/exFAT.
+                # Reuse is based on recorded source metadata plus checksums.
+                (first / "source.py").touch()
+                second = complete_backup.create_complete_backup(
+                    destination,
+                    source_root=source,
+                    require_different_drive=False,
+                    progress=lambda _message: None,
+                )
+                second_summary = json.loads(
+                    (second / "BACKUP_SUMMARY.json").read_text(encoding="utf-8")
+                )
+
+                (source / "source.py").write_text(
+                    "print('changed')\n", encoding="utf-8"
+                )
+                (source / "scanner_templates.json").unlink()
+                (source / "new_file.txt").write_text("new\n", encoding="utf-8")
+                database = sqlite3.connect(source / "watchlists.db")
+                try:
+                    database.execute("INSERT INTO lists VALUES('New Watchlist')")
+                    database.commit()
+                finally:
+                    database.close()
+                third = complete_backup.create_complete_backup(
+                    destination,
+                    source_root=source,
+                    require_different_drive=False,
+                    progress=lambda _message: None,
+                )
+                third_summary = json.loads(
+                    (third / "BACKUP_SUMMARY.json").read_text(encoding="utf-8")
+                )
+
+            self.assertEqual(first, second)
+            self.assertEqual(second, third)
+            self.assertEqual(first.name, complete_backup.SMART_BACKUP_NAME)
+            self.assertFalse(first_summary["incremental_update"])
+            self.assertTrue(second_summary["incremental_update"])
+            self.assertGreater(second_summary["reused_verified_files"], 0)
+            self.assertEqual(second_summary["copied_or_refreshed_files"], 0)
+            self.assertEqual(
+                (third / "source.py").read_text(encoding="utf-8"),
+                "print('changed')\n",
+            )
+            self.assertEqual(
+                (third / "new_file.txt").read_text(encoding="utf-8"), "new\n"
+            )
+            self.assertFalse((third / "scanner_templates.json").exists())
+            self.assertEqual(third_summary["removed_retired_files"], 1)
+            self.assertTrue((third / "BACKUP_COMPLETE.txt").is_file())
+            database = sqlite3.connect(third / "watchlists.db")
+            try:
+                names = database.execute(
+                    "SELECT name FROM lists ORDER BY name"
+                ).fetchall()
+            finally:
+                database.close()
+            self.assertEqual(names, [("My Watchlist",), ("New Watchlist",)])
+
+    def test_smart_backup_refuses_unmarked_existing_current_folder(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_name:
+            base = Path(temporary_name)
+            source = base / "project"
+            destination = base / "usb"
+            source.mkdir()
+            destination.mkdir()
+            self._make_project(source)
+            foreign = destination / complete_backup.SMART_BACKUP_NAME
+            foreign.mkdir()
+            (foreign / "do_not_touch.txt").write_text("personal", encoding="utf-8")
+            with self.assertRaises(complete_backup.CompleteBackupError):
+                complete_backup.create_complete_backup(
+                    destination,
+                    source_root=source,
+                    require_different_drive=False,
+                    progress=lambda _message: None,
+                )
+            self.assertEqual(
+                (foreign / "do_not_touch.txt").read_text(encoding="utf-8"),
+                "personal",
+            )
+
 
 if __name__ == "__main__":
     unittest.main()
