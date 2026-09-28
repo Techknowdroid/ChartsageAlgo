@@ -304,6 +304,162 @@ class FinalWatchlistAutonamingTests(unittest.TestCase):
             window.close()
             app.processEvents()
 
+    def test_latest_run_private_and_published_watchlists_use_distinct_highlights(self):
+        catalog = {
+            "Generated Private": ("FINALCHARTINK WATCHLIST", ["AAA"]),
+            "FINALCHARTINK Generated Private": (
+                "CHARTSAGE WATCHLIST", ["AAA"]
+            ),
+            "Older List": ("FINALCHARTINK WATCHLIST", ["BBB"]),
+            "NIFTY 500": ("UNIVERSE", object()),
+        }
+        app = module.QApplication.instance() or module.QApplication([])
+        with (
+            patch.object(module, "finalchartink_source_catalog", return_value=catalog),
+            patch.object(
+                module,
+                "sync_finalchartink_watchlist_metadata",
+                return_value={},
+            ),
+        ):
+            window = module.FinalChartInkWindow()
+            try:
+                window._latest_run_private_watchlists = {"Generated Private"}
+                window._latest_run_published_watchlists = {
+                    "FINALCHARTINK Generated Private"
+                }
+                window._refresh_source_catalog()
+
+                def item_named(widget, name):
+                    for index in range(widget.count()):
+                        item = widget.item(index)
+                        if item.data(module.Qt.ItemDataRole.UserRole) == name:
+                            return item
+                    self.fail(f"Missing source item {name}")
+
+                for widget in (
+                    window.source_watchlist_list,
+                    window.final_watchlist_list,
+                ):
+                    private_item = item_named(widget, "Generated Private")
+                    published_item = item_named(
+                        widget, "FINALCHARTINK Generated Private"
+                    )
+                    older_item = item_named(widget, "Older List")
+                    self.assertEqual(
+                        private_item.background().color().name().upper(),
+                        module.LATEST_RUN_PRIVATE_WATCHLIST_COLOR,
+                    )
+                    self.assertEqual(
+                        published_item.background().color().name().upper(),
+                        module.LATEST_RUN_PUBLISHED_WATCHLIST_COLOR,
+                    )
+                    self.assertIn("Generated or refreshed privately", private_item.toolTip())
+                    self.assertIn("Published to ChartSage", published_item.toolTip())
+                    self.assertEqual(
+                        older_item.background().style(),
+                        module.Qt.BrushStyle.NoBrush,
+                    )
+
+                priority = module.finalchartink_watchlist_highlight(
+                    "Same Name",
+                    "FINALCHARTINK WATCHLIST",
+                    {"Same Name"},
+                    {"Same Name"},
+                )
+                self.assertEqual(
+                    priority[0], module.LATEST_RUN_PUBLISHED_WATCHLIST_COLOR
+                )
+
+                window._clear_latest_watchlist_highlights()
+                self.assertFalse(window._latest_run_private_watchlists)
+                self.assertFalse(window._latest_run_published_watchlists)
+                for widget in (
+                    window.source_watchlist_list,
+                    window.final_watchlist_list,
+                ):
+                    self.assertEqual(
+                        item_named(widget, "Generated Private").background().style(),
+                        module.Qt.BrushStyle.NoBrush,
+                    )
+                    self.assertEqual(
+                        item_named(
+                            widget, "FINALCHARTINK Generated Private"
+                        ).background().style(),
+                        module.Qt.BrushStyle.NoBrush,
+                    )
+            finally:
+                window.close()
+                app.processEvents()
+
+    def test_cycle_highlight_names_include_base_snapshots_and_published_copies(self):
+        config = module.normalize_finalchartink_recipe({
+            "multirule_watchlist": "S1 Result",
+            "final_input_watchlist": "Final Input",
+            "buy_results_watchlist": "Buy Result",
+            "exit_results_watchlist": "Exit Result",
+        })
+        private_names, published_names = (
+            module.finalchartink_cycle_watchlist_highlight_names({
+                "config": config,
+                "historical_mode": False,
+                "timestamped_watchlists": [{"name": "Buy Result 20260928_120000"}],
+                "chartsage_published_watchlists": [
+                    {"published_name": "FINALCHARTSAGE Buy Result"}
+                ],
+            })
+        )
+        self.assertEqual(
+            private_names,
+            {
+                "S1 Result",
+                "Final Input",
+                "Buy Result",
+                "Exit Result",
+                "Buy Result 20260928_120000",
+            },
+        )
+        self.assertEqual(published_names, {"FINALCHARTSAGE Buy Result"})
+        self.assertEqual(
+            module.finalchartink_cycle_watchlist_highlight_names({
+                "config": config,
+                "historical_mode": True,
+            }),
+            (set(), set()),
+        )
+
+    def test_private_watchlist_manager_has_two_draggable_resizable_panes(self):
+        class MemoryStore:
+            def load(self):
+                return {
+                    "A long generated watchlist name": ["AAA", "BBB"],
+                    "Another watchlist": ["CCC"],
+                }
+
+        app = module.QApplication.instance() or module.QApplication([])
+        dialog = module.FinalChartInkPrivateWatchlistDialog(MemoryStore())
+        try:
+            dialog.resize(1000, 600)
+            dialog.show()
+            app.processEvents()
+            splitter = dialog.watchlist_splitter
+            self.assertEqual(splitter.count(), 2)
+            self.assertFalse(splitter.childrenCollapsible())
+            self.assertGreaterEqual(splitter.handleWidth(), 8)
+
+            splitter.setSizes([700, 250])
+            app.processEvents()
+            left_wide = splitter.sizes()
+            splitter.setSizes([250, 700])
+            app.processEvents()
+            right_wide = splitter.sizes()
+            self.assertGreater(left_wide[0], right_wide[0])
+            self.assertLess(left_wide[1], right_wide[1])
+            self.assertGreater(splitter.handle(1).toolTip().strip(), "")
+        finally:
+            dialog.close()
+            app.processEvents()
+
 
 if __name__ == "__main__":
     unittest.main()

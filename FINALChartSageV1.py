@@ -22459,6 +22459,36 @@ def _watchlist_metadata_key(kind: str, name: str) -> str:
     return json.dumps([str(kind), str(name)], ensure_ascii=False, separators=(",", ":"))
 
 
+LATEST_RUN_PRIVATE_WATCHLIST_COLOR = "#FFE4B5"
+LATEST_RUN_PUBLISHED_WATCHLIST_COLOR = "#D9F2D9"
+
+
+def finalchartink_watchlist_highlight(
+    name: str,
+    kind: str,
+    latest_private_names: Iterable[str] = (),
+    latest_published_names: Iterable[str] = (),
+) -> tuple[str, str] | None:
+    """Return the current-cycle Step 2 highlight colour and accessible label."""
+    clean_name = str(name)
+    clean_kind = str(kind)
+    published = {str(value) for value in latest_published_names}
+    private = {str(value) for value in latest_private_names}
+    # Green deliberately wins if one visible catalogue row ever represents
+    # both the generated and published state.
+    if clean_kind != "UNIVERSE" and clean_name in published:
+        return (
+            LATEST_RUN_PUBLISHED_WATCHLIST_COLOR,
+            "Published to ChartSage in the latest run/publish operation",
+        )
+    if clean_kind == "FINALCHARTINK WATCHLIST" and clean_name in private:
+        return (
+            LATEST_RUN_PRIVATE_WATCHLIST_COLOR,
+            "Generated or refreshed privately by the latest run",
+        )
+    return None
+
+
 def _watchlist_symbol_digest(symbols: Iterable[str]) -> str:
     normalized = sorted({
         str(symbol).strip().upper()
@@ -22610,6 +22640,27 @@ def finalchartink_recipe_watchlist_names(config: dict[str, Any]) -> list[str]:
         )
         if str(name).strip()
     ))
+
+
+def finalchartink_cycle_watchlist_highlight_names(
+    payload: dict[str, Any],
+) -> tuple[set[str], set[str]]:
+    """Return private and published catalogue names produced by a live cycle."""
+    if bool(payload.get("historical_mode", False)):
+        return set(), set()
+    completed_config = normalize_finalchartink_recipe(payload.get("config", {}))
+    private_names = set(finalchartink_recipe_watchlist_names(completed_config))
+    private_names.update(
+        str(item.get("name", "")).strip()
+        for item in payload.get("timestamped_watchlists", []) or []
+        if str(item.get("name", "")).strip()
+    )
+    published_names = {
+        str(item.get("published_name", "")).strip()
+        for item in payload.get("chartsage_published_watchlists", []) or []
+        if str(item.get("published_name", "")).strip()
+    }
+    return private_names, published_names
 
 
 def build_finalchartink_timestamped_watchlists(
@@ -25787,7 +25838,8 @@ class FinalChartInkPrivateWatchlistDialog(QDialog):
         self.watchlists = self.store.load()
         self.changed = False
         self.setWindowTitle("Manage FINAL ChartSage Private Watchlists")
-        self.resize(850, 520)
+        self.resize(1100, 650)
+        self.setMinimumSize(700, 400)
 
         layout = QVBoxLayout(self)
         warning = QLabel(
@@ -25802,8 +25854,19 @@ class FinalChartInkPrivateWatchlistDialog(QDialog):
         )
         layout.addWidget(warning)
 
-        panes = QSplitter(Qt.Orientation.Horizontal)
+        self.watchlist_splitter = QSplitter(Qt.Orientation.Horizontal)
+        self.watchlist_splitter.setChildrenCollapsible(False)
+        self.watchlist_splitter.setOpaqueResize(True)
+        self.watchlist_splitter.setHandleWidth(10)
+        self.watchlist_splitter.setStyleSheet(
+            "QSplitter::handle:horizontal {"
+            " background:#b7c6bf; border-left:1px solid #71877c;"
+            " border-right:1px solid #71877c; margin:0 2px;"
+            "}"
+            "QSplitter::handle:horizontal:hover { background:#7fa08f; }"
+        )
         left = QWidget()
+        left.setMinimumWidth(220)
         left_layout = QVBoxLayout(left)
         left_layout.setContentsMargins(0, 0, 0, 0)
         left_layout.addWidget(QLabel("Private watchlists:"))
@@ -25813,9 +25876,10 @@ class FinalChartInkPrivateWatchlistDialog(QDialog):
         self.delete_list_btn = QPushButton("Delete Entire Watchlist…")
         self.delete_list_btn.clicked.connect(self._delete_watchlist)
         left_layout.addWidget(self.delete_list_btn)
-        panes.addWidget(left)
+        self.watchlist_splitter.addWidget(left)
 
         right = QWidget()
+        right.setMinimumWidth(300)
         right_layout = QVBoxLayout(right)
         right_layout.setContentsMargins(0, 0, 0, 0)
         self.symbol_heading = QLabel("Symbols")
@@ -25828,9 +25892,16 @@ class FinalChartInkPrivateWatchlistDialog(QDialog):
         self.delete_symbols_btn = QPushButton("Delete Selected Symbol(s)…")
         self.delete_symbols_btn.clicked.connect(self._delete_symbols)
         right_layout.addWidget(self.delete_symbols_btn)
-        panes.addWidget(right)
-        panes.setSizes([360, 490])
-        layout.addWidget(panes, 1)
+        self.watchlist_splitter.addWidget(right)
+        self.watchlist_splitter.setStretchFactor(0, 1)
+        self.watchlist_splitter.setStretchFactor(1, 2)
+        self.watchlist_splitter.setSizes([430, 650])
+        divider = self.watchlist_splitter.handle(1)
+        divider.setCursor(Qt.CursorShape.SplitHCursor)
+        divider.setToolTip(
+            "Drag left or right to resize the watchlist and symbol panes."
+        )
+        layout.addWidget(self.watchlist_splitter, 1)
 
         close_btn = QPushButton("Close")
         close_btn.clicked.connect(self.accept)
@@ -25967,6 +26038,8 @@ class FinalChartInkWindow(QMainWindow):
         self.automation_timer = QTimer(self)
         self.automation_timer.setSingleShot(True)
         self.automation_timer.timeout.connect(self._automation_tick)
+        self._latest_run_private_watchlists: set[str] = set()
+        self._latest_run_published_watchlists: set[str] = set()
         self._cycle_started_at: float | None = None
         self._cycle_elapsed_timer = QTimer(self)
         self._cycle_elapsed_timer.setInterval(1000)
@@ -26107,6 +26180,28 @@ class FinalChartInkWindow(QMainWindow):
         )
         source_actions.addWidget(self.manage_private_watchlists_btn)
         sources_layout.addLayout(source_actions)
+        highlight_legend = QHBoxLayout()
+        highlight_legend.addWidget(QLabel("Latest run highlights:"))
+        private_legend = QLabel(" Newly generated private list ")
+        private_legend.setStyleSheet(
+            f"background:{LATEST_RUN_PRIVATE_WATCHLIST_COLOR}; color:#5D3A00; "
+            "border:1px solid #D6A45B; padding:2px 6px;"
+        )
+        private_legend.setToolTip(
+            "Private FINAL ChartSage watchlist generated or refreshed by the latest run."
+        )
+        highlight_legend.addWidget(private_legend)
+        published_legend = QLabel(" Published ChartSage copy ")
+        published_legend.setStyleSheet(
+            f"background:{LATEST_RUN_PUBLISHED_WATCHLIST_COLOR}; color:#1B5E20; "
+            "border:1px solid #81C784; padding:2px 6px;"
+        )
+        published_legend.setToolTip(
+            "ChartSage watchlist copy published by the latest run or manual publish."
+        )
+        highlight_legend.addWidget(published_legend)
+        highlight_legend.addStretch(1)
+        sources_layout.addLayout(highlight_legend)
         source_split = QSplitter(Qt.Orientation.Horizontal)
 
         self.feeder_source_box = QGroupBox(
@@ -27244,6 +27339,28 @@ class FinalChartInkWindow(QMainWindow):
                         ),
                     )
                 )
+                highlight = finalchartink_watchlist_highlight(
+                    name,
+                    kind,
+                    self._latest_run_private_watchlists,
+                    self._latest_run_published_watchlists,
+                )
+                if highlight:
+                    color, description = highlight
+                    item.setBackground(QColor(color))
+                    tooltip = item.toolTip()
+                    note = (
+                        "<br/><br/><b>Latest run highlight:</b> "
+                        + html.escape(description)
+                    )
+                    item.setToolTip(
+                        tooltip[:-5] + note + "</qt>"
+                        if tooltip.endswith("</qt>")
+                        else tooltip + note
+                    )
+                    item.setData(
+                        Qt.ItemDataRole.AccessibleDescriptionRole, description
+                    )
                 item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
                 item.setCheckState(
                     Qt.CheckState.Checked
@@ -27268,6 +27385,13 @@ class FinalChartInkWindow(QMainWindow):
                 f"watchlist(s), {private_count} private FINAL ChartSage "
                 "watchlist(s), plus built-in universes."
             )
+
+    def _clear_latest_watchlist_highlights(self) -> None:
+        """Return previous-run rows to their default palette before a new cycle."""
+        self._latest_run_private_watchlists.clear()
+        self._latest_run_published_watchlists.clear()
+        if hasattr(self, "source_watchlist_list"):
+            self._refresh_source_catalog()
 
     def _show_source_details(self, item: QListWidgetItem) -> None:
         """Open a resizable, scrollable view instead of an oversized tooltip."""
@@ -27692,6 +27816,11 @@ class FinalChartInkWindow(QMainWindow):
         except (OSError, ValueError, WatchlistStoreError) as exc:
             QMessageBox.warning(self, "Publishing failed", str(exc))
             return
+        self._latest_run_published_watchlists.update(
+            str(item.get("published_name", "")).strip()
+            for item in result
+            if str(item.get("published_name", "")).strip()
+        )
         self._refresh_inputs()
         total_symbols = sum(int(item.get("symbols", 0) or 0) for item in result)
         self.status_label.setText(
@@ -27897,6 +28026,7 @@ class FinalChartInkWindow(QMainWindow):
                 "Full cycle cancelled before scanning; no watchlists were updated."
             )
             return
+        self._clear_latest_watchlist_highlights()
         self.progress.setValue(1)
         self.progress.setFormat("%p% — Preparing cycle…")
         self._cycle_started_at = _time.perf_counter()
@@ -28006,6 +28136,13 @@ class FinalChartInkWindow(QMainWindow):
             self.status_label.setText(
                 self.status_label.text()
                 + f" Created {len(timestamped)} timestamped watchlist snapshot(s)."
+            )
+        if not historical:
+            (
+                self._latest_run_private_watchlists,
+                self._latest_run_published_watchlists,
+            ) = finalchartink_cycle_watchlist_highlight_names(
+                payload
             )
         if (
             not historical
