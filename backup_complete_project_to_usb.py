@@ -160,7 +160,12 @@ def _copy_regular_file_consistently(source: Path, destination: Path) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
     for attempt in range(3):
         before = source.stat()
-        shutil.copy2(source, destination)
+        # copy2() propagates Windows' read-only attribute from packed Git
+        # object files to our temporary file. A read-only temporary cannot be
+        # atomically renamed or removed on some external drives. Content is
+        # what recovery requires; source timestamps are tracked separately in
+        # BACKUP_STATE.json for incremental-change detection.
+        shutil.copyfile(source, destination)
         after = source.stat()
         if (before.st_size, before.st_mtime_ns) == (
             after.st_size,
@@ -305,6 +310,46 @@ def _safe_managed_path(target: Path, relative_text: str) -> Path:
     return candidate
 
 
+def _unlink_backup_temporary(path: Path) -> None:
+    """Remove one utility-owned temporary, including a read-only remnant."""
+    if path.is_symlink():
+        path.unlink(missing_ok=True)
+        return
+    try:
+        path.chmod(0o600)
+    except OSError:
+        pass
+    path.unlink(missing_ok=True)
+
+
+def _prepare_managed_destination_for_replace(path: Path) -> None:
+    """Clear an old Windows read-only attribute before atomic replacement."""
+    if path.is_symlink():
+        path.unlink(missing_ok=True)
+        return
+    if not path.exists():
+        return
+    try:
+        path.chmod(0o600)
+    except OSError as exc:
+        raise CompleteBackupError(
+            f"Cannot make the prior managed backup file replaceable: {path}: {exc}"
+        ) from exc
+
+
+def _cleanup_interrupted_temporaries(target: Path) -> int:
+    """Remove only temporary files whose reserved names belong to this tool."""
+    removed = 0
+    for path in target.rglob("*"):
+        if not path.is_file() and not path.is_symlink():
+            continue
+        if not path.name.startswith((".chartsage-copy-", ".chartsage-metadata-")):
+            continue
+        _unlink_backup_temporary(path)
+        removed += 1
+    return removed
+
+
 def _copy_file_atomically(source: Path, destination: Path) -> str:
     """Copy one source through a same-volume temporary file and return its hash."""
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -325,11 +370,21 @@ def _copy_file_atomically(source: Path, destination: Path) -> str:
                     f"Copied file checksum mismatch: {source}"
                 )
         digest = _sha256(temporary)
-        os.replace(temporary, destination)
+        _prepare_managed_destination_for_replace(destination)
+        try:
+            os.replace(temporary, destination)
+        except PermissionError:
+            # Some Windows/external-drive combinations still reject replacing
+            # a formerly read-only target even after chmod. The new temporary
+            # has already been fully copied and checksummed, so remove only the
+            # known managed destination and retry the same-volume rename.
+            if destination.exists() or destination.is_symlink():
+                _unlink_backup_temporary(destination)
+            os.replace(temporary, destination)
         return digest
     finally:
         if temporary.exists():
-            temporary.unlink()
+            _unlink_backup_temporary(temporary)
 
 
 def _reuse_verified_file(
@@ -500,6 +555,12 @@ def create_complete_backup(
             target.mkdir(parents=True)
     if not incremental_update:
         _write_backup_marker(target)
+    cleaned_temporaries = _cleanup_interrupted_temporaries(target)
+    if cleaned_temporaries:
+        progress(
+            f"Cleaned {cleaned_temporaries:,} interrupted temporary file(s) "
+            "from the prior attempt."
+        )
 
     prior_state = _load_json_object(target / BACKUP_STATE_FILE)
     prior_manifest = _load_manifest(target / "BACKUP_MANIFEST.sha256")

@@ -10061,8 +10061,20 @@ class WatchlistManagerDialog(QDialog):
         left_box = QGroupBox("Custom Watchlists")
         left_box.setMinimumWidth(220)
         left_layout = QVBoxLayout(left_box)
+        selection_help = QLabel(
+            "Ctrl-click or Shift-click to select multiple watchlists for deletion."
+        )
+        selection_help.setWordWrap(True)
+        selection_help.setStyleSheet("color:#555; font-size:11px;")
+        left_layout.addWidget(selection_help)
         self.watchlist_list = QListWidget()
+        self.watchlist_list.setSelectionMode(
+            QAbstractItemView.SelectionMode.ExtendedSelection
+        )
         self.watchlist_list.currentTextChanged.connect(self._watchlist_selected)
+        self.watchlist_list.itemSelectionChanged.connect(
+            self._watchlist_selection_changed
+        )
         left_layout.addWidget(self.watchlist_list)
 
         left_buttons = QHBoxLayout()
@@ -10167,6 +10179,67 @@ class WatchlistManagerDialog(QDialog):
                 return raw
         return text
 
+    def _get_selected_watchlist_names(self) -> list[str]:
+        names: list[str] = []
+        for item in self.watchlist_list.selectedItems():
+            name = str(item.data(Qt.ItemDataRole.UserRole) or "").strip()
+            if not name:
+                text = item.text()
+                name = text.rsplit(" (", 1)[0] if " (" in text else text
+                name = name.strip()
+            if name in self.watchlists and name not in names:
+                names.append(name)
+        return names
+
+    @staticmethod
+    def _is_system_zerodha_watchlist(name: str) -> bool:
+        return str(name).casefold().startswith(HOLDINGS_UNIVERSE_PREFIX.casefold())
+
+    def _watchlist_selection_changed(self) -> None:
+        names = self._get_selected_watchlist_names()
+        if not names:
+            self.rename_btn.setEnabled(False)
+            self.rename_btn.setToolTip("Select one watchlist to rename it.")
+            self.del_btn.setText("Delete")
+            self.del_btn.setEnabled(False)
+            self.del_btn.setToolTip("Select one or more watchlists to delete.")
+            return
+
+        system_names = [
+            name for name in names if self._is_system_zerodha_watchlist(name)
+        ]
+        if len(names) > 1:
+            self.rename_btn.setEnabled(False)
+            self.rename_btn.setToolTip(
+                "Rename is available only when one watchlist is selected."
+            )
+            self.del_btn.setText(f"Delete {len(names)} Selected…")
+            self.del_btn.setEnabled(not system_names)
+            self.del_btn.setToolTip(
+                "Zerodha portfolio/account lists must be removed one at a time."
+                if system_names
+                else "Delete all selected custom watchlists together."
+            )
+            return
+
+        name = names[0]
+        if self._is_system_zerodha_watchlist(name):
+            self.rename_btn.setEnabled(False)
+            self.rename_btn.setToolTip(
+                "System-managed Zerodha portfolio watchlist cannot be renamed."
+            )
+            self.del_btn.setText("Remove Account…")
+            self.del_btn.setEnabled(True)
+            self.del_btn.setToolTip(
+                "Permanently remove this saved Zerodha account and its local portfolio list."
+            )
+        else:
+            self.rename_btn.setEnabled(True)
+            self.rename_btn.setToolTip("")
+            self.del_btn.setText("Delete")
+            self.del_btn.setEnabled(True)
+            self.del_btn.setToolTip("Delete the selected custom watchlist.")
+
     def _watchlist_selected(self, *_args: Any) -> None:
         self.symbol_list.clear()
         self.search_input.clear()
@@ -10174,9 +10247,10 @@ class WatchlistManagerDialog(QDialog):
         if not watchlist_name:
             self.right_box.setTitle("Symbols in Watchlist")
             self.right_box.setEnabled(False)
+            self._watchlist_selection_changed()
             return
 
-        is_system_zerodha = watchlist_name.startswith("💼 ZERODHA") or watchlist_name.startswith("💼 Zerodha")
+        is_system_zerodha = self._is_system_zerodha_watchlist(watchlist_name)
         if is_system_zerodha:
             self.rename_btn.setEnabled(False)
             self.rename_btn.setToolTip("System-managed Zerodha portfolio watchlist cannot be renamed.")
@@ -10204,6 +10278,7 @@ class WatchlistManagerDialog(QDialog):
 
         for symbol in symbols:
             self.symbol_list.addItem(symbol)
+        self._watchlist_selection_changed()
 
     def _create_watchlist(self) -> None:
         name, ok = QInputDialog.getText(self, "New Watchlist", "Watchlist Name:")
@@ -10234,6 +10309,8 @@ class WatchlistManagerDialog(QDialog):
             self.parent()._watchlist_created(clean_name)
 
     def _rename_watchlist(self) -> None:
+        if len(self._get_selected_watchlist_names()) != 1:
+            return
         old_name = self._get_selected_watchlist_name()
         if not old_name:
             return
@@ -10269,26 +10346,57 @@ class WatchlistManagerDialog(QDialog):
             self.parent()._watchlist_renamed(old_name, new_name)
 
     def _delete_watchlist(self) -> None:
-        name = self._get_selected_watchlist_name()
-        if not name:
+        names = self._get_selected_watchlist_names()
+        if not names:
             return
-        if is_holdings_universe(name):
-            self._remove_zerodha_account(name)
+        system_names = [
+            name for name in names if self._is_system_zerodha_watchlist(name)
+        ]
+        if system_names:
+            if len(names) == 1:
+                self._remove_zerodha_account(names[0])
+            else:
+                QMessageBox.information(
+                    self,
+                    "Remove Zerodha Accounts Individually",
+                    "Zerodha portfolio/account watchlists cannot be included in "
+                    "a bulk deletion. Deselect them and remove each account "
+                    "individually through its stronger confirmation workflow.",
+                )
             return
+        if len(names) == 1:
+            question = f"Are you sure you want to delete the watchlist '{names[0]}'?"
+        else:
+            visible_names = names[:12]
+            name_lines = "\n".join(f"• {name}" for name in visible_names)
+            if len(names) > len(visible_names):
+                name_lines += f"\n• …and {len(names) - len(visible_names)} more"
+            question = (
+                f"Are you sure you want to delete {len(names)} selected "
+                f"watchlists?\n\n{name_lines}"
+            )
         if QMessageBox.question(
             self,
-            "Delete Watchlist",
-            f"Are you sure you want to delete the watchlist '{name}'?",
+            "Delete Watchlist" if len(names) == 1 else "Delete Watchlists",
+            question,
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
         ) != QMessageBox.StandardButton.Yes:
             return
 
-        self.watchlists.pop(name, None)
-        self.store.save(self.watchlists)
+        updated = dict(self.watchlists)
+        for name in names:
+            updated.pop(name, None)
+        try:
+            self.store.save(updated)
+        except (OSError, WatchlistStoreError) as exc:
+            QMessageBox.warning(self, "Delete failed", str(exc))
+            return
+        self.watchlists = updated
         self._refresh_watchlist_list()
 
         if self.parent() and hasattr(self.parent(), "_watchlist_deleted"):
-            self.parent()._watchlist_deleted(name)
+            for name in names:
+                self.parent()._watchlist_deleted(name)
 
     def _remove_zerodha_account(self, watchlist_name: str) -> None:
         user_id = zerodha_account_id_from_watchlist(watchlist_name)
@@ -10593,6 +10701,7 @@ class WatchlistManagerDialog(QDialog):
             item = QListWidgetItem(f"{name} ({count})")
             item.setData(Qt.ItemDataRole.UserRole, name)
             self.watchlist_list.addItem(item)
+        self._watchlist_selection_changed()
 
     def _load_cached_nse_symbols_or_download(self) -> None:
         if not NSE_SYMBOLS_CACHE_FILE.exists():

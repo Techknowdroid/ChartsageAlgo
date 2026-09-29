@@ -25869,11 +25869,23 @@ class FinalChartInkPrivateWatchlistDialog(QDialog):
         left.setMinimumWidth(220)
         left_layout = QVBoxLayout(left)
         left_layout.setContentsMargins(0, 0, 0, 0)
-        left_layout.addWidget(QLabel("Private watchlists:"))
+        left_layout.addWidget(
+            QLabel("Private watchlists (Ctrl/Shift-click to select multiple):")
+        )
         self.watchlist_list = QListWidget()
+        self.watchlist_list.setSelectionMode(
+            QAbstractItemView.SelectionMode.ExtendedSelection
+        )
         self.watchlist_list.currentItemChanged.connect(self._show_symbols)
+        self.watchlist_list.itemSelectionChanged.connect(
+            self._watchlist_selection_changed
+        )
         left_layout.addWidget(self.watchlist_list, 1)
-        self.delete_list_btn = QPushButton("Delete Entire Watchlist…")
+        self.delete_list_btn = QPushButton("Delete Selected Watchlist(s)…")
+        self.delete_list_btn.setToolTip(
+            "Use Ctrl-click or Shift-click in the left pane to select multiple "
+            "private watchlists, then delete them together."
+        )
         self.delete_list_btn.clicked.connect(self._delete_watchlist)
         left_layout.addWidget(self.delete_list_btn)
         self.watchlist_splitter.addWidget(left)
@@ -25915,6 +25927,22 @@ class FinalChartInkPrivateWatchlistDialog(QDialog):
         item = self.watchlist_list.currentItem()
         return str(item.data(Qt.ItemDataRole.UserRole) or "") if item else ""
 
+    def _selected_watchlist_names(self) -> list[str]:
+        return list(dict.fromkeys(
+            str(item.data(Qt.ItemDataRole.UserRole) or "").strip()
+            for item in self.watchlist_list.selectedItems()
+            if str(item.data(Qt.ItemDataRole.UserRole) or "").strip()
+        ))
+
+    def _watchlist_selection_changed(self) -> None:
+        selected_count = len(self._selected_watchlist_names())
+        self.delete_list_btn.setEnabled(bool(selected_count))
+        self.delete_list_btn.setText(
+            f"Delete {selected_count} Selected Watchlists…"
+            if selected_count > 1
+            else "Delete Selected Watchlist(s)…"
+        )
+
     def _refresh_lists(self, select_name: str = "") -> None:
         self.watchlist_list.clear()
         for name, symbols in sorted(
@@ -25938,22 +25966,37 @@ class FinalChartInkPrivateWatchlistDialog(QDialog):
         )
         self.symbol_list.clear()
         self.symbol_list.addItems(symbols)
-        self.delete_list_btn.setEnabled(bool(name))
+        self._watchlist_selection_changed()
         self.delete_symbols_btn.setEnabled(bool(name and symbols))
 
     def _delete_watchlist(self) -> None:
-        name = self._current_name()
-        if not name:
+        names = self._selected_watchlist_names()
+        if not names:
             return
+        if len(names) == 1:
+            title = "Delete private watchlist"
+            question = (
+                f"Delete the private FINAL ChartSage watchlist '{names[0]}'?"
+            )
+        else:
+            title = "Delete private watchlists"
+            visible_names = names[:12]
+            name_lines = "\n".join(f"• {name}" for name in visible_names)
+            if len(names) > len(visible_names):
+                name_lines += f"\n• …and {len(names) - len(visible_names)} more"
+            question = (
+                f"Delete {len(names)} selected private FINAL ChartSage "
+                f"watchlists?\n\n{name_lines}"
+            )
         if QMessageBox.question(
             self,
-            "Delete private watchlist",
-            f"Delete the private FINAL ChartSage watchlist '{name}'?\n\n"
-            "A later full cycle may recreate generated watchlists.",
+            title,
+            question + "\n\nA later full cycle may recreate generated watchlists.",
         ) != QMessageBox.StandardButton.Yes:
             return
         updated = dict(self.watchlists)
-        updated.pop(name, None)
+        for name in names:
+            updated.pop(name, None)
         try:
             self.store.save(updated)
         except (OSError, WatchlistStoreError) as exc:

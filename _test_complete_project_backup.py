@@ -192,6 +192,54 @@ class CompleteProjectBackupTests(unittest.TestCase):
                 "personal",
             )
 
+    def test_read_only_git_object_and_interrupted_temporary_are_handled(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_name:
+            base = Path(temporary_name)
+            source = base / "project"
+            destination = base / "usb"
+            source.mkdir()
+            destination.mkdir()
+            self._make_project(source)
+            object_dir = source / ".git" / "objects" / "00"
+            object_dir.mkdir(parents=True)
+            source_object = object_dir / "readonly-object"
+            source_object.write_bytes(b"packed git object")
+            source_object.chmod(0o444)
+
+            target = destination / complete_backup.SMART_BACKUP_NAME
+            target.mkdir()
+            complete_backup._write_backup_marker(target)
+            interrupted_dir = target / ".git" / "objects" / "00"
+            interrupted_dir.mkdir(parents=True)
+            interrupted = interrupted_dir / ".chartsage-copy-interrupted"
+            interrupted.write_bytes(b"partial")
+            interrupted.chmod(0o444)
+            prior_destination = interrupted_dir / source_object.name
+            prior_destination.write_bytes(b"old incomplete copy")
+            prior_destination.chmod(0o444)
+            try:
+                with mock.patch.object(
+                    complete_backup,
+                    "_verify_git_repository",
+                    return_value="test passed",
+                ):
+                    result = complete_backup.create_complete_backup(
+                        destination,
+                        source_root=source,
+                        require_different_drive=False,
+                        progress=lambda _message: None,
+                    )
+                self.assertFalse(interrupted.exists())
+                self.assertEqual(
+                    (result / ".git" / "objects" / "00" / source_object.name).read_bytes(),
+                    b"packed git object",
+                )
+                self.assertTrue((result / "BACKUP_COMPLETE.txt").is_file())
+            finally:
+                source_object.chmod(0o666)
+                if prior_destination.exists():
+                    prior_destination.chmod(0o666)
+
 
 if __name__ == "__main__":
     unittest.main()

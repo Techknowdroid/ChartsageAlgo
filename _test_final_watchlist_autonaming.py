@@ -460,6 +460,53 @@ class FinalWatchlistAutonamingTests(unittest.TestCase):
             dialog.close()
             app.processEvents()
 
+    def test_private_watchlist_manager_deletes_multiple_selected_lists(self):
+        class MemoryStore:
+            def __init__(self):
+                self.data = {
+                    "First List": ["AAA"],
+                    "Second List": ["BBB"],
+                    "Third List": ["CCC"],
+                }
+                self.saved = None
+
+            def load(self):
+                return dict(self.data)
+
+            def save(self, updated):
+                self.saved = dict(updated)
+                self.data = dict(updated)
+
+        app = module.QApplication.instance() or module.QApplication([])
+        store = MemoryStore()
+        dialog = module.FinalChartInkPrivateWatchlistDialog(store)
+        try:
+            self.assertEqual(
+                dialog.watchlist_list.selectionMode(),
+                module.QAbstractItemView.SelectionMode.ExtendedSelection,
+            )
+            dialog.watchlist_list.clearSelection()
+            dialog.watchlist_list.item(0).setSelected(True)
+            dialog.watchlist_list.item(1).setSelected(True)
+            app.processEvents()
+            self.assertEqual(len(dialog.watchlist_list.selectedItems()), 2)
+            self.assertIn("Delete 2 Selected", dialog.delete_list_btn.text())
+
+            with patch.object(
+                module.QMessageBox,
+                "question",
+                return_value=module.QMessageBox.StandardButton.Yes,
+            ) as question:
+                dialog._delete_watchlist()
+
+            self.assertEqual(store.saved, {"Third List": ["CCC"]})
+            self.assertEqual(dialog.watchlists, {"Third List": ["CCC"]})
+            self.assertEqual(dialog.watchlist_list.count(), 1)
+            self.assertIn("2 selected", question.call_args.args[2])
+        finally:
+            dialog.close()
+            app.processEvents()
+
 
 if __name__ == "__main__":
     unittest.main()
