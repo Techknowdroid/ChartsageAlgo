@@ -200,6 +200,99 @@ class FinalWatchlistAutonamingTests(unittest.TestCase):
             window.close()
             app.processEvents()
 
+    def test_flow_popup_refreshes_step3_rules_in_manual_naming_mode(self):
+        app = module.QApplication.instance() or module.QApplication([])
+        window = module.FinalChartInkWindow()
+        try:
+            window._apply_config(module.finalchartink_defaults())
+            window.auto_watchlist_naming_cb.setChecked(False)
+            window.buy_set_combo.clear()
+            window.exit_set_combo.clear()
+            window.buy_set_combo.addCheckItem("[RULE] BUY One", "BUY One")
+            window.buy_set_combo.addCheckItem("[RULE] BUY Two", "BUY Two")
+            window.exit_set_combo.addCheckItem("[RULE] EXIT One", "EXIT One")
+            window.exit_set_combo.addCheckItem("[RULE] EXIT Two", "EXIT Two")
+            window.buy_set_combo.setCheckedData(["BUY One", "BUY Two"])
+            window.exit_set_combo.setCheckedData(["EXIT One", "EXIT Two"])
+            selected_sources = (
+                (window.source_universe_list, "NIFTY 500"),
+                (window.source_watchlist_list, "Momentum Watchlist"),
+                (window.final_universe_list, "NIFTY PHARMA"),
+                (window.final_watchlist_list, "Published BUY Watchlist"),
+            )
+            for widget, name in selected_sources:
+                item = module.QListWidgetItem(name)
+                item.setData(module.Qt.ItemDataRole.UserRole, name)
+                item.setCheckState(module.Qt.CheckState.Checked)
+                widget.addItem(item)
+            window._update_auto_watchlist_names()
+
+            popup = window.multirule_name_edit.toolTip()
+            self.assertIn(
+                "Step 2A mode: Inactive because no Step 1 rule template is selected",
+                popup,
+            )
+            self.assertNotIn("Step 2A mode: SAVED", popup)
+            self.assertIn(
+                "Step 2A universes/watchlists below: Ignored in this mode; checkmarked choices are not used",
+                popup,
+            )
+            self.assertNotIn("Step 2A selected universes: NIFTY 500", popup)
+            self.assertNotIn(
+                "Step 2A selected watchlists: Momentum Watchlist", popup
+            )
+            self.assertIn(
+                "Step 2A selection usage: Ignored; no Step 1 rule template is selected",
+                popup,
+            )
+            self.assertIn("Step 2B direct universes: NIFTY PHARMA", popup)
+            self.assertIn(
+                "Step 2B direct watchlists: Published BUY Watchlist", popup
+            )
+            self.assertIn("Step 3 BUY (ANY): BUY One, BUY Two", popup)
+            self.assertIn("Step 3 EXIT (ANY): EXIT One, EXIT Two", popup)
+            self.assertEqual(
+                popup,
+                window.final_source_name_edit.toolTip(),
+            )
+            self.assertEqual(
+                popup,
+                window.buy_results_name_edit.toolTip(),
+            )
+            self.assertEqual(
+                popup,
+                window.exit_results_name_edit.toolTip(),
+            )
+
+            combine_index = window.feeder_scope_combo.findData("COMBINE")
+            window.feeder_scope_combo.setCurrentIndex(combine_index)
+            window._update_auto_watchlist_names()
+            active_popup = window.multirule_name_edit.toolTip()
+            self.assertIn("Step 2A selected universes: NIFTY 500", active_popup)
+            self.assertIn(
+                "Step 2A selected watchlists: Momentum Watchlist", active_popup
+            )
+            self.assertNotIn(
+                "checkmarked choices are not used", active_popup
+            )
+            self.assertNotIn("Step 2B selection status: NOTHING SELECTED", active_popup)
+
+            window.final_universe_list.item(
+                window.final_universe_list.count() - 1
+            ).setCheckState(module.Qt.CheckState.Unchecked)
+            window.final_watchlist_list.item(
+                window.final_watchlist_list.count() - 1
+            ).setCheckState(module.Qt.CheckState.Unchecked)
+            window._update_auto_watchlist_names()
+            empty_step2b_popup = window.multirule_name_edit.toolTip()
+            self.assertIn(
+                "Step 2B selection status: NOTHING SELECTED; no direct universe or watchlist is added",
+                empty_step2b_popup,
+            )
+        finally:
+            window.close()
+            app.processEvents()
+
     def test_step2_sources_are_visually_split_and_generated_lists_are_newest_first(self):
         catalog = {
             "NIFTY PHARMA": ("UNIVERSE", object()),

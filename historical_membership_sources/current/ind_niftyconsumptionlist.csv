@@ -1,5 +1,4 @@
 Company Name,Industry,Symbol,Series,ISIN Code
-Adani Power Ltd.,Power,ADANIPOWER,EQ,INE814H01029
 Apollo Hospitals Enterprise Ltd.,Healthcare,APOLLOHOSP,EQ,INE437A01024
 Asian Paints Ltd.,Consumer Durables,ASIANPAINT,EQ,INE021A01026
 Avenue Supermarts Ltd.,Consumer Services,DMART,EQ,INE192R01011
@@ -10,8 +9,8 @@ DLF Ltd.,Realty,DLF,EQ,INE271C01023
 Dixon Technologies (India) Ltd.,Consumer Durables,DIXON,EQ,INE935N01020
 Eicher Motors Ltd.,Automobile and Auto Components,EICHERMOT,EQ,INE066A01021
 Eternal Ltd.,Consumer Services,ETERNAL,EQ,INE758T01015
+Fortis Healthcare Ltd.,Healthcare,FORTIS,EQ,INE061F01013
 Godrej Consumer Products Ltd.,Fast Moving Consumer Goods,GODREJCP,EQ,INE102D01028
-Havells India Ltd.,Consumer Durables,HAVELLS,EQ,INE176B01034
 Hero MotoCorp Ltd.,Automobile and Auto Components,HEROMOTOCO,EQ,INE158A01026
 Hindustan Unilever Ltd.,Fast Moving Consumer Goods,HINDUNILVR,EQ,INE030A01027
 ITC Ltd.,Fast Moving Consumer Goods,ITC,EQ,INE154A01025
@@ -26,6 +25,7 @@ TVS Motor Company Ltd.,Automobile and Auto Components,TVSMOTOR,EQ,INE494B01023
 Tata Consumer Products Ltd.,Fast Moving Consumer Goods,TATACONSUM,EQ,INE192A01025
 Tata Power Co. Ltd.,Power,TATAPOWER,EQ,INE245A01021
 Titan Company Ltd.,Consumer Durables,TITAN,EQ,INE280A01028
+Torrent Pharmaceuticals Ltd.,Healthcare,TORNTPHARM,EQ,INE685A01028
 Trent Ltd.,Consumer Services,TRENT,EQ,INE849A01020
 United Spirits Ltd.,Fast Moving Consumer Goods,UNITDSPR,EQ,INE854D01024
 Varun Beverages Ltd.,Fast Moving Consumer Goods,VBL,EQ,INE200M01039

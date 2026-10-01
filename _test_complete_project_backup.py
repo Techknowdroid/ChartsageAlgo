@@ -7,6 +7,7 @@ import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest import mock
 
 import backup_complete_project_to_usb as complete_backup
@@ -147,7 +148,13 @@ class CompleteProjectBackupTests(unittest.TestCase):
             self.assertEqual(second, third)
             self.assertEqual(first.name, complete_backup.SMART_BACKUP_NAME)
             self.assertFalse(first_summary["incremental_update"])
+            self.assertEqual(
+                first_summary["effective_verification_mode"], "full"
+            )
             self.assertTrue(second_summary["incremental_update"])
+            self.assertEqual(
+                second_summary["effective_verification_mode"], "fast"
+            )
             self.assertGreater(second_summary["reused_verified_files"], 0)
             self.assertEqual(second_summary["copied_or_refreshed_files"], 0)
             self.assertEqual(
@@ -168,6 +175,131 @@ class CompleteProjectBackupTests(unittest.TestCase):
             finally:
                 database.close()
             self.assertEqual(names, [("My Watchlist",), ("New Watchlist",)])
+
+    def test_fast_mode_skips_destination_rehash_and_full_mode_repairs_corruption(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_name:
+            base = Path(temporary_name)
+            source = base / "project"
+            destination = base / "usb"
+            source.mkdir()
+            destination.mkdir()
+            self._make_project(source)
+            with mock.patch.object(
+                complete_backup, "_verify_git_repository", return_value="test passed"
+            ):
+                target = complete_backup.create_complete_backup(
+                    destination,
+                    source_root=source,
+                    require_different_drive=False,
+                    progress=lambda _message: None,
+                )
+
+                # Fast mode must trust the last completed source metadata and
+                # manifest rather than invoking the USB-reading reuse checker.
+                with mock.patch.object(
+                    complete_backup,
+                    "_reuse_verified_file",
+                    side_effect=AssertionError(
+                        "fast mode reopened an unchanged destination file"
+                    ),
+                ):
+                    complete_backup.create_complete_backup(
+                        destination,
+                        source_root=source,
+                        require_different_drive=False,
+                        verification_mode=complete_backup.FAST_VERIFICATION_MODE,
+                        progress=lambda _message: None,
+                    )
+
+                backed_up_source = target / "source.py"
+                backed_up_source.write_text("corrupt destination\n", encoding="utf-8")
+                complete_backup.create_complete_backup(
+                    destination,
+                    source_root=source,
+                    require_different_drive=False,
+                    verification_mode=complete_backup.FULL_VERIFICATION_MODE,
+                    progress=lambda _message: None,
+                )
+
+            self.assertEqual(
+                backed_up_source.read_text(encoding="utf-8"),
+                "print('ready')\n",
+            )
+            summary = json.loads(
+                (target / "BACKUP_SUMMARY.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(summary["effective_verification_mode"], "full")
+            self.assertTrue(summary["full_destination_verification_performed"])
+            self.assertEqual(summary["fast_incremental_runs_since_full"], 0)
+
+    def test_incomplete_prior_backup_forces_full_verification(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary_name:
+            base = Path(temporary_name)
+            source = base / "project"
+            destination = base / "usb"
+            source.mkdir()
+            destination.mkdir()
+            self._make_project(source)
+            messages = []
+            with mock.patch.object(
+                complete_backup, "_verify_git_repository", return_value="test passed"
+            ):
+                target = complete_backup.create_complete_backup(
+                    destination,
+                    source_root=source,
+                    require_different_drive=False,
+                    progress=lambda _message: None,
+                )
+                (target / "BACKUP_COMPLETE.txt").unlink()
+                complete_backup.create_complete_backup(
+                    destination,
+                    source_root=source,
+                    require_different_drive=False,
+                    verification_mode=complete_backup.FAST_VERIFICATION_MODE,
+                    progress=messages.append,
+                )
+            summary = json.loads(
+                (target / "BACKUP_SUMMARY.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(summary["requested_verification_mode"], "fast")
+            self.assertEqual(summary["effective_verification_mode"], "full")
+            self.assertTrue(any("automatically switching" in item for item in messages))
+
+    def test_interactive_mode_choice_accepts_fast_and_full(self) -> None:
+        with mock.patch("builtins.input", return_value=""):
+            self.assertEqual(
+                complete_backup.choose_verification_mode(),
+                complete_backup.FAST_VERIFICATION_MODE,
+            )
+        with mock.patch("builtins.input", side_effect=["wrong", "2"]):
+            self.assertEqual(
+                complete_backup.choose_verification_mode(),
+                complete_backup.FULL_VERIFICATION_MODE,
+            )
+
+    def test_plain_launch_routes_to_gui_with_fast_mode_selected(self) -> None:
+        arguments = SimpleNamespace(
+            gui=False,
+            console=False,
+            destination=None,
+            yes=False,
+            new_snapshot=False,
+            fast=False,
+            full_verify=False,
+        )
+        with (
+            mock.patch.object(complete_backup, "parse_arguments", return_value=arguments),
+            mock.patch.object(
+                complete_backup, "run_backup_gui", return_value=0
+            ) as gui,
+            mock.patch.object(complete_backup.sys, "argv", ["backup.py"]),
+        ):
+            self.assertEqual(complete_backup.main(), 0)
+        gui.assert_called_once_with(
+            complete_backup.FAST_VERIFICATION_MODE,
+            initial_destination=None,
+            initial_snapshot=False,
+        )
 
     def test_smart_backup_refuses_unmarked_existing_current_folder(self) -> None:
         with tempfile.TemporaryDirectory() as temporary_name:

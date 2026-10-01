@@ -511,6 +511,8 @@ OPERATORS = (
 )
 VALID_OPERATORS = (*OPERATORS, LEGACY_HIGH_52_WEEK_RANGE_OPERATOR)
 TIMEFRAMES = ("D", "W", "M")
+OCCURRENCE_THRESHOLD_OPERATORS = (">=", ">", "<=", "<", "=", "!=")
+MAX_OCCURRENCE_LOOKBACK = 2000
 NSE_MARKET_OPEN = time(9, 15)
 NSE_MARKET_CLOSE = time(15, 30)
 NSE_CALENDAR = NSETradingCalendar(NSE_CALENDAR_FILE)
@@ -696,6 +698,17 @@ FILTER_EXAMPLE_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
             "Daily Close < Daily SMA 20 * 0.98",
         ),
     ),
+    (
+        "Frequency / Count over recent candles",
+        (
+            "Close above SMA 20 on at least 10 of the last 30 days",
+            "Close above EMA 50 on at least 20 of the last 30 days",
+            "Close above Supertrend(10,3) on at least 15 of the last 20 days",
+            "RSI 14 above 60 on at least 8 of the last 15 days",
+            "SMA 10 above SMA 20 on at least 12 of the last 20 days",
+            "EMA 10 crosses above EMA 20 on at least 2 of the last 60 days",
+        ),
+    ),
 )
 
 
@@ -723,6 +736,14 @@ def filter_examples_text(custom_snippets: list[str] | None = None) -> str:
             "• Prior-high duration can use days, weeks, months, or years (for example, 90 day high or 4 year high).",
             "• “All available history since 2014” uses every available daily candle from 2014 onward.",
             "• “Near 52 week high” defaults to 2% above and 2% below; use “between A% above and B% below” for asymmetric limits.",
+        ]
+    )
+    sections.extend(
+        [
+            "",
+            "Frequency rule grammar:",
+            "Append 'on at least K of the last N days/weeks/months' to one comparison.",
+            "Matches need not be consecutive; days mean trading candles, not calendar days.",
         ]
     )
     for heading, examples in FILTER_EXAMPLE_GROUPS:
@@ -850,6 +871,52 @@ def rule_node(left: dict[str, Any] | None = None, operator: str = ">", right: di
         "operator": operator,
         "right": right or value_operand(),
     }
+
+
+def occurrence_rule(
+    condition: dict[str, Any] | None = None,
+    lookback: int = 30,
+    threshold: int = 10,
+    operator: str = ">=",
+    timeframe: str = "D",
+) -> dict[str, Any]:
+    """Wrap one ordinary comparison in a recent-candle occurrence test."""
+    result = copy.deepcopy(condition or rule_node())
+    result["occurrence"] = {
+        "lookback": int(lookback),
+        "threshold": int(threshold),
+        "operator": str(operator),
+        "timeframe": str(timeframe),
+    }
+    return result
+
+
+def occurrence_spec(node: dict[str, Any]) -> dict[str, Any] | None:
+    value = node.get("occurrence")
+    return value if isinstance(value, dict) else None
+
+
+def occurrence_unit(timeframe: str, plural: bool = True) -> str:
+    singular = {"D": "day", "W": "week", "M": "month"}.get(timeframe, "candle")
+    return singular + ("s" if plural else "")
+
+
+def occurrence_candle_label(timeframe: str) -> str:
+    return {"D": "daily", "W": "weekly", "M": "monthly"}.get(
+        timeframe, "selected-timeframe"
+    )
+
+
+def occurrence_requirement_text(spec: dict[str, Any]) -> str:
+    phrases = {
+        ">=": "at least",
+        ">": "more than",
+        "<=": "at most",
+        "<": "fewer than",
+        "=": "exactly",
+        "!=": "not exactly",
+    }
+    return f"{phrases[str(spec['operator'])]} {int(spec['threshold'])}"
 
 
 def high_52_week_range_rule(
@@ -1305,6 +1372,46 @@ def validate_ast(node: Any, root: bool = True, allow_empty_groups: bool = False)
             raise ValueError(f"Unknown comparison: {node.get('operator')}")
         validate_operand(node.get("left"))
         validate_operand(node.get("right"))
+        occurrence = occurrence_spec(node)
+        if node.get("occurrence") is not None and occurrence is None:
+            raise ValueError("Frequency settings must be a structured object.")
+        if occurrence is not None:
+            timeframe = str(occurrence.get("timeframe", ""))
+            operator = str(occurrence.get("operator", ""))
+            try:
+                lookback = int(occurrence.get("lookback"))
+                threshold = int(occurrence.get("threshold"))
+            except (TypeError, ValueError) as exc:
+                raise ValueError(
+                    "Frequency lookback and required matches must be whole numbers."
+                ) from exc
+            if timeframe not in TIMEFRAMES:
+                raise ValueError("Frequency timeframe must be Daily, Weekly, or Monthly.")
+            if operator not in OCCURRENCE_THRESHOLD_OPERATORS:
+                raise ValueError("Unknown frequency-count comparison.")
+            if not 1 <= lookback <= MAX_OCCURRENCE_LOOKBACK:
+                raise ValueError(
+                    f"Frequency lookback must be between 1 and {MAX_OCCURRENCE_LOOKBACK:,} candles."
+                )
+            if not 0 <= threshold <= lookback:
+                raise ValueError(
+                    "Required matches must be between zero and the frequency lookback."
+                )
+            field_operands = [
+                operand
+                for operand in (node["left"], node["right"])
+                if operand.get("kind") == "field"
+            ]
+            if not field_operands:
+                raise ValueError("A frequency rule must compare at least one market field.")
+            if any(operand.get("name") in PNL_FIELDS for operand in field_operands):
+                raise ValueError(
+                    "Frequency counting is not available for holding-dependent Profit/Loss fields."
+                )
+            if any(operand.get("timeframe") != timeframe for operand in field_operands):
+                raise ValueError(
+                    "Every field in a frequency rule must use the same timeframe as its count window."
+                )
         if (
             node["left"].get("kind") == "field"
             and node["left"].get("name") == "Stop Loss %"
@@ -1526,13 +1633,22 @@ def rank_scan_rows(
 def expression_text(node: dict[str, Any]) -> str:
     if node["type"] == "rule":
         if is_52_week_range_rule(node):
-            return plain_rule_text(node)
-        left_txt = operand_text(node['left'])
-        right_txt = operand_text(node['right'])
-        if node['left'].get('kind') == 'field' and node['left'].get('name') in PNL_FIELDS:
-            if node['right'].get('kind') == 'value' and not right_txt.endswith('%'):
-                right_txt += '%'
-        return f"{left_txt} {node['operator']} {right_txt}"
+            base = plain_rule_text({key: value for key, value in node.items() if key != "occurrence"})
+        else:
+            left_txt = operand_text(node['left'])
+            right_txt = operand_text(node['right'])
+            if node['left'].get('kind') == 'field' and node['left'].get('name') in PNL_FIELDS:
+                if node['right'].get('kind') == 'value' and not right_txt.endswith('%'):
+                    right_txt += '%'
+            base = f"{left_txt} {node['operator']} {right_txt}"
+        occurrence = occurrence_spec(node)
+        if occurrence is None:
+            return base
+        lookback = int(occurrence["lookback"])
+        return (
+            f"{base} on {occurrence_requirement_text(occurrence)} of the last "
+            f"{lookback} {occurrence_unit(str(occurrence['timeframe']))}"
+        )
     if not node_enabled(node):
         return "<no enabled rules>"
     children = [expression_text(c) for c in node["children"] if has_active_rule(c)]
@@ -1598,6 +1714,16 @@ def plain_operand_text(operand: dict[str, Any]) -> str:
 
 
 def plain_rule_text(node: dict[str, Any]) -> str:
+    occurrence = occurrence_spec(node)
+    if occurrence is not None:
+        base_node = {key: value for key, value in node.items() if key != "occurrence"}
+        lookback = int(occurrence["lookback"])
+        timeframe = str(occurrence["timeframe"])
+        return (
+            f"During the last {lookback} {occurrence_candle_label(timeframe)} candles, "
+            f"the condition '{plain_rule_text(base_node)}' must match on "
+            f"{occurrence_requirement_text(occurrence)} candles"
+        )
     left_operand = node["left"]
     right_operand = node["right"]
     if is_52_week_range_rule(node):
@@ -1785,6 +1911,12 @@ def rule_value_columns(
             for child in current["children"]:
                 visit(child)
             return
+        occurrence = occurrence_spec(current)
+        if occurrence is not None:
+            label = occurrence_result_column(current)
+            if label not in columns:
+                columns.append(label)
+            return
         add_operand(current["left"])
         add_operand(current["right"])
         if current["operator"] in {"crosses above", "crosses below"}:
@@ -1793,6 +1925,17 @@ def rule_value_columns(
 
     visit(node)
     return columns
+
+
+def occurrence_result_column(node: dict[str, Any]) -> str:
+    occurrence = occurrence_spec(node)
+    if occurrence is None:
+        return "Matching candle count"
+    base_node = {key: value for key, value in node.items() if key != "occurrence"}
+    return (
+        f"Count({int(occurrence['lookback'])} {occurrence['timeframe']}): "
+        f"{expression_text(base_node)}"
+    )
 
 
 def selected_result_headers(setup: dict[str, Any]) -> list[str]:
@@ -2066,6 +2209,9 @@ class RuleParser:
     @classmethod
     def parse(cls, text: str) -> dict[str, Any]:
         clean = " ".join(text.strip().split())
+        occurrence = cls._parse_occurrence_rule(clean)
+        if occurrence is not None:
+            return occurrence
         clean = re.sub(r"\b(ema|sma|rsi|adx|obv|supertrend)\s*\(\s*(?:(?:daily|weekly|monthly)\s+)?close\s*,\s*(\d+)\s*\)", r"\1 \2", clean, flags=re.I)
         clean = re.sub(r"\s+greater\s+than\s+or\s+equal\s+to\s+", " >= ", clean, flags=re.I)
         clean = re.sub(r"\s+less\s+than\s+or\s+equal\s+to\s+", " <= ", clean, flags=re.I)
@@ -2104,6 +2250,75 @@ class RuleParser:
             if left.get("name") == "Stop Loss %" and val > 0 and operator in {"<=", "<", "="}:
                 right["value"] = -val
         return node
+
+    @classmethod
+    def _parse_occurrence_rule(cls, text: str) -> dict[str, Any] | None:
+        natural = re.fullmatch(
+            r"(?P<condition>.+?)\s+(?:(?:on|for)\s+)?"
+            r"(?P<requirement>at\s+least|at\s+most|exactly|not\s+exactly|more\s+than|fewer\s+than|less\s+than)\s+"
+            r"(?P<threshold>\d+)\s+(?:of|out\s+of)\s+(?:the\s+)?last\s+"
+            r"(?P<lookback>\d+)\s+"
+            r"(?P<unit>days?|weeks?|months?|daily\s+candles?|weekly\s+candles?|monthly\s+candles?|candles?)",
+            text,
+            re.I,
+        )
+        chart_style = re.fullmatch(
+            r"(?:(?P<prefix>daily|weekly|monthly)\s+)?count\(\s*"
+            r"(?P<lookback>\d+)\s*,\s*(?P<condition>.+)\)\s*"
+            r"(?P<operator>>=|<=|!=|=|>|<)\s*(?P<threshold>\d+)",
+            text,
+            re.I,
+        )
+        if natural is None and chart_style is None:
+            return None
+        match = natural or chart_style
+        assert match is not None
+        condition = cls.parse(match.group("condition"))
+        if condition.get("type") != "rule" or occurrence_spec(condition) is not None:
+            raise ValueError("A frequency rule must contain exactly one ordinary comparison.")
+        field_timeframes = {
+            str(operand.get("timeframe"))
+            for operand in (condition["left"], condition["right"])
+            if operand.get("kind") == "field"
+        }
+        if chart_style is not None:
+            prefix = chart_style.group("prefix")
+            timeframe = cls.TF[prefix.lower()] if prefix else ""
+            operator = chart_style.group("operator")
+        else:
+            unit = str(natural.group("unit")).lower()
+            if unit.startswith(("day", "daily")):
+                timeframe = "D"
+            elif unit.startswith(("week", "weekly")):
+                timeframe = "W"
+            elif unit.startswith(("month", "monthly")):
+                timeframe = "M"
+            else:
+                timeframe = ""
+            operator = {
+                "at least": ">=",
+                "at most": "<=",
+                "exactly": "=",
+                "not exactly": "!=",
+                "more than": ">",
+                "fewer than": "<",
+                "less than": "<",
+            }[" ".join(natural.group("requirement").lower().split())]
+        if not timeframe:
+            if len(field_timeframes) != 1:
+                raise ValueError(
+                    "Specify daily, weekly, or monthly for a frequency rule with mixed timeframes."
+                )
+            timeframe = next(iter(field_timeframes))
+        result = occurrence_rule(
+            condition,
+            int(match.group("lookback")),
+            int(match.group("threshold")),
+            operator,
+            timeframe,
+        )
+        validate_ast(result)
+        return result
 
     @classmethod
     def _parse_52_week_high_rule(cls, text: str) -> dict[str, Any] | None:
@@ -7143,6 +7358,93 @@ def compare_values(left: float, operator: str, right: float, previous_left: floa
     raise ValueError(f"Unsupported operator: {operator}")
 
 
+def _native_operand_series(
+    market: MarketData,
+    operand: dict[str, Any],
+    index: pd.DatetimeIndex,
+    crossing_step: int = 0,
+) -> pd.Series:
+    if operand["kind"] == "value":
+        return pd.Series(float(operand["value"]), index=index, dtype=float)
+    result = market.series(operand).shift(
+        int(operand.get("offset", 0)) + crossing_step
+    )
+    if operand.get("name") != "Supertrend":
+        result = result.mul(float(operand.get("multiplier", 1.0)))
+    return result.reindex(index).astype(float)
+
+
+def occurrence_count_series(node: dict[str, Any], market: MarketData) -> pd.Series:
+    """Return a full-window rolling count for one frequency comparison."""
+    occurrence = occurrence_spec(node)
+    if occurrence is None:
+        raise ValueError("This rule has no frequency settings.")
+    timeframe = str(occurrence["timeframe"])
+    index = market.frame(timeframe).index
+    if index.empty:
+        return pd.Series(dtype=float, index=index)
+    operator = str(node["operator"])
+    if is_high_range_operator(operator):
+        left_operand = {**node["left"], "multiplier": 1.0}
+        right_operand = {**node["right"], "multiplier": 1.0}
+        left = _native_operand_series(market, left_operand, index)
+        right = _native_operand_series(market, right_operand, index)
+        valid = np.isfinite(left) & np.isfinite(right) & (right > 0)
+        above, below, _offset = range_rule_limits(node)
+        lower_bound = right * (1.0 - below / 100.0)
+        upper_bound = right * (1.0 + above / 100.0)
+        matched = valid & (left >= lower_bound) & (left <= upper_bound)
+    else:
+        left = _native_operand_series(market, node["left"], index)
+        right = _native_operand_series(market, node["right"], index)
+        valid = np.isfinite(left) & np.isfinite(right)
+        if operator == ">":
+            matched = valid & (left > right)
+        elif operator == ">=":
+            matched = valid & (left >= right)
+        elif operator == "<":
+            matched = valid & (left < right)
+        elif operator == "<=":
+            matched = valid & (left <= right)
+        elif operator == "=":
+            matched = valid & (left == right)
+        elif operator == "!=":
+            matched = valid & (left != right)
+        else:
+            previous_left = _native_operand_series(market, node["left"], index, 1)
+            previous_right = _native_operand_series(market, node["right"], index, 1)
+            previous_valid = np.isfinite(previous_left) & np.isfinite(previous_right)
+            valid = valid & previous_valid
+            if operator == "crosses above":
+                matched = valid & (left > right) & (previous_left <= previous_right)
+            elif operator == "crosses below":
+                matched = valid & (left < right) & (previous_left >= previous_right)
+            else:
+                raise ValueError(f"Unsupported operator: {operator}")
+    observations = matched.astype(float).where(valid)
+    lookback = int(occurrence["lookback"])
+    return observations.rolling(lookback, min_periods=lookback).sum()
+
+
+def _compare_count_series(
+    counts: pd.Series, operator: str, threshold: int
+) -> pd.Series:
+    valid = np.isfinite(counts)
+    if operator == ">=":
+        return (valid & (counts >= threshold)).fillna(False)
+    if operator == ">":
+        return (valid & (counts > threshold)).fillna(False)
+    if operator == "<=":
+        return (valid & (counts <= threshold)).fillna(False)
+    if operator == "<":
+        return (valid & (counts < threshold)).fillna(False)
+    if operator == "=":
+        return (valid & (counts == threshold)).fillna(False)
+    if operator == "!=":
+        return (valid & (counts != threshold)).fillna(False)
+    raise ValueError(f"Unsupported frequency-count operator: {operator}")
+
+
 def within_52_week_high_range(
     close: float,
     prior_high: float,
@@ -7182,6 +7484,33 @@ def evaluate_ast(node: dict[str, Any], market: MarketData, evidence: list[dict[s
                 k = 1
             return sum(1 for outcome in outcomes if outcome) >= k
         return all(outcomes)
+    occurrence = occurrence_spec(node)
+    if occurrence is not None:
+        counts = occurrence_count_series(node, market)
+        count = float(counts.iloc[-1]) if not counts.empty else math.nan
+        threshold = int(occurrence["threshold"])
+        matched = compare_values(
+            count,
+            str(occurrence["operator"]),
+            float(threshold),
+            math.nan,
+            math.nan,
+        )
+        evidence.append(
+            {
+                "rule": expression_text(node),
+                "left": count,
+                "right": float(threshold),
+                "previous_left": math.nan,
+                "previous_right": math.nan,
+                "left_operand": value_operand(0),
+                "right_operand": value_operand(threshold),
+                "operator": str(occurrence["operator"]),
+                "matched": matched,
+                "result_column": occurrence_result_column(node),
+            }
+        )
+        return matched
     if is_high_range_operator(node["operator"]):
         # This operator has dedicated above/below percentages, so operand scale
         # multipliers must never distort its Close-versus-prior-high comparison.
@@ -7292,6 +7621,25 @@ class HistoricalMarketData:
         return self._aligned[key]
 
 
+def align_occurrence_counts(
+    counts: pd.Series,
+    timeframe: str,
+    market: HistoricalMarketData,
+) -> pd.Series:
+    if timeframe == "D":
+        return counts.reindex(market.index).astype(float)
+    source = counts.copy()
+    source.index = pd.DatetimeIndex(
+        [
+            NSE_CALENDAR.period_final_session(stamp.date(), timeframe)
+            for stamp in source.index
+        ]
+    )
+    source = source[~source.index.duplicated(keep="last")]
+    combined = source.index.union(market.index)
+    return source.reindex(combined).sort_index().ffill().reindex(market.index).astype(float)
+
+
 def evaluate_historical_ast(
     node: dict[str, Any],
     market: HistoricalMarketData,
@@ -7329,6 +7677,36 @@ def evaluate_historical_ast(
         for outcome in outcomes[1:]:
             result = result & outcome
         return result
+
+    occurrence = occurrence_spec(node)
+    if occurrence is not None:
+        counts = align_occurrence_counts(
+            occurrence_count_series(node, market.market),
+            str(occurrence["timeframe"]),
+            market,
+        )
+        threshold = int(occurrence["threshold"])
+        right = pd.Series(float(threshold), index=market.index, dtype=float)
+        previous = pd.Series(np.nan, index=market.index, dtype=float)
+        matched = _compare_count_series(
+            counts, str(occurrence["operator"]), threshold
+        )
+        evidence.append(
+            {
+                "rule": expression_text(node),
+                "left": counts,
+                "right": right,
+                "previous_left": previous,
+                "previous_right": previous.copy(),
+                "left_operand": value_operand(0),
+                "right_operand": value_operand(threshold),
+                "operator": str(occurrence["operator"]),
+                "matched": matched,
+                "valid": np.isfinite(counts),
+                "result_column": occurrence_result_column(node),
+            }
+        )
+        return matched
 
     operator = node["operator"]
     if is_high_range_operator(operator):
@@ -7387,7 +7765,7 @@ def evaluate_historical_ast(
 
 
 def required_calendar_days(node: dict[str, Any]) -> int:
-    operands: list[dict[str, Any]] = []
+    operands: list[tuple[dict[str, Any], int]] = []
 
     def visit(current: dict[str, Any]) -> None:
         if not node_enabled(current):
@@ -7396,15 +7774,19 @@ def required_calendar_days(node: dict[str, Any]) -> int:
             for child in current["children"]:
                 visit(child)
         else:
-            operands.extend([current["left"], current["right"]])
+            occurrence = occurrence_spec(current)
+            extra_bars = int(occurrence["lookback"]) - 1 if occurrence else 0
+            operands.extend(
+                [(current["left"], extra_bars), (current["right"], extra_bars)]
+            )
 
     visit(node)
     required = 250
     factors = {"D": 2, "W": 9, "M": 35}
-    for operand in operands:
+    for operand, extra_bars in operands:
         if operand.get("kind") != "field":
             continue
-        bars = int(operand.get("offset", 0)) + 3
+        bars = int(operand.get("offset", 0)) + 3 + extra_bars
         if operand["name"] == "RSI":
             # RMA is recursive. A long warm-up makes the current value
             # independent of the scanner's download boundary, as on TradingView.
@@ -7668,7 +8050,7 @@ class RuleScannerWorker(QThread):
                 not math.isfinite(item.get("left", 0))
                 or not math.isfinite(item.get("right", 0))
                 or (
-                    str(item.get("rule", "")).find("crosses ") >= 0
+                    item.get("operator") in {"crosses above", "crosses below"}
                     and (
                         not math.isfinite(item.get("previous_left", 0))
                         or not math.isfinite(item.get("previous_right", 0))
@@ -7744,6 +8126,9 @@ class RuleScannerWorker(QThread):
                     if item.get("matched", True)
                 )
                 for item in evidence:
+                    result_column = str(item.get("result_column", "")).strip()
+                    if result_column:
+                        row[result_column] = finite_or_none(item.get("left"))
                     for side in ("left", "right"):
                         operand = item[f"{side}_operand"]
                         if operand.get("kind") == "field":
@@ -8202,7 +8587,7 @@ class FinalsetScannerWorker(RuleScannerWorker):
                 not math.isfinite(item.get("left", 0))
                 or not math.isfinite(item.get("right", 0))
                 or (
-                    str(item.get("rule", "")).find("crosses ") >= 0
+                    item.get("operator") in {"crosses above", "crosses below"}
                     and (
                         not math.isfinite(item.get("previous_left", 0))
                         or not math.isfinite(item.get("previous_right", 0))
@@ -8510,6 +8895,9 @@ class HistoryScannerWorker(RuleScannerWorker):
                     evidence_parts.append(
                         f"{item['rule']} [{format_number(left)} vs {format_number(right)}]"
                     )
+                    result_column = str(item.get("result_column", "")).strip()
+                    if result_column:
+                        row[result_column] = finite_or_none(left)
                     for side, value in (("left", left), ("right", right)):
                         operand = item[f"{side}_operand"]
                         if operand.get("kind") != "field":
@@ -9087,6 +9475,44 @@ class RuleDialog(QDialog):
         self.operator = QComboBox()
         self.operator.addItems(OPERATORS)
         self.operator.setCurrentText(self.rule["operator"])
+        occurrence = occurrence_spec(self.rule) or {}
+        self.occurrence_enabled = QCheckBox(
+            "Count how often this condition matched in a recent window"
+        )
+        self.occurrence_enabled.setChecked(bool(occurrence))
+        self.occurrence_enabled.setToolTip(
+            "Example: require Close > SMA(20) on at least 10 of the last 30 daily candles."
+        )
+        self.occurrence_timeframe = QComboBox()
+        for label, value in (
+            ("Daily candles", "D"),
+            ("Weekly candles", "W"),
+            ("Monthly candles", "M"),
+        ):
+            self.occurrence_timeframe.addItem(label, value)
+        default_occurrence_timeframe = str(
+            occurrence.get(
+                "timeframe",
+                self.rule.get("left", {}).get("timeframe", "D"),
+            )
+        )
+        occurrence_index = self.occurrence_timeframe.findData(
+            default_occurrence_timeframe
+        )
+        self.occurrence_timeframe.setCurrentIndex(max(0, occurrence_index))
+        self.occurrence_lookback = QSpinBox()
+        self.occurrence_lookback.setRange(1, MAX_OCCURRENCE_LOOKBACK)
+        self.occurrence_lookback.setValue(int(occurrence.get("lookback", 30)))
+        self.occurrence_threshold_operator = QComboBox()
+        self.occurrence_threshold_operator.addItems(
+            OCCURRENCE_THRESHOLD_OPERATORS
+        )
+        self.occurrence_threshold_operator.setCurrentText(
+            str(occurrence.get("operator", ">="))
+        )
+        self.occurrence_threshold = QSpinBox()
+        self.occurrence_threshold.setRange(0, self.occurrence_lookback.value())
+        self.occurrence_threshold.setValue(int(occurrence.get("threshold", 10)))
         above, below, _offset = (
             range_rule_limits(self.rule)
             if is_52_week_range_rule(self.rule)
@@ -9124,6 +9550,11 @@ class RuleDialog(QDialog):
         form.addRow("Left", left_row)
         form.addRow("Comparison", self.operator)
         form.addRow("Right", right_row)
+        form.addRow("Frequency rule", self.occurrence_enabled)
+        form.addRow("Count timeframe", self.occurrence_timeframe)
+        form.addRow("Recent-candle lookback", self.occurrence_lookback)
+        form.addRow("Required-count comparison", self.occurrence_threshold_operator)
+        form.addRow("Required matching candles", self.occurrence_threshold)
         form.addRow("Maximum distance above prior high", self.above_percent)
         form.addRow("Maximum distance below prior high", self.below_percent)
         form.addRow("Prior-high lookback duration", self.lookback_count)
@@ -9147,9 +9578,26 @@ class RuleDialog(QDialog):
         buttons.rejected.connect(self.reject)
         layout.addWidget(buttons)
         self.operator.currentTextChanged.connect(self._operator_changed)
+        self.occurrence_enabled.toggled.connect(self._occurrence_changed)
+        self.occurrence_lookback.valueChanged.connect(
+            self._occurrence_lookback_changed
+        )
         self.lookback_count.valueChanged.connect(self._lookback_changed)
         self.lookback_unit.currentTextChanged.connect(self._lookback_changed)
         self._operator_changed(self.operator.currentText())
+        self._occurrence_changed(self.occurrence_enabled.isChecked())
+
+    def _occurrence_changed(self, enabled: bool) -> None:
+        for widget in (
+            self.occurrence_timeframe,
+            self.occurrence_lookback,
+            self.occurrence_threshold_operator,
+            self.occurrence_threshold,
+        ):
+            widget.setEnabled(enabled)
+
+    def _occurrence_lookback_changed(self, value: int) -> None:
+        self.occurrence_threshold.setMaximum(int(value))
 
     def _operator_changed(self, operator: str) -> None:
         is_range = operator == HIGH_52_WEEK_RANGE_OPERATOR
@@ -9212,6 +9660,16 @@ class RuleDialog(QDialog):
         if dialog.exec():
             self.rule[side] = dialog.operand()
             getattr(self, side + "_label").setText(operand_text(self.rule[side]))
+            if (
+                self.occurrence_enabled.isChecked()
+                and side == "left"
+                and self.rule[side].get("kind") == "field"
+            ):
+                index = self.occurrence_timeframe.findData(
+                    self.rule[side].get("timeframe", "D")
+                )
+                if index >= 0:
+                    self.occurrence_timeframe.setCurrentIndex(index)
             if side == "right" and self.rule[side].get("name") in HIGH_52_WEEK_FIELDS:
                 count, unit, _bars = lookback_high_parameters(self.rule[side])
                 self.lookback_count.setValue(count)
@@ -9219,6 +9677,15 @@ class RuleDialog(QDialog):
 
     def result_rule(self) -> dict[str, Any]:
         self.rule["operator"] = self.operator.currentText()
+        if self.occurrence_enabled.isChecked():
+            self.rule["occurrence"] = {
+                "timeframe": str(self.occurrence_timeframe.currentData()),
+                "lookback": self.occurrence_lookback.value(),
+                "operator": self.occurrence_threshold_operator.currentText(),
+                "threshold": self.occurrence_threshold.value(),
+            }
+        else:
+            self.rule.pop("occurrence", None)
         if (
             self.rule["left"].get("kind") == "field"
             and self.rule["left"].get("name") == "Stop Loss %"
@@ -15294,7 +15761,9 @@ class ScannerWindow(QMainWindow):
         self.master_force_fresh.setChecked(
             bool(master_settings.get("force_fresh", True))
         )
-        tpl_row2.addWidget(QLabel("Refresh latest data:"))
+        tpl_row2.addWidget(
+            QLabel("Refreshing latest Data & Run Scan at Selected Interval of:")
+        )
         tpl_row2.addWidget(self.master_refresh_interval)
         tpl_row2.addWidget(self.master_force_fresh)
         tpl_row2.addStretch(1)

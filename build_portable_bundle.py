@@ -26,10 +26,10 @@ PROJECT_DIR = Path(__file__).resolve().parent
 DIST_DIR = PROJECT_DIR / "dist"
 BUILD_DIR = PROJECT_DIR / "build"
 SPEC_FILE = PROJECT_DIR / "ChartSageSuiteComplete.spec"
-# Keep the build toolchain self-contained inside the project.  The consolidated
-# runtime holds both application wheels and PyInstaller, avoiding stale or
-# inaccessible split caches and preventing fallback to user installations.
-PACKAGING_RUNTIME = PROJECT_DIR / "_packaging_runtime"
+# Keep the build toolchain self-contained inside the project. This dependency
+# tree holds both application wheels and PyInstaller, avoiding inaccessible
+# user installations and keeping the exact Qt/Shiboken runtime reproducible.
+PACKAGING_RUNTIME = PROJECT_DIR / "_packaging_deps"
 PACKAGING_DEPS = PACKAGING_RUNTIME
 BUILD_TOOLS = PACKAGING_RUNTIME
 MEMBERSHIP_TOOLS = PACKAGING_RUNTIME

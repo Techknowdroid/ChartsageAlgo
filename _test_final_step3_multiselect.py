@@ -11,6 +11,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import pandas as pd
 import FINALChartSageV1 as module
+from openpyxl import load_workbook
 from PySide6.QtTest import QTest
 
 
@@ -323,6 +324,145 @@ class FinalStep3MultiSelectTests(unittest.TestCase):
             worker.config["history_price_date_policy"],
             "latest verified official Bhavcopy session",
         )
+
+    def test_final_history_supports_one_two_and_three_month_periods(self):
+        window = module.FinalChartInkWindow()
+        try:
+            choices = [
+                window.history_period.itemData(index)
+                for index in range(window.history_period.count())
+            ]
+            self.assertEqual(choices, [1, 2, 3, 6, 12, 24, 48])
+        finally:
+            window.close()
+            self.app.processEvents()
+
+        config = module.finalchartink_defaults()
+        config.update({
+            "as_of_mode": "historical",
+            "as_of_date": "2026-09-30",
+        })
+        anchor = module.date.fromisoformat("2026-09-30")
+        with patch.object(
+            module.NSE_CALENDAR, "previous_session", return_value=anchor
+        ):
+            for months in (1, 2, 3):
+                with self.subTest(months=months):
+                    worker = module.FinalChartInkHistoryWorker(
+                        config, self.templates, {}, months
+                    )
+                    expected_start = (
+                        pd.Timestamp(anchor) - pd.DateOffset(months=months)
+                    ).date().isoformat()
+                    self.assertEqual(worker.history_start, expected_start)
+                    self.assertEqual(worker.history_end, anchor.isoformat())
+                    self.assertIn(
+                        months, module.FINALCHARTINK_HISTORY_MONTH_CHOICES
+                    )
+
+        self.assertEqual(module.finalchartink_history_period_label(1), "1 month")
+        self.assertEqual(module.finalchartink_history_period_label(2), "2 months")
+        self.assertEqual(module.finalchartink_history_period_label(3), "3 months")
+
+    def test_every_final_xlsx_path_carries_current_strategy_descriptions(self):
+        config = module.finalchartink_defaults()
+        config.update({
+            "recipe_name": "XLSX Messaging",
+            "feeder_templates": ["BUY A"],
+            "feeder_scope": "SAVED",
+            # Deliberately check a Step 2A source so the export must explain
+            # that this choice is ignored by SAVED mode.
+            "feeder_sources": ["NIFTY 500"],
+            "include_multirule": True,
+            "final_additional_sources": [],
+            "buy_finalsets": ["BUY A", "BUY B"],
+            "exit_finalsets": ["EXIT X"],
+            "history_months": 1,
+        })
+        selected_rules = module.build_finalchartink_selected_rule_rows(
+            config, self.templates
+        )
+
+        def sheet_text(sheet):
+            return "\n".join(
+                str(value)
+                for row in sheet.iter_rows(values_only=True)
+                for value in row
+                if value is not None
+            )
+
+        expected_messages = (
+            "Use each Step 1 template's saved universe only",
+            module.FINALCHARTINK_STEP2A_SAVED_SELECTION_MESSAGE,
+            module.FINALCHARTINK_STEP2B_EMPTY_SELECTION_MESSAGE,
+            "BUY A",
+            "BUY B",
+            "EXIT X",
+        )
+
+        live_path = ROOT / "build" / "_test_final_xlsx_descriptions.xlsx"
+        history_path = ROOT / "build" / "_test_final_history_descriptions.xlsx"
+        live_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            module.export_finalchartink_workbook(
+                live_path,
+                {
+                    "config": config,
+                    "guidance_rows": [],
+                    "selected_rule_rows": selected_rules,
+                    "timestamped_watchlists": [],
+                    "feeder_results": [],
+                    "feeder_match_rows": [],
+                },
+            )
+            live_workbook = load_workbook(live_path, data_only=True)
+            try:
+                self.assertIn("Run Summary", live_workbook.sheetnames)
+                self.assertIn("How Strategy Works", live_workbook.sheetnames)
+                live_text = "\n".join((
+                    sheet_text(live_workbook["Run Summary"]),
+                    sheet_text(live_workbook["How Strategy Works"]),
+                ))
+                for message in expected_messages:
+                    self.assertIn(message, live_text)
+            finally:
+                live_workbook.close()
+
+            report = module.HistoryReport(
+                rows_by_date={},
+                daily_summary=[],
+                total_symbols=0,
+                scanned_symbols=0,
+                total_matches=0,
+                dates_with_matches=0,
+                downloaded_symbols=0,
+                cache_hits=0,
+                missing_symbols=0,
+                download_failure_symbols=0,
+                insufficient_symbols=0,
+                universe_errors=[],
+                start_date="2026-09-01",
+                end_date="2026-09-30",
+            )
+            module.export_finalchartink_history_workbook(
+                str(history_path), report, config, self.templates
+            )
+            history_workbook = load_workbook(history_path, data_only=True)
+            try:
+                self.assertIn("Strategy Flow & Rules", history_workbook.sheetnames)
+                self.assertIn("How Strategy Works", history_workbook.sheetnames)
+                history_text = "\n".join((
+                    sheet_text(history_workbook["Strategy Flow & Rules"]),
+                    sheet_text(history_workbook["How Strategy Works"]),
+                ))
+                for message in expected_messages:
+                    self.assertIn(message, history_text)
+                self.assertIn("1 month", history_text)
+            finally:
+                history_workbook.close()
+        finally:
+            live_path.unlink(missing_ok=True)
+            history_path.unlink(missing_ok=True)
 
     def test_historical_as_of_keeps_its_selected_session_policy(self):
         config = module.finalchartink_defaults()
