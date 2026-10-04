@@ -164,6 +164,93 @@ def evaluate_position_exit_expression(node, profit_percent):
     ]
 
 
+def validate_exit_evaluation_plan(plan):
+    """Validate the Paper-only plan that combines technical and holding leaves."""
+    if not isinstance(plan, dict):
+        raise ValueError('Invalid Paper Backtest EXIT evaluation plan.')
+    members = plan.get('members')
+    items = plan.get('items')
+    if not isinstance(members, dict) or not isinstance(items, list) or not items:
+        raise ValueError('The Paper Backtest EXIT evaluation plan is empty.')
+    for name, member in members.items():
+        if not str(name).strip() or not isinstance(member, dict):
+            raise ValueError('The Paper Backtest EXIT evaluation plan has an invalid member.')
+        position_expression = member.get('position_expression')
+        if position_expression is not None:
+            validate_position_exit_expression(position_expression)
+        if position_expression is None and not member.get('has_technical'):
+            raise ValueError(
+                f"Paper Backtest EXIT member '{name}' has no evaluable condition."
+            )
+    for item in items:
+        item_members = item.get('members', []) if isinstance(item, dict) else []
+        if not item_members or any(name not in members for name in item_members):
+            raise ValueError('The Paper Backtest EXIT evaluation plan has an invalid item.')
+        required = int(item.get('required', 1) or 1)
+        if required < 1 or required > len(item_members):
+            raise ValueError('The Paper Backtest EXIT evaluation threshold is invalid.')
+
+
+def evaluate_exit_plan_for_holding(plan, day, symbol, profit_percent):
+    """Evaluate Step-3 EXIT items for one dated simulated holding.
+
+    Technical leaf truth is precomputed by historical scans. Holding-dependent
+    leaves are evaluated here, where the replay knows the holding's dated
+    weighted-average acquisition cost. Members inside one item use that item's
+    AND/OR/ANY-N threshold; separately checked Step-3 items match as ANY (OR).
+    """
+    technical_by_symbol = (
+        plan.get('technical_matches_by_date', {}).get(str(day), {})
+    )
+    raw_technical = technical_by_symbol.get(str(symbol), [])
+    if isinstance(raw_technical, dict):
+        technical_matches = set(raw_technical)
+    else:
+        technical_matches = {str(name) for name in raw_technical}
+
+    matched_items = []
+    matched_members = []
+    evidence = []
+    members = plan.get('members', {})
+    for item in plan.get('items', []):
+        item_matches = []
+        item_matched_members = []
+        item_evidence = []
+        for member_name in item.get('members', []):
+            member = members[member_name]
+            technical_matched = bool(
+                member.get('has_technical') and member_name in technical_matches
+            )
+            position_matched = False
+            position_evidence = []
+            if member.get('position_expression') is not None:
+                position_matched, position_evidence = evaluate_position_exit_expression(
+                    member['position_expression'], profit_percent
+                )
+            member_matched = technical_matched or position_matched
+            item_matches.append(member_matched)
+            if not member_matched:
+                continue
+            item_matched_members.append(member_name)
+            if technical_matched:
+                item_evidence.append(f'{member_name}: technical rule matched')
+            if position_matched:
+                item_evidence.extend(
+                    f'{member_name}: {detail}' for detail in position_evidence
+                )
+        required = int(item.get('required', 1) or 1)
+        if sum(bool(value) for value in item_matches) >= required:
+            matched_items.append(str(item.get('name', '') or 'Step 3 EXIT item'))
+            matched_members.extend(item_matched_members)
+            evidence.extend(item_evidence)
+
+    return bool(matched_items), {
+        'matched_items': list(dict.fromkeys(matched_items)),
+        'matched_members': list(dict.fromkeys(matched_members)),
+        'evidence': list(dict.fromkeys(evidence)),
+    }
+
+
 def xirr(contributions, end, terminal):
     """Annualized return for external contributions and a terminal valuation."""
     flows = {}
@@ -311,12 +398,15 @@ def replay(
     daily_prices=None,
     benchmark_prices=None,
     benchmark_name='NIFTY 500 TRI',
+    exit_evaluation_plan=None,
 ):
     if start > end or cost_percent < 0:
         raise ValueError('Invalid dates or costs.')
     position_sizer = PositionSizer(reference_capital, minimum_allocation)
     if position_exit_rule:
         validate_position_exit_expression(position_exit_rule.get('expression'))
+    if exit_evaluation_plan:
+        validate_exit_evaluation_plan(exit_evaluation_plan)
     ledgers, holdings, summaries, reviews = [], [], [], []
     campaigns, equity_curve, benchmark_curve = [], [], []
     exit_audit = []
@@ -332,7 +422,7 @@ def replay(
                 symbol = str(recorded_row.get('Symbol', ''))
                 if symbol and recorded_day > pre_start_buy_dates.get(symbol, ''):
                     pre_start_buy_dates[symbol] = recorded_day
-    exit_source = holding_exit_rows_by_date
+    exit_source = {} if exit_evaluation_plan else holding_exit_rows_by_date
     if exit_source is None:
         exit_source = {
             day: [
@@ -354,7 +444,20 @@ def replay(
                 Evidence=row.get('Evidence', ''),
                 Executed='No',
                 ExitPnLPercent='',
+                Reason='',
             ))
+
+    def update_pending_exit_audit(day, symbol, **updates):
+        """Update the most recent matching broad EXIT audit observation."""
+        audit_row = next((
+            item for item in reversed(exit_audit)
+            if item.get('Date') == day
+            and item.get('Symbol') == symbol
+            and item.get('Executed') != 'Yes'
+        ), None)
+        if audit_row is not None:
+            audit_row.update(updates)
+        return audit_row
     for mode in ('Reference capital',):
         cash = contributed = costs = realized = 0.0
         positions = {}
@@ -363,6 +466,8 @@ def replay(
         event_days = set(rows_by_date)
         if holding_exit_rows_by_date is not None:
             event_days.update(holding_exit_rows_by_date)
+        if exit_evaluation_plan:
+            event_days.update(exit_evaluation_plan.get('technical_matches_by_date', {}))
         for prices in (daily_prices or {}).values():
             event_days.update(prices)
         previous_equity = 0.0
@@ -384,7 +489,39 @@ def replay(
             # Exits release cash before purchases on the same date.
             normal_rows = list(rows_by_date.get(day, []))
             position_exit_rows = []
-            if position_exit_rule:
+            if exit_evaluation_plan:
+                for symbol, pos in list(positions.items()):
+                    raw_price = (daily_prices or {}).get(symbol, {}).get(day)
+                    try:
+                        price = float(raw_price)
+                    except (TypeError, ValueError):
+                        continue
+                    if not math.isfinite(price) or price <= 0 or pos['quantity'] <= 0:
+                        continue
+                    average_cost = pos['basis'] / pos['quantity']
+                    profit_percent = (price - average_cost) / average_cost * 100.0
+                    matched, detail = evaluate_exit_plan_for_holding(
+                        exit_evaluation_plan, day, symbol, profit_percent
+                    )
+                    if matched:
+                        matched_members = detail['matched_members']
+                        position_exit_rows.append(dict(
+                            Symbol=symbol,
+                            Signal='EXIT / PAPER STRATEGY',
+                            Close=price,
+                            **{
+                                'Matched Members': ', '.join(matched_members),
+                                'Matched Step 3 Items': ', '.join(
+                                    detail['matched_items']
+                                ),
+                                'Confirmation Count': len(matched_members),
+                                'Evidence': ' | '.join(detail['evidence']),
+                                'Average Cost': average_cost,
+                                'Profit % at Exit': profit_percent,
+                                '_paper_exit_plan': True,
+                            },
+                        ))
+            elif position_exit_rule:
                 for symbol, pos in list(positions.items()):
                     raw_price = (daily_prices or {}).get(symbol, {}).get(day)
                     try:
@@ -411,7 +548,12 @@ def replay(
                                 '_paper_position_exit': True,
                             },
                         ))
-            if holding_exit_rows_by_date is None:
+            if exit_evaluation_plan:
+                rows = position_exit_rows + [
+                    row for row in normal_rows
+                    if not str(row.get('Signal', '')).startswith('EXIT')
+                ]
+            elif holding_exit_rows_by_date is None:
                 rows = position_exit_rows + normal_rows
             else:
                 rows = position_exit_rows + [
@@ -436,7 +578,10 @@ def replay(
                     if not math.isfinite(price) or price <= 0:
                         raise ValueError()
                 except (TypeError, ValueError):
-                    reviews.append(dict(Mode=mode, Date=day, Symbol=symbol, Reason='Missing/invalid recorded price'))
+                    reason = 'Missing/invalid recorded price'
+                    reviews.append(dict(Mode=mode, Date=day, Symbol=symbol, Reason=reason))
+                    if signal.startswith('EXIT'):
+                        update_pending_exit_audit(day, symbol, Reason=reason)
                     continue
                 if symbol in positions:
                     positions[symbol]['price'], positions[symbol]['date'] = price, day
@@ -457,11 +602,17 @@ def replay(
                     cash += topup - gross - fee
                     pos = positions.setdefault(symbol, dict(
                         quantity=0.0, basis=0.0, entry_date=day, buy_count=0,
+                        last_buy_date=day, purchase_dates=[],
+                        gross_purchases=0.0, buy_side_costs=0.0,
                     ))
                     pos.update(price=price, date=day)
                     pos['quantity'] += quantity
                     pos['basis'] += gross + fee
                     pos['buy_count'] += 1
+                    pos['last_buy_date'] = day
+                    pos['purchase_dates'].append(day)
+                    pos['gross_purchases'] += gross
+                    pos['buy_side_costs'] += fee
                     action = 'BUY'
                 else:
                     pos = positions.pop(symbol, None)
@@ -493,6 +644,7 @@ def replay(
                         reviews.append(
                             dict(Mode=mode, Date=day, Symbol=symbol, Reason=reason)
                         )
+                        update_pending_exit_audit(day, symbol, Reason=reason)
                         continue
                     quantity = pos['quantity']
                     gross = quantity * price
@@ -516,30 +668,29 @@ def replay(
                     ))
                     last_sell_dates[symbol] = day
                     action = 'SELL'
-                    if row.get('_paper_position_exit'):
+                    if row.get('_paper_position_exit') or row.get('_paper_exit_plan'):
                         exit_audit.append(dict(
                             Date=day,
                             Symbol=symbol,
                             Close=price,
-                            Confirmations=1,
+                            Confirmations=row.get('Confirmation Count', 1),
                             MatchedMembers=row.get('Matched Members', ''),
                             Evidence=row.get('Evidence', ''),
                             Executed='Yes',
                             ExitPnLPercent=exit_pnl_percent,
+                            Reason='Simulated holding sold',
                         ))
                     else:
                         # Technical EXIT matches are recorded in the audit
                         # before replay. Mark the exact row that became a sale
                         # and attach its realized return for truthful colouring.
-                        audit_row = next((
-                            item for item in reversed(exit_audit)
-                            if item.get('Date') == day
-                            and item.get('Symbol') == symbol
-                            and item.get('Executed') != 'Yes'
-                        ), None)
-                        if audit_row is not None:
-                            audit_row['Executed'] = 'Yes'
-                            audit_row['ExitPnLPercent'] = exit_pnl_percent
+                        update_pending_exit_audit(
+                            day,
+                            symbol,
+                            Executed='Yes',
+                            ExitPnLPercent=exit_pnl_percent,
+                            Reason='Simulated holding sold',
+                        )
                 costs += fee
                 ledgers.append(dict(Mode=mode, Date=day, Symbol=symbol, Action=action,
                     Quantity=quantity, Price=price, Gross=gross, Costs=fee,
@@ -557,6 +708,8 @@ def replay(
                     SignalSource=(
                         'Completed Step 1 to Step 3 BUY result'
                         if action == 'BUY'
+                        else 'Paper holding Step 3 EXIT evaluation-plan match'
+                        if row.get('_paper_exit_plan')
                         else 'Paper holding profit/stop EXIT rule match'
                         if row.get('_paper_position_exit')
                         else 'Paper holding EXIT rule match'
@@ -605,10 +758,29 @@ def replay(
                 missing += 1
                 reviews.append(dict(Mode=mode, Date=end, Symbol=symbol, Reason='End valuation unavailable: ' + str(mark.get('error', 'no valid dated closing price'))))
             basis += pos['basis']
-            holdings.append(dict(Mode=mode, Symbol=symbol, Quantity=pos['quantity'],
-                CostBasis=pos['basis'], ValuationPrice=price if valid else None, PriceDate=price_date if valid else '',
-                PriceSource=mark.get('source', ''), MarketValue=market,
-                UnrealizedPnL=market-pos['basis'] if valid else None))
+            quantity = pos['quantity']
+            holdings.append(dict(
+                Mode=mode,
+                Symbol=symbol,
+                FirstPurchaseDate=pos['entry_date'],
+                LatestPurchaseDate=pos['last_buy_date'],
+                PurchaseDates=', '.join(pos['purchase_dates']),
+                BuyCount=pos['buy_count'],
+                Quantity=quantity,
+                WeightedAveragePurchasePrice=(
+                    pos['gross_purchases'] / quantity if quantity > 0 else None
+                ),
+                BuySideCosts=pos['buy_side_costs'],
+                AverageAcquisitionCost=(
+                    pos['basis'] / quantity if quantity > 0 else None
+                ),
+                CostBasis=pos['basis'],
+                ValuationPrice=price if valid else None,
+                PriceDate=price_date if valid else '',
+                PriceSource=mark.get('source', ''),
+                MarketValue=market,
+                UnrealizedPnL=market-pos['basis'] if valid else None,
+            ))
             if valid:
                 open_pnl = market - pos['basis']
                 campaigns.append(dict(
@@ -674,6 +846,9 @@ def replay(
             ),
             ReturnStatus='Missing valuation prices' if missing else 'Calculated' if annual is not None else 'XIRR undefined (no dated positive/negative cash-flow pair)',
             MissingValuations=missing))
+    for audit_row in exit_audit:
+        if audit_row.get('Executed') != 'Yes' and not audit_row.get('Reason'):
+            audit_row['Reason'] = 'No eligible simulated holding was available'
     return dict(
         Summary=summaries,
         Transactions=ledgers,

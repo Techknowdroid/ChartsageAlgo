@@ -19387,8 +19387,11 @@ class ScannerWindow(QMainWindow):
                 QMessageBox.warning(
                     self,
                     "One Portfolio Account Required",
-                    "Profit/stop rules and exit triggers require exactly one identifiable Zerodha account.\n\n"
-                    "Select one account-specific Zerodha portfolio watchlist or assign one target account.",
+                    "There is no PORTFOLIO or HOLDINGS here. So this Rule cannot be "
+                    "applied here to Scanning RULEs. IT can be APPLIED to BACKTESTS "
+                    "where we have HOLDINGS as a result of OUR Paper Backtest "
+                    "Purchases, or to ZERODHA Portfolio HOLDING (when we make that "
+                    "(ZERODHA) part Available).",
                 )
                 return False
         self.auto_scan_timer.stop()

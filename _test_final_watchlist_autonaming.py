@@ -228,6 +228,8 @@ class FinalWatchlistAutonamingTests(unittest.TestCase):
             window._update_auto_watchlist_names()
 
             popup = window.multirule_name_edit.toolTip()
+            self.assertTrue(popup.startswith("<qt>"), popup[:80])
+            self.assertIn("width='560'", popup)
             self.assertIn(
                 "Step 2A mode: Inactive because no Step 1 rule template is selected",
                 popup,
@@ -251,6 +253,24 @@ class FinalWatchlistAutonamingTests(unittest.TestCase):
             )
             self.assertIn("Step 3 BUY (ANY): BUY One, BUY Two", popup)
             self.assertIn("Step 3 EXIT (ANY): EXIT One, EXIT Two", popup)
+            self.assertIn("PRIVATE WATCHLISTS CREATED/UPDATED", popup)
+            self.assertIn(
+                "1. Step 1 matches: MultiruleWatchlist", popup
+            )
+            self.assertIn(
+                "2. Final input: FINALCHARTSAGE INPUT", popup
+            )
+            self.assertIn(
+                "3. BUY results: MY MULTIRULE GUIDE BUY RESULTS", popup
+            )
+            self.assertIn(
+                "4. EXIT results: MY MULTIRULE GUIDE EXIT RESULTS", popup
+            )
+            self.assertIn(
+                "TIMESTAMPED SNAPSHOTS — manual latest-data runs", popup
+            )
+            self.assertIn("&lt;YYYYMMDD_", popup)
+            self.assertIn("HHMMSS&gt;", popup)
             self.assertEqual(
                 popup,
                 window.final_source_name_edit.toolTip(),
@@ -263,6 +283,29 @@ class FinalWatchlistAutonamingTests(unittest.TestCase):
                 popup,
                 window.exit_results_name_edit.toolTip(),
             )
+
+            window.publish_to_chartsage_cb.setChecked(True)
+            published_popup = window.multirule_name_edit.toolTip()
+            self.assertIn(
+                "PUBLISHED CHARTSAGE COPIES CREATED/UPDATED", published_popup
+            )
+            self.assertIn(
+                module.finalchartink_chartsage_watchlist_name(
+                    window.multirule_name_edit.text()
+                ),
+                published_popup,
+            )
+            window.historical_radio.setChecked(True)
+            historical_popup = window.multirule_name_edit.toolTip()
+            self.assertIn(
+                "CONFIGURED OUTPUT WATCHLISTS — historical mode does not write them",
+                historical_popup,
+            )
+            self.assertNotIn(
+                "PUBLISHED CHARTSAGE COPIES CREATED/UPDATED", historical_popup
+            )
+            self.assertNotIn("TIMESTAMPED SNAPSHOTS", historical_popup)
+            window.latest_radio.setChecked(True)
 
             combine_index = window.feeder_scope_combo.findData("COMBINE")
             window.feeder_scope_combo.setCurrentIndex(combine_index)

@@ -2214,9 +2214,10 @@ def finalchartink_exit_scope_warning(
         if pnl_members:
             return (
                 "Important: This FINAL RULE SET contains holding-dependent Profit %, "
-                "Loss %, or Stop Loss % rules. They cannot be distributed across a FINAL "
-                "RULE SET; place all such branches inside one standalone Step 3 "
-                "EXIT template using OR."
+                "Loss %, or Stop Loss % rules. Paper Backtest evaluates those rules "
+                "against each simulated holding and combines them with the set's "
+                "technical members. Current Results cannot evaluate holding-dependent "
+                "branches and should not be used to judge this EXIT set."
             )
         return ""
     expression = setup.get("expression")
@@ -8226,6 +8227,9 @@ class HistoryReport:
     # A standalone portfolio-dependent Step 3 EXIT template is evaluated by
     # Paper Backtest against its own dated holdings, not by the broad scanner.
     paper_position_exit_rule: dict[str, Any] | None = None
+    # Paper-only plan for FINAL RULE SETs that combine dated technical matches
+    # with holding-dependent Profit/Loss members.
+    paper_exit_evaluation_plan: dict[str, Any] | None = None
     # One entry per failed component-scan attempt. A symbol may therefore
     # occur more than once; the GUI shows both attempts and unique names.
     download_failed_symbols: list[str] = field(default_factory=list)
@@ -9222,6 +9226,7 @@ class HistoryScannerWorker(RuleScannerWorker):
         downloader: Callable[[str, pd.Timestamp, pd.Timestamp, bool], pd.DataFrame] = download_symbol,
         shared_history_frames: dict[tuple[Any, ...], pd.DataFrame] | None = None,
         shared_history_start: pd.Timestamp | str | None = None,
+        dated_symbol_filter: Callable[[str, pd.Timestamp], bool] | None = None,
     ):
         super().__init__(
             setup,
@@ -9236,6 +9241,7 @@ class HistoryScannerWorker(RuleScannerWorker):
             if shared_history_start is not None
             else None
         )
+        self.dated_symbol_filter = dated_symbol_filter
 
     def _history_pool_key(
         self, symbol: str, as_of: pd.Timestamp, adjusted: bool
@@ -9616,6 +9622,18 @@ class HistoryScannerWorker(RuleScannerWorker):
                 insufficient_symbols += 1
 
             matched_dates = matched.index[matched]
+            if self.dated_symbol_filter is not None and len(matched_dates):
+                # A period-wide symbol pool is only a loading optimization. A
+                # ranked historical universe must first be restricted to the
+                # constituents eligible on that exact session; otherwise former
+                # constituents from a longer backtest can occupy Top-N places
+                # and make an identical date produce different results.
+                matched_dates = matched_dates[
+                    [
+                        bool(self.dated_symbol_filter(symbol, pd.Timestamp(stamp)))
+                        for stamp in matched_dates
+                    ]
+                ]
             for match_index, stamp in enumerate(matched_dates):
                 if match_index % 100 == 0:
                     self._check_cancelled()
@@ -25660,6 +25678,7 @@ class FinalChartInkHistoryWorker(QThread):
         start: int,
         end: int,
         expression_override: dict[str, Any] | None = None,
+        dated_symbol_filter: Callable[[str, pd.Timestamp], bool] | None = None,
     ) -> HistoryReport:
         setup = copy.deepcopy(self.templates[name])
         if expression_override is not None:
@@ -25687,6 +25706,7 @@ class FinalChartInkHistoryWorker(QThread):
             cache_path=PRICE_CACHE_DB,
             shared_history_frames=self._history_shared_frames,
             shared_history_start=self._history_shared_start,
+            dated_symbol_filter=dated_symbol_filter,
         )
         self._active = worker
         report = worker.scan(
@@ -25887,6 +25907,17 @@ class FinalChartInkHistoryWorker(QThread):
             for selected in self.config[key]:
                 members, required = self._rule_members(selected, self.templates)
                 branch_specs[side].append((selected, members, required))
+        exit_position_member_names = {
+            member
+            for _selected, members, _required in branch_specs["EXIT"]
+            for member in members
+            if expression_has_pnl_rules(self.templates[member].get("expression"))
+        }
+        use_paper_exit_evaluation_plan = any(
+            any(member in exit_position_member_names for member in members)
+            and (len(members) != 1 or selected != members[0])
+            for selected, members, _required in branch_specs["EXIT"]
+        )
         task_total = max(
             1,
             len(feeder_names)
@@ -25928,6 +25959,22 @@ class FinalChartInkHistoryWorker(QThread):
                 paper_source_specs.append((list(allowed_names), allowed_custom))
             possible_symbols.extend(symbols)
             symbol_details.update(details)
+            dated_members: dict[str, set[str]] = {}
+
+            def eligible_on_date(
+                symbol: str,
+                stamp: pd.Timestamp,
+                source_names: tuple[str, ...] = tuple(allowed_names),
+                source_custom: str = allowed_custom,
+                membership_cache: dict[str, set[str]] = dated_members,
+            ) -> bool:
+                day = pd.Timestamp(stamp).date().isoformat()
+                members = membership_cache.get(day)
+                if members is None:
+                    members = self._members_on(source_names, day, source_custom)
+                    membership_cache[day] = members
+                return str(symbol) in members
+
             start = 5 + int(task_index * 80 / task_total)
             task_index += 1
             report = self._scan(
@@ -25936,6 +25983,7 @@ class FinalChartInkHistoryWorker(QThread):
                 details,
                 start,
                 5 + int(task_index * 80 / task_total),
+                dated_symbol_filter=eligible_on_date,
             )
             reports.append(report)
             feeder_days = list(report.rows_by_date.items())
@@ -25959,6 +26007,7 @@ class FinalChartInkHistoryWorker(QThread):
         }
         paper_position_exit_rule: dict[str, Any] | None = None
         position_technical_overrides: dict[str, dict[str, Any]] = {}
+        paper_position_expressions: dict[str, dict[str, Any]] = {}
         for side in ("BUY", "EXIT"):
             members = list(dict.fromkeys(
                 member
@@ -25972,32 +26021,31 @@ class FinalChartInkHistoryWorker(QThread):
                 )
             ] if side == "EXIT" else []
             if position_members:
-                invalid_branches = [
-                    selected
-                    for selected, branch_members, _required in branch_specs[side]
-                    if any(member in position_members for member in branch_members)
-                    and (len(branch_members) != 1 or selected != branch_members[0])
-                ]
-                if len(position_members) > 1 or invalid_branches:
-                    raise ValueError(
-                        "Paper Backtest currently requires a portfolio Profit %, "
-                        "Loss %, or Stop Loss % Step 3 EXIT rule to be one standalone "
-                        "checked item, not a member of a FINAL RULE SET."
+                position_expressions: list[dict[str, Any]] = []
+                for position_name in position_members:
+                    position_expression, technical_expression = (
+                        self._split_position_or_exit_expression(
+                            self.templates[position_name].get("expression")
+                        )
                     )
-                position_name = position_members[0]
-                position_expression, technical_expression = (
-                    self._split_position_or_exit_expression(
-                        self.templates[position_name].get("expression")
+                    position_expressions.append(position_expression)
+                    paper_position_expressions[position_name] = position_expression
+                    if technical_expression is not None:
+                        position_technical_overrides[position_name] = (
+                            technical_expression
+                        )
+                if not use_paper_exit_evaluation_plan:
+                    combined_position_expression = (
+                        position_expressions[0]
+                        if len(position_expressions) == 1
+                        else group_node("OR", position_expressions)
                     )
-                )
-                paper_position_exit_rule = {
-                    "name": position_name,
-                    "expression": position_expression,
-                }
-                if technical_expression is not None:
-                    position_technical_overrides[position_name] = (
-                        technical_expression
-                    )
+                    paper_position_exit_rule = {
+                        "name": ", ".join(position_members),
+                        "expression": combined_position_expression,
+                        "members": list(position_members),
+                        "combination": "ANY (OR)",
+                    }
             for name in members:
                 self._check()
                 if (
@@ -26029,6 +26077,49 @@ class FinalChartInkHistoryWorker(QThread):
                             str(row["Symbol"]), {"members": [], "row": row}
                         )
                         entry["members"].append(name)
+
+        paper_exit_evaluation_plan: dict[str, Any] | None = None
+        if use_paper_exit_evaluation_plan:
+            exit_members = list(dict.fromkeys(
+                member
+                for _selected, members, _required in branch_specs["EXIT"]
+                for member in members
+            ))
+            paper_exit_evaluation_plan = {
+                "version": 1,
+                "combination": "ANY (OR)",
+                "items": [
+                    {
+                        "name": selected,
+                        "members": list(members),
+                        "required": required,
+                        "combination": (
+                            "AND" if required == len(members) and len(members) > 1
+                            else "OR" if required == 1 and len(members) > 1
+                            else f"ANY {required}" if len(members) > 1
+                            else "ONE"
+                        ),
+                    }
+                    for selected, members, required in branch_specs["EXIT"]
+                ],
+                "members": {
+                    name: {
+                        "position_expression": paper_position_expressions.get(name),
+                        "has_technical": (
+                            name not in paper_position_expressions
+                            or name in position_technical_overrides
+                        ),
+                    }
+                    for name in exit_members
+                },
+                "technical_matches_by_date": {
+                    day: {
+                        symbol: list(dict.fromkeys(match["members"]))
+                        for symbol, match in symbol_matches.items()
+                    }
+                    for day, symbol_matches in rule_matches["EXIT"].items()
+                },
+            }
 
         self.progress.emit(85, "Collecting all trading dates from completed rule scans")
         all_dates = sorted({
@@ -26164,6 +26255,7 @@ class FinalChartInkHistoryWorker(QThread):
             paper_exit_rows_by_date=paper_exit_rows_by_date,
             paper_reference_prices_by_date=paper_reference_prices_by_date,
             paper_position_exit_rule=paper_position_exit_rule,
+            paper_exit_evaluation_plan=paper_exit_evaluation_plan,
             download_failed_symbols=[
                 symbol
                 for report in reports
@@ -27270,6 +27362,24 @@ class FinalChartInkWindow(QMainWindow):
         self.exit_set_combo.selectionChanged.connect(
             self._update_auto_watchlist_names
         )
+        self.publish_to_chartsage_cb.toggled.connect(
+            self._refresh_watchlist_flow_tooltip
+        )
+        self.timestamp_snapshots_cb.toggled.connect(
+            self._refresh_watchlist_flow_tooltip
+        )
+        self.latest_radio.toggled.connect(
+            self._refresh_watchlist_flow_tooltip
+        )
+        self.historical_radio.toggled.connect(
+            self._refresh_watchlist_flow_tooltip
+        )
+        self.multirule_name_edit.textChanged.connect(
+            self._refresh_watchlist_flow_tooltip
+        )
+        self.final_source_name_edit.textChanged.connect(
+            self._refresh_watchlist_flow_tooltip
+        )
         self._auto_watchlist_naming_toggled(True)
 
     def _build_paper_tab(self) -> None:
@@ -27343,11 +27453,105 @@ class FinalChartInkWindow(QMainWindow):
         ):
             table = QTableWidget()
             table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-            tabs.addTab(table, name)
             self.paper_tables[name] = table
+            if name == "EXIT Evaluation Audit":
+                audit_page = QWidget()
+                audit_layout = QVBoxLayout(audit_page)
+                audit_layout.setContentsMargins(4, 4, 4, 4)
+                audit_controls = QHBoxLayout()
+                audit_controls.addWidget(QLabel("Show:"))
+                self.paper_exit_audit_filter = QComboBox()
+                self.paper_exit_audit_filter.addItem(
+                    "Executed exits only", "EXECUTED"
+                )
+                self.paper_exit_audit_filter.addItem(
+                    "Not executed", "NOT_EXECUTED"
+                )
+                self.paper_exit_audit_filter.addItem("All", "ALL")
+                self.paper_exit_audit_filter.setToolTip(
+                    "Executed exits are shown by default. Use the other choices "
+                    "to diagnose EXIT signals that did not sell a simulated holding."
+                )
+                audit_controls.addWidget(self.paper_exit_audit_filter)
+                self.paper_exit_audit_summary = QLabel(
+                    "EXIT signals: 0 | Executed: 0 | Not executed: 0"
+                )
+                self.paper_exit_audit_summary.setStyleSheet(
+                    "color: #555; font-weight: bold;"
+                )
+                audit_controls.addWidget(self.paper_exit_audit_summary)
+                audit_controls.addStretch(1)
+                audit_layout.addLayout(audit_controls)
+                audit_layout.addWidget(table)
+                self.paper_exit_audit_filter.currentIndexChanged.connect(
+                    self._refresh_paper_exit_audit_table
+                )
+                tabs.addTab(audit_page, name)
+            else:
+                tabs.addTab(table, name)
         layout.addWidget(tabs)
         self.paper_result = None
         self.result_tabs.addTab(page, "Paper Backtest")
+
+    def _populate_paper_table(
+        self, name: str, rows: list[dict[str, Any]]
+    ) -> None:
+        """Populate one Paper table while retaining EXIT profit/loss colouring."""
+        table = self.paper_tables[name]
+        headers = list(rows[0]) if rows else []
+        if name == "EXIT Evaluation Audit" and not headers:
+            complete_audit = list(
+                (self.paper_result or {}).get("EXIT Evaluation Audit", [])
+            )
+            headers = list(complete_audit[0]) if complete_audit else []
+        table.setColumnCount(len(headers))
+        table.setHorizontalHeaderLabels(headers)
+        table.setRowCount(len(rows))
+        for i, row in enumerate(rows):
+            exit_pnl = None
+            if name == "EXIT Evaluation Audit" and row.get("Executed") == "Yes":
+                try:
+                    exit_pnl = float(row.get("ExitPnLPercent"))
+                    if not math.isfinite(exit_pnl):
+                        exit_pnl = None
+                except (TypeError, ValueError):
+                    exit_pnl = None
+            for j, key in enumerate(headers):
+                value = row.get(key, "")
+                item = QTableWidgetItem(
+                    f"{value:,.4f}" if isinstance(value, float) else str(value)
+                )
+                if exit_pnl is not None and exit_pnl != 0:
+                    if exit_pnl > 0:
+                        item.setBackground(QColor("#e2f0d9"))
+                        item.setForeground(QColor("#006100"))
+                    else:
+                        item.setBackground(QColor("#fce4d6"))
+                        item.setForeground(QColor("#9c0006"))
+                table.setItem(i, j, item)
+        table.resizeColumnsToContents()
+
+    def _refresh_paper_exit_audit_table(self, *_args: Any) -> None:
+        """Apply the selected audit view without changing the replay results."""
+        all_rows = list(
+            (self.paper_result or {}).get("EXIT Evaluation Audit", [])
+        )
+        executed = [row for row in all_rows if row.get("Executed") == "Yes"]
+        not_executed = [
+            row for row in all_rows if row.get("Executed") != "Yes"
+        ]
+        selected = self.paper_exit_audit_filter.currentData()
+        if selected == "NOT_EXECUTED":
+            visible_rows = not_executed
+        elif selected == "ALL":
+            visible_rows = all_rows
+        else:
+            visible_rows = executed
+        self.paper_exit_audit_summary.setText(
+            f"EXIT signals: {len(all_rows):,} | Executed: {len(executed):,} | "
+            f"Not executed: {len(not_executed):,}"
+        )
+        self._populate_paper_table("EXIT Evaluation Audit", visible_rows)
 
     def _update_paper_benchmark(self) -> None:
         """Refresh the automatically selected five-year TRI cache."""
@@ -27492,6 +27696,7 @@ class FinalChartInkWindow(QMainWindow):
             cost_percent=self.paper_cost.value(),
             holding_exit_rows_by_date=report.paper_exit_rows_by_date,
             position_exit_rule=report.paper_position_exit_rule,
+            exit_evaluation_plan=report.paper_exit_evaluation_plan,
             daily_prices=daily_prices,
         )
         valuations = {}
@@ -27523,6 +27728,7 @@ class FinalChartInkWindow(QMainWindow):
             valuations=valuations,
             holding_exit_rows_by_date=report.paper_exit_rows_by_date,
             position_exit_rule=report.paper_position_exit_rule,
+            exit_evaluation_plan=report.paper_exit_evaluation_plan,
             daily_prices=daily_prices,
             benchmark_prices=BenchmarkHistoryStore(BENCHMARK_HISTORY_DB).load(
                 (date.fromisoformat(start) - timedelta(days=10)).isoformat(), end,
@@ -27567,40 +27773,23 @@ class FinalChartInkWindow(QMainWindow):
             EntryScope='Only completed BUY results from the configured Step 1 to Step 3 flow',
             ExitScope='Every simulated holding; independent of Step 1 eligibility',
             PositionDependentExit=(
+                ", ".join(
+                    item.get('name', '')
+                    for item in report.paper_exit_evaluation_plan.get('items', [])
+                    if item.get('name')
+                )
+                if report.paper_exit_evaluation_plan else
                 report.paper_position_exit_rule.get('name', '')
                 if report.paper_position_exit_rule else 'None'
             ),
             ProfitExitBasis='Daily close versus weighted-average acquisition cost including BUY-side costs',
             Prices='Uses report price basis, including its adjustment setting')
-        for name, table in self.paper_tables.items():
+        for name in self.paper_tables:
+            if name == "EXIT Evaluation Audit":
+                continue
             rows = self.paper_result[name]
-            headers = list(rows[0]) if rows else []
-            table.setColumnCount(len(headers))
-            table.setHorizontalHeaderLabels(headers)
-            table.setRowCount(len(rows))
-            for i, row in enumerate(rows):
-                exit_pnl = None
-                if name == "EXIT Evaluation Audit" and row.get("Executed") == "Yes":
-                    try:
-                        exit_pnl = float(row.get("ExitPnLPercent"))
-                        if not math.isfinite(exit_pnl):
-                            exit_pnl = None
-                    except (TypeError, ValueError):
-                        exit_pnl = None
-                for j, key in enumerate(headers):
-                    value = row[key]
-                    item = QTableWidgetItem(
-                        f"{value:,.4f}" if isinstance(value, float) else str(value)
-                    )
-                    if exit_pnl is not None and exit_pnl != 0:
-                        if exit_pnl > 0:
-                            item.setBackground(QColor("#e2f0d9"))
-                            item.setForeground(QColor("#006100"))
-                        else:
-                            item.setBackground(QColor("#fce4d6"))
-                            item.setForeground(QColor("#9c0006"))
-                    table.setItem(i, j, item)
-            table.resizeColumnsToContents()
+            self._populate_paper_table(name, rows)
+        self._refresh_paper_exit_audit_table()
         missing = self.paper_result['Summary'][0]['MissingValuations']
         benchmark_end = self.paper_result['Summary'][0].get(
             'BenchmarkEndObservationDate'
@@ -27632,6 +27821,10 @@ class FinalChartInkWindow(QMainWindow):
             table.clear()
             table.setRowCount(0)
             table.setColumnCount(0)
+        if hasattr(self, 'paper_exit_audit_summary'):
+            self.paper_exit_audit_summary.setText(
+                "EXIT signals: 0 | Executed: 0 | Not executed: 0"
+            )
         self.paper_status.setText(
             f"Ready to replay the completed Backtest History: "
             f"{report.start_date} to {report.end_date}."
@@ -27824,16 +28017,14 @@ class FinalChartInkWindow(QMainWindow):
             )
         self._update_auto_watchlist_names()
 
-    def _update_auto_watchlist_names(self, *_args: Any) -> None:
-        """Refresh all four output-name previews from the current step choices."""
-        if not hasattr(self, "buy_results_name_edit"):
-            return
+    def _current_watchlist_flow_selection(self) -> dict[str, Any]:
+        """Return the current Step 1/2/3 selections used by naming and help."""
         recipe_name = self.recipe_name_edit.text().strip() or "UNNAMED STRATEGY"
         step2a_watchlists = self._checked(self.source_watchlist_list)
         step2a_universes = self._checked(self.source_universe_list)
         step2b_watchlists = self._checked(self.final_watchlist_list)
         step2b_universes = self._checked(self.final_universe_list)
-        raw = {
+        return {
             "recipe_name": recipe_name,
             "feeder_templates": self._checked(self.feeder_list),
             "feeder_sources": [*step2a_watchlists, *step2a_universes],
@@ -27845,7 +28036,18 @@ class FinalChartInkWindow(QMainWindow):
             "include_multirule": self.include_multirule_cb.isChecked(),
             "buy_finalsets": self.buy_set_combo.checkedData(),
             "exit_finalsets": self.exit_set_combo.checkedData(),
+            "_step2a_watchlists": step2a_watchlists,
+            "_step2a_universes": step2a_universes,
+            "_step2b_watchlists": step2b_watchlists,
+            "_step2b_universes": step2b_universes,
         }
+
+    def _update_auto_watchlist_names(self, *_args: Any) -> None:
+        """Refresh all four output-name previews from the current step choices."""
+        if not hasattr(self, "buy_results_name_edit"):
+            return
+        raw = self._current_watchlist_flow_selection()
+        recipe_name = raw["recipe_name"]
         names = build_finalchartink_auto_watchlist_names(raw, self.templates)
         if self.auto_watchlist_naming_cb.isChecked():
             self.multirule_name_edit.setText(names["multirule_watchlist"])
@@ -27855,6 +28057,26 @@ class FinalChartInkWindow(QMainWindow):
         else:
             self.buy_results_name_edit.setText(f"{recipe_name} BUY RESULTS")
             self.exit_results_name_edit.setText(f"{recipe_name} EXIT RESULTS")
+        self._refresh_watchlist_flow_tooltip(raw, names)
+
+    def _refresh_watchlist_flow_tooltip(
+        self,
+        raw: dict[str, Any] | None = None,
+        generated_names: dict[str, str] | None = None,
+        *_args: Any,
+    ) -> None:
+        """Show the complete flow in a fixed-width, wrapping rich tooltip."""
+        if not hasattr(self, "buy_results_name_edit"):
+            return
+        if not isinstance(raw, dict):
+            raw = self._current_watchlist_flow_selection()
+        names = generated_names or build_finalchartink_auto_watchlist_names(
+            raw, self.templates
+        )
+        step2a_watchlists = list(raw.get("_step2a_watchlists", []))
+        step2a_universes = list(raw.get("_step2a_universes", []))
+        step2b_watchlists = list(raw.get("_step2b_watchlists", []))
+        step2b_universes = list(raw.get("_step2b_universes", []))
         has_step1 = bool(raw["feeder_templates"])
         step2a_mode_text = finalchartink_step2a_mode_description(
             raw["feeder_scope"], has_step1
@@ -27880,19 +28102,132 @@ class FinalChartInkWindow(QMainWindow):
             if not step2b_universes and not step2b_watchlists
             else ""
         )
+        base_watchlists = [
+            ("1. Step 1 matches", self.multirule_name_edit.text().strip()),
+            ("2. Final input", self.final_source_name_edit.text().strip()),
+            ("3. BUY results", self.buy_results_name_edit.text().strip()),
+            ("4. EXIT results", self.exit_results_name_edit.text().strip()),
+        ]
+        historical = self.historical_radio.isChecked()
+        lines: list[tuple[str, bool, bool]] = [
+            (f"Flow ID: {names['watchlist_flow_id']}", False, False),
+            (f"Step 1: {', '.join(raw['feeder_templates']) or 'None'}", False, False),
+            (f"Step 2A mode: {step2a_mode_text}", False, False),
+        ]
+        lines.extend(
+            (line, False, False)
+            for line in step2a_selection_summary.rstrip("\n").splitlines()
+            if line
+        )
+        lines.extend([
+            (f"Step 2A selection usage: {step2a_usage}", False, False),
+            (
+                "Step 2B effectively includes Step 1: "
+                + (
+                    "Yes"
+                    if raw["feeder_templates"] and raw["include_multirule"]
+                    else "No"
+                ),
+                False,
+                False,
+            ),
+            (
+                f"Step 2B direct universes: "
+                f"{', '.join(step2b_universes) or 'None'}",
+                False,
+                False,
+            ),
+            (
+                f"Step 2B direct watchlists: "
+                f"{', '.join(step2b_watchlists) or 'None'}",
+                False,
+                False,
+            ),
+        ])
+        lines.extend(
+            (line, False, False)
+            for line in step2b_empty_summary.rstrip("\n").splitlines()
+            if line
+        )
+        lines.extend([
+            (
+                f"Step 3 BUY (ANY): "
+                f"{', '.join(raw['buy_finalsets']) or 'None'}",
+                False,
+                False,
+            ),
+            (
+                f"Step 3 EXIT (ANY): "
+                f"{', '.join(raw['exit_finalsets']) or 'None'}",
+                False,
+                False,
+            ),
+            ("", False, False),
+            (
+                "CONFIGURED OUTPUT WATCHLISTS — historical mode does not write them"
+                if historical
+                else "PRIVATE WATCHLISTS CREATED/UPDATED",
+                True,
+                False,
+            ),
+        ])
+        lines.extend(
+            (f"{label}: {name or 'None'}", False, True)
+            for label, name in base_watchlists
+        )
+        if not historical and self.timestamp_snapshots_cb.isChecked():
+            lines.extend([
+                ("", False, False),
+                (
+                    "TIMESTAMPED SNAPSHOTS — manual latest-data runs",
+                    True,
+                    False,
+                ),
+            ])
+            lines.extend(
+                (f"{label}: {name} <YYYYMMDD_HHMMSS>", False, True)
+                for label, name in base_watchlists
+            )
+        elif not historical:
+            lines.append(("Timestamped snapshots: Off", False, False))
+        if not historical and self.publish_to_chartsage_cb.isChecked():
+            lines.extend([
+                ("", False, False),
+                ("PUBLISHED CHARTSAGE COPIES CREATED/UPDATED", True, False),
+            ])
+            lines.extend(
+                (
+                    f"{label}: {finalchartink_chartsage_watchlist_name(name)}",
+                    False,
+                    True,
+                )
+                for label, name in base_watchlists
+            )
+        elif not historical:
+            lines.append(("ChartSage publishing: Off", False, False))
+
+        def render_line(text: str, bold: bool, add_breaks: bool) -> str:
+            escaped = html.escape(text, quote=False)
+            if add_breaks:
+                escaped = (
+                    escaped.replace("_", "_&#8203;")
+                    .replace("-", "-&#8203;")
+                    .replace("/", "/&#8203;")
+                )
+            if not text:
+                escaped = "&nbsp;"
+            if bold:
+                escaped = f"<b>{escaped}</b>"
+            return (
+                "<tr><td style='white-space:normal; padding:1px 3px;'>"
+                f"{escaped}</td></tr>"
+            )
+
         exact = (
-            f"Flow ID: {names['watchlist_flow_id']}\n"
-            f"Step 1: {', '.join(raw['feeder_templates']) or 'None'}\n"
-            f"Step 2A mode: {step2a_mode_text}\n"
-            f"{step2a_selection_summary}"
-            f"Step 2A selection usage: {step2a_usage}\n"
-            f"Step 2B effectively includes Step 1: "
-            f"{'Yes' if raw['feeder_templates'] and raw['include_multirule'] else 'No'}\n"
-            f"Step 2B direct universes: {', '.join(step2b_universes) or 'None'}\n"
-            f"Step 2B direct watchlists: {', '.join(step2b_watchlists) or 'None'}\n"
-            f"{step2b_empty_summary}"
-            f"Step 3 BUY (ANY): {', '.join(raw['buy_finalsets']) or 'None'}\n"
-            f"Step 3 EXIT (ANY): {', '.join(raw['exit_finalsets']) or 'None'}"
+            "<qt><table width='560' cellspacing='0' cellpadding='0' "
+            "style='white-space:normal;'>"
+            + "".join(render_line(*line) for line in lines)
+            + "</table></qt>"
         )
         for widget in (
             self.multirule_name_edit,

@@ -6,12 +6,13 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parent
-sys.path.insert(0, str(ROOT / "_packaging_runtime"))
+sys.path.insert(0, str(ROOT / "_packaging_deps"))
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import pandas as pd
 import FINALChartSageV1 as module
 from openpyxl import load_workbook
+from paper_signal_replay import evaluate_position_exit_expression
 from PySide6.QtTest import QTest
 
 
@@ -104,6 +105,279 @@ class FinalStep3MultiSelectTests(unittest.TestCase):
         self.assertFalse(module.ScannerWindow._validate_template_setup(
             dummy_window, live_setup, silent=True
         ))
+
+    def test_paper_history_combines_multiple_standalone_position_exits_as_or(self):
+        templates = {
+            name: module.default_setup()
+            for name in ("FEEDER", "BUY A", "STOP LOSS", "TAKE PROFIT")
+        }
+        templates["FEEDER"]["universes"] = ["FIXED TEST SOURCE"]
+        templates["STOP LOSS"]["expression"] = module.group_node("AND", [
+            module.rule_node(
+                module.field_operand("Loss %", "D"),
+                ">=",
+                module.value_operand(8.5),
+            )
+        ])
+        templates["TAKE PROFIT"]["expression"] = module.group_node("AND", [
+            module.rule_node(
+                module.field_operand("Profit %", "D"),
+                ">=",
+                module.value_operand(16),
+            )
+        ])
+        config = module.finalchartink_defaults()
+        config.update({
+            "recipe_name": "POSITION EXIT OR TEST",
+            "feeder_templates": ["FEEDER"],
+            "feeder_scope": "SAVED",
+            "include_multirule": True,
+            "buy_finalsets": ["BUY A"],
+            "exit_finalsets": ["STOP LOSS", "TAKE PROFIT"],
+            "as_of_mode": "historical",
+            "as_of_date": "2025-10-03",
+        })
+        worker = module.FinalChartInkHistoryWorker(
+            config,
+            templates,
+            {"FIXED TEST SOURCE": ("CHARTSAGE WATCHLIST", ["ABC"])},
+            1,
+        )
+
+        def report(rows):
+            return module.HistoryReport(
+                rows_by_date=rows,
+                daily_summary=[
+                    {"date": "2025-10-01", "total": len(rows), "sectors": {}}
+                ],
+                total_symbols=1,
+                scanned_symbols=1,
+                total_matches=sum(len(items) for items in rows.values()),
+                dates_with_matches=len(rows),
+                downloaded_symbols=0,
+                cache_hits=1,
+                missing_symbols=0,
+                download_failure_symbols=0,
+                insufficient_symbols=0,
+                universe_errors=[],
+                start_date="2025-10-01",
+                end_date="2025-10-03",
+            )
+
+        reports = {
+            "FEEDER": report({
+                "2025-10-01": [{"Symbol": "ABC", "Close": 100.0}]
+            }),
+            "BUY A": report({
+                "2025-10-01": [{"Symbol": "ABC", "Close": 100.0}]
+            }),
+        }
+        worker._scan = (
+            lambda name, _symbols, _details, _start, _end, **_kwargs: reports[name]
+        )
+        worker._paper_reference_prices = lambda *_args, **_kwargs: {}
+
+        history = worker._run_history()
+        position_rule = history.paper_position_exit_rule
+        self.assertEqual(position_rule["members"], ["STOP LOSS", "TAKE PROFIT"])
+        self.assertEqual(position_rule["combination"], "ANY (OR)")
+        self.assertEqual(position_rule["expression"]["op"], "OR")
+        self.assertTrue(evaluate_position_exit_expression(
+            position_rule["expression"], -8.5
+        )[0])
+        self.assertTrue(evaluate_position_exit_expression(
+            position_rule["expression"], 16
+        )[0])
+        self.assertFalse(evaluate_position_exit_expression(
+            position_rule["expression"], 5
+        )[0])
+
+        replay = module.replay_paper_signals(
+            history.rows_by_date,
+            "2025-10-01",
+            "2025-10-03",
+            reference_capital=100,
+            position_exit_rule=position_rule,
+            daily_prices={"ABC": {
+                "2025-10-01": 100,
+                "2025-10-02": 91.5,
+                "2025-10-03": 110,
+            }},
+        )
+        self.assertEqual(
+            [row["Action"] for row in replay["Transactions"]],
+            ["BUY", "SELL"],
+        )
+        self.assertAlmostEqual(
+            replay["Transactions"][-1]["ProfitPercentAtExit"], -8.5
+        )
+
+    def test_paper_history_builds_mixed_final_set_evaluation_plan(self):
+        templates = {
+            name: module.default_setup()
+            for name in ("FEEDER", "BUY A", "STOP LOSS", "RSI WEAK")
+        }
+        templates["FEEDER"]["universes"] = ["FIXED TEST SOURCE"]
+        templates["STOP LOSS"]["expression"] = module.group_node("AND", [
+            module.rule_node(
+                module.field_operand("Loss %", "D"),
+                ">=",
+                module.value_operand(8.5),
+            )
+        ])
+        templates["MIXED EXIT SET"] = {
+            **module.default_setup(),
+            "is_final_template": True,
+            "finalset_side": "EXIT",
+            "finalset_op": "AND",
+            "finalset_members": ["STOP LOSS", "RSI WEAK"],
+        }
+        config = module.finalchartink_defaults()
+        config.update({
+            "recipe_name": "MIXED POSITION EXIT TEST",
+            "feeder_templates": ["FEEDER"],
+            "feeder_scope": "SAVED",
+            "include_multirule": True,
+            "buy_finalsets": ["BUY A"],
+            "exit_finalsets": ["MIXED EXIT SET"],
+            "as_of_mode": "historical",
+            "as_of_date": "2025-10-03",
+        })
+        worker = module.FinalChartInkHistoryWorker(
+            config,
+            templates,
+            {"FIXED TEST SOURCE": ("CHARTSAGE WATCHLIST", ["ABC"])},
+            1,
+        )
+
+        def report(rows):
+            return module.HistoryReport(
+                rows_by_date=rows,
+                daily_summary=[
+                    {"date": day, "total": len(day_rows), "sectors": {}}
+                    for day, day_rows in rows.items()
+                ],
+                total_symbols=1,
+                scanned_symbols=1,
+                total_matches=sum(len(items) for items in rows.values()),
+                dates_with_matches=len(rows),
+                downloaded_symbols=0,
+                cache_hits=1,
+                missing_symbols=0,
+                download_failure_symbols=0,
+                insufficient_symbols=0,
+                universe_errors=[],
+                start_date="2025-10-01",
+                end_date="2025-10-03",
+            )
+
+        reports = {
+            "FEEDER": report({
+                "2025-10-01": [{"Symbol": "ABC", "Close": 100.0}]
+            }),
+            "BUY A": report({
+                "2025-10-01": [{"Symbol": "ABC", "Close": 100.0}]
+            }),
+            "RSI WEAK": report({
+                "2025-10-02": [{"Symbol": "ABC", "Close": 91.5}]
+            }),
+        }
+        worker._scan = (
+            lambda name, _symbols, _details, _start, _end, **_kwargs: reports[name]
+        )
+        worker._paper_reference_prices = lambda *_args, **_kwargs: {}
+
+        history = worker._run_history()
+        self.assertIsNone(history.paper_position_exit_rule)
+        plan = history.paper_exit_evaluation_plan
+        self.assertEqual(plan["combination"], "ANY (OR)")
+        self.assertEqual(plan["items"], [{
+            "name": "MIXED EXIT SET",
+            "members": ["STOP LOSS", "RSI WEAK"],
+            "required": 2,
+            "combination": "AND",
+        }])
+        self.assertEqual(
+            plan["technical_matches_by_date"]["2025-10-02"]["ABC"],
+            ["RSI WEAK"],
+        )
+
+        result = module.replay_paper_signals(
+            history.rows_by_date,
+            "2025-10-01",
+            "2025-10-03",
+            reference_capital=100,
+            holding_exit_rows_by_date=history.paper_exit_rows_by_date,
+            exit_evaluation_plan=plan,
+            daily_prices={"ABC": {
+                "2025-10-01": 100,
+                "2025-10-02": 91.5,
+                "2025-10-03": 90,
+            }},
+        )
+        self.assertEqual(
+            [row["Action"] for row in result["Transactions"]],
+            ["BUY", "SELL"],
+        )
+        self.assertEqual(result["Transactions"][-1]["Date"], "2025-10-02")
+        self.assertEqual(
+            result["Transactions"][-1]["SignalSource"],
+            "Paper holding Step 3 EXIT evaluation-plan match",
+        )
+
+    def test_exit_audit_defaults_to_executed_and_filters_all_views(self):
+        window = module.FinalChartInkWindow()
+        try:
+            window.paper_result = {
+                "EXIT Evaluation Audit": [
+                    {
+                        "Date": "2025-01-01", "Symbol": "AAA", "Close": 100.0,
+                        "Confirmations": 1, "MatchedMembers": "EXIT A",
+                        "Evidence": "matched", "Executed": "Yes",
+                        "ExitPnLPercent": 5.0, "Reason": "Simulated holding sold",
+                    },
+                    {
+                        "Date": "2025-01-02", "Symbol": "BBB", "Close": 90.0,
+                        "Confirmations": 1, "MatchedMembers": "EXIT A",
+                        "Evidence": "matched", "Executed": "No",
+                        "ExitPnLPercent": "", "Reason": "Never bought",
+                    },
+                    {
+                        "Date": "2025-01-03", "Symbol": "CCC", "Close": 80.0,
+                        "Confirmations": 1, "MatchedMembers": "EXIT A",
+                        "Evidence": "matched", "Executed": "No",
+                        "ExitPnLPercent": "", "Reason": "Already sold",
+                    },
+                ]
+            }
+            window._refresh_paper_exit_audit_table()
+            table = window.paper_tables["EXIT Evaluation Audit"]
+            self.assertEqual(window.paper_exit_audit_filter.currentData(), "EXECUTED")
+            self.assertEqual(table.rowCount(), 1)
+            self.assertEqual(
+                window.paper_exit_audit_summary.text(),
+                "EXIT signals: 3 | Executed: 1 | Not executed: 2",
+            )
+
+            window.paper_exit_audit_filter.setCurrentIndex(
+                window.paper_exit_audit_filter.findData("NOT_EXECUTED")
+            )
+            self.app.processEvents()
+            self.assertEqual(table.rowCount(), 2)
+            headers = [
+                table.horizontalHeaderItem(index).text()
+                for index in range(table.columnCount())
+            ]
+            self.assertIn("Reason", headers)
+
+            window.paper_exit_audit_filter.setCurrentIndex(
+                window.paper_exit_audit_filter.findData("ALL")
+            )
+            self.app.processEvents()
+            self.assertEqual(table.rowCount(), 3)
+        finally:
+            window.close()
+            self.app.processEvents()
 
     def test_old_singular_strategy_migrates_to_one_checked_item(self):
         config = module.normalize_finalchartink_recipe({
@@ -598,6 +872,89 @@ class FinalStep3MultiSelectTests(unittest.TestCase):
         self.assertFalse(reused)
         self.assertFalse(shared)
         self.assertEqual(frame.index.min(), pd.Timestamp("2025-01-05"))
+
+    def test_history_ranking_filters_dated_membership_before_top_n(self):
+        setup = module.default_setup()
+        setup.update({
+            "as_of_mode": "historical",
+            "as_of_date": "2026-09-30",
+            "history_months": 1,
+            "expression": module.group_node("AND", [
+                module.rule_node(
+                    module.field_operand("Close", "D"),
+                    ">",
+                    module.value_operand(0),
+                )
+            ]),
+            "ranking_enabled": True,
+            "ranking_direction": "DESC",
+            "ranking_rsi_periods": [2, 3],
+            "ranking_top_n": 1,
+        })
+        dates = pd.date_range("2025-05-01", "2026-09-30", freq="B")
+        frames = {
+            symbol: pd.DataFrame({
+                "Open": [100.0] * len(dates),
+                "High": [101.0] * len(dates),
+                "Low": [99.0] * len(dates),
+                "Close": [100.0] * len(dates),
+                "Volume": [1000.0] * len(dates),
+            }, index=dates)
+            for symbol in ("CURRENT", "FORMER")
+        }
+
+        class FakeCache:
+            COLUMNS = ["Open", "High", "Low", "Close", "Volume"]
+
+            def __init__(self, *_args, **_kwargs):
+                pass
+
+            def load(self, symbol, start, end, _adjusted):
+                frame = frames[symbol]
+                return frame.loc[(frame.index >= start) & (frame.index <= end)].copy()
+
+            def is_covered(self, *_args, **_kwargs):
+                return True
+
+            def candle_source(self, *_args, **_kwargs):
+                return "Test"
+
+        scored_symbols = []
+
+        def fake_ranking_values(row, _setup, _value_for_period):
+            symbol = str(row["Symbol"])
+            scored_symbols.append(symbol)
+            row[module.COMPOSITE_RSI_MOMENTUM_COLUMN] = (
+                100.0 if symbol == "FORMER" else 50.0
+            )
+
+        worker = module.HistoryScannerWorker(
+            setup,
+            symbols=["CURRENT", "FORMER"],
+            symbol_details={},
+            cache_path=ROOT / "price_cache.db",
+            dated_symbol_filter=lambda symbol, _stamp: symbol == "CURRENT",
+        )
+        with (
+            patch.object(module, "PriceCache", FakeCache),
+            patch.object(
+                module,
+                "add_composite_rsi_ranking_values",
+                side_effect=fake_ranking_values,
+            ),
+        ):
+            report = worker.scan()
+
+        self.assertTrue(report.rows_by_date)
+        self.assertEqual(
+            {
+                row["Symbol"]
+                for rows in report.rows_by_date.values()
+                for row in rows
+            },
+            {"CURRENT"},
+        )
+        self.assertNotIn("FORMER", scored_symbols)
 
     def test_compact_telegram_lists_close_and_daily_change(self):
         payload = {
